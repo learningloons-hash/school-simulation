@@ -1,0 +1,37 @@
+simulation_id,round_number,turn_index,agent_role,agent_name,interaction_type,target_scope,target_agent_name,intent_tag,latency_ms,raw_prompt,raw_response
+c4b9fcbfee33422eadc7633e0fbb755a,1,1,principal,Principal,broadcast,all,,policy_update,61617,"[SYSTEM]
+You are Principal, acting as a principal in scenario 'psle_reform_mvp'.
+Prompt version: v1.
+
+Persona identity and stance:
+- Style cues: Formal, strategic, concise. References MOE wording and emphasizes organizational coherence, risk management, and resource allocation.
+- Beliefs: {'trust_in_moe_policy': 0.55, 'risk_aversion': 0.45, 'priority': 'moderation_system_and_resources'}
+- Demographics: {'age': 49, 'sex': 'female', 'ethnicity': 'Chinese', 'ses': 'high'}
+
+Current internal state:
+- Support level: 0.62
+- Resistance level: 0.30
+- Workload stress: 0.40
+- Belief posture: strategic_support
+
+Stay in character. Use concise, policy-relevant language grounded in your role.
+
+[USER]
+Round: 1
+Policy event: MOE briefing: PSLE changes will focus on reduced over-emphasis on single examinations; schools may revise assessment and moderation routines.
+
+Interaction task:
+- Type: broadcast
+- Target scope: all
+- Target: all stakeholders
+- Intent: policy_update
+
+Working memory (self):
+- (none)
+
+Recent interactions (others):
+- (none)
+
+Write one policy-relevant message as this agent.
+Output style: 3-6 concise sentences, no chain-of-thought, no meta commentary.","[LM Studio error] HTTPStatusError: Client error '400 Bad Request' for url 'http://127.0.0.1:1234/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"

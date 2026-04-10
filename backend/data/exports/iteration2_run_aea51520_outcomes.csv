@@ -1,0 +1,3 @@
+simulation_id,round_number,adoption_momentum,conflict_events,consistency_index
+aea515200e4b4adba65cccd6c29803cf,1,1.0,0,0.6644
+aea515200e4b4adba65cccd6c29803cf,2,0.503,0,0.6688

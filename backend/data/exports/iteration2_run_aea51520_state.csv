@@ -1,0 +1,7 @@
+simulation_id,round_number,agent_id,agent_role,agent_name,age,sex,ethnicity,ses,support_level,resistance_level,workload_stress,belief_posture
+aea515200e4b4adba65cccd6c29803cf,1,middle_manager_001_001,middle_manager,"HoD / Middle Manager",42,male,Malay,middle,0.55,0.35,0.51,supportive
+aea515200e4b4adba65cccd6c29803cf,1,principal_001_000,principal,Principal,49,female,Chinese,high,0.62,0.3,0.39,supportive
+aea515200e4b4adba65cccd6c29803cf,1,teacher_001_002,teacher,Teacher,35,female,Indian,middle,0.5,0.38,0.57,mixed
+aea515200e4b4adba65cccd6c29803cf,2,middle_manager_001_001,middle_manager,"HoD / Middle Manager",42,male,Malay,middle,0.55,0.35,0.5,supportive
+aea515200e4b4adba65cccd6c29803cf,2,principal_001_000,principal,Principal,49,female,Chinese,high,0.62,0.3,0.38,supportive
+aea515200e4b4adba65cccd6c29803cf,2,teacher_001_002,teacher,Teacher,35,female,Indian,middle,0.5,0.38,0.56,mixed

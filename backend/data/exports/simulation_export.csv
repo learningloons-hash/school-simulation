@@ -1,0 +1,145 @@
+simulation_id,status,current_round,total_rounds,run_created_at,round_number,turn_index,agent_role,agent_name,raw_response,latency_ms,turn_created_at
+f4f1a11bd8974aa1ba79c064f5ac1802,pending,0,4,"2026-03-31 08:09:09",,,,,,,
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",1,1,principal,Principal,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies an early stage of implementation or discussion about changes to the Primary School Leaving Examination in Singapore.
+",9877,"2026-03-31 08:07:48"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",1,2,middle_manager,"HoD / Middle Manager","Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies a pilot or initial implementation phase of changes to the Primary School Leaving Examination in Singapore.
+   ",4760,"2026-03-31 08:07:53"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",1,3,teacher,Teacher,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies a pilot or initial implementation phase of changes to the Primary School Leaving Examination in Singapore.
+   ",4785,"2026-03-31 08:07:58"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",2,1,principal,Principal,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Role:** Principal (AgentName=Principal).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This suggests a context where changes to the Primary School Leaving Examination are being piloted or",4928,"2026-03-31 08:08:03"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",2,2,middle_manager,"HoD / Middle Manager","Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0 (Initial iteration).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This suggests we are in the early stages of implementing changes to the Primary School Leaving Examination",4890,"2026-03-31 08:08:08"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",2,3,teacher,Teacher,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0 (Initial iteration).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This suggests we are in the early stages of implementing changes to the Primary School Leaving Examination",4915,"2026-03-31 08:08:13"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",3,1,principal,Principal,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies an early stage of implementation or discussion about changes to the Primary School Leaving Examination in Singapore.
+",5195,"2026-03-31 08:08:18"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",3,2,middle_manager,"HoD / Middle Manager","Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Input:** A prompt specifying a scenario (PSLE Reform MVP), round (3), policy event (MOE publishes implementation guidance on school-based moderation and reporting practices for PSLE cohorts), agent role (HoD / Middle Manager",5219,"2026-03-31 08:08:23"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",3,3,teacher,Teacher,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Input:** A prompt structure defining a scenario (PSLE Reform MVP), round (3), policy event (MOE publishes guidance on school-based moderation and reporting for PSLE cohorts), agent role (teacher), persona style cues (",5218,"2026-03-31 08:08:28"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",4,1,principal,Principal,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Role:** Principal (AgentName=Principal).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies an early stage of implementation or discussion about changes to the Primary School Leaving Examination",5200,"2026-03-31 08:08:33"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",4,2,middle_manager,"HoD / Middle Manager","Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0 (Initial iteration).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies we are testing or rolling out changes to the Primary School Leaving Examination system,",5194,"2026-03-31 08:08:39"
+3aa3616f94b24f5a95e23bc3c970f5c2,completed,4,4,"2026-03-31 08:07:38",4,3,teacher,Teacher,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Input:** A prompt structure defining a scenario (PSLE Reform MVP), round (4 - based on the initial `Round=4` in the first line, though the thinking process snippet mentions Round 3, I should stick",5211,"2026-03-31 08:08:44"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",1,1,principal,Principal,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies an early stage of implementation or discussion about changes to the Primary School Leaving Examination in Singapore.
+",14400,"2026-03-30 09:52:21"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",1,2,middle_manager,"HoD / Middle Manager","Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies a pilot or initial implementation phase of changes to the Primary School Leaving Examination in Singapore.
+   ",15332,"2026-03-30 09:52:36"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",1,3,teacher,Teacher,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This implies a pilot or initial implementation phase of changes to the Primary School Leaving Examination in Singapore.
+   ",13922,"2026-03-30 09:52:50"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",2,1,principal,Principal,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Role:** Principal (AgentName=Principal, AgentRole=principal).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This suggests a context where changes to the Primary School Leaving Examination",13667,"2026-03-30 09:53:04"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",2,2,middle_manager,"HoD / Middle Manager","Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0 (Initial iteration).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This suggests we are in the early stages of implementing changes to the Primary School Leaving Examination",14492,"2026-03-30 09:53:19"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",2,3,teacher,Teacher,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Prompt Version:** v0 (Initial iteration).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This suggests we are in the early stages of implementing changes to the Primary School Leaving Examination",13613,"2026-03-30 09:53:32"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",3,1,principal,Principal,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Input:** A prompt structure defining a scenario (PSLE Reform MVP), round (3), policy event (MOE publishes guidance on school-based moderation and reporting), agent role (Principal), persona style (Formal, strategic,",13901,"2026-03-30 09:53:46"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",3,2,middle_manager,"HoD / Middle Manager","Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Role:** HoD / Middle Manager (Head of Department).
+    *   **Scenario:** PSLE Reform MVP (Minimum Viable Product/Phase). This is a pilot or initial implementation phase in Singapore's education context.",13866,"2026-03-30 09:54:00"
+949ea5b0ccda471cbc018971d33d35bf,completed,3,3,"2026-03-30 09:52:07",3,3,teacher,Teacher,"Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Input:** A prompt structure defining a scenario (PSLE Reform MVP), round (3), policy event (MOE publishes guidance on school-based moderation and reporting for PSLE cohorts), agent role (teacher), persona style cues (",14665,"2026-03-30 09:54:15"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",1,1,principal,Principal,"",14435,"2026-03-30 09:49:41"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",1,2,middle_manager,"HoD / Middle Manager","",13642,"2026-03-30 09:49:54"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",1,3,teacher,Teacher,"",12757,"2026-03-30 09:50:07"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",2,1,principal,Principal,"",14245,"2026-03-30 09:50:21"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",2,2,middle_manager,"HoD / Middle Manager","",15997,"2026-03-30 09:50:37"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",2,3,teacher,Teacher,"",14312,"2026-03-30 09:50:52"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",3,1,principal,Principal,"",14242,"2026-03-30 09:51:06"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",3,2,middle_manager,"HoD / Middle Manager","",15126,"2026-03-30 09:51:21"
+d7dfee493a9b4ade8133ef1d2f42ce4a,completed,3,3,"2026-03-30 09:49:26",3,3,teacher,Teacher,"",14241,"2026-03-30 09:51:35"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",1,1,principal,Principal,"",39921,"2026-03-30 09:48:05"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",1,2,middle_manager,"HoD / Middle Manager","",48148,"2026-03-30 09:48:54"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",1,3,teacher,Teacher,"",44889,"2026-03-30 09:49:38"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",2,1,principal,Principal,"",55551,"2026-03-30 09:50:34"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",2,2,middle_manager,"HoD / Middle Manager","",57455,"2026-03-30 09:51:31"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",2,3,teacher,Teacher,"",43677,"2026-03-30 09:52:15"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",3,1,principal,Principal,"",55501,"2026-03-30 09:53:11"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",3,2,middle_manager,"HoD / Middle Manager","",54847,"2026-03-30 09:54:06"
+86441787d5364abc8805ee73f2b31392,completed,3,3,"2026-03-30 09:47:26",3,3,teacher,Teacher,"",41640,"2026-03-30 09:54:47"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",1,1,principal,Principal,"[LM Studio error] ReadTimeout: ",120040,"2026-03-30 09:47:14"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",1,2,middle_manager,"HoD / Middle Manager","[LM Studio error] ReadTimeout: ",120018,"2026-03-30 09:49:14"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",1,3,teacher,Teacher,"[LM Studio error] ReadTimeout: ",120027,"2026-03-30 09:51:14"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",2,1,principal,Principal,"[LM Studio error] ReadTimeout: ",120020,"2026-03-30 09:53:14"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",2,2,middle_manager,"HoD / Middle Manager","[LM Studio error] ReadTimeout: ",120021,"2026-03-30 09:55:14"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",2,3,teacher,Teacher,"[LM Studio error] ReadTimeout: ",120021,"2026-03-30 09:57:14"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",3,1,principal,Principal,"[LM Studio error] ReadTimeout: ",120026,"2026-03-30 09:59:14"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",3,2,middle_manager,"HoD / Middle Manager","[LM Studio error] ReadTimeout: ",120035,"2026-03-30 10:01:14"
+0a469945293c4717b8ae0e79a5563891,completed,3,3,"2026-03-30 09:45:14",3,3,teacher,Teacher,"[LM Studio error] ReadTimeout: ",120024,"2026-03-30 10:03:14"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",1,1,principal,Principal,"[LM Studio error] ReadTimeout: ",120032,"2026-03-30 09:46:30"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",1,2,middle_manager,"HoD / Middle Manager","[LM Studio error] ReadTimeout: ",120021,"2026-03-30 09:48:30"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",1,3,teacher,Teacher,"[LM Studio error] ReadTimeout: ",120026,"2026-03-30 09:50:30"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",2,1,principal,Principal,"[LM Studio error] ReadTimeout: ",120026,"2026-03-30 09:52:30"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",2,2,middle_manager,"HoD / Middle Manager","[LM Studio error] ReadTimeout: ",120019,"2026-03-30 09:54:30"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",2,3,teacher,Teacher,"[LM Studio error] ReadTimeout: ",120026,"2026-03-30 09:56:31"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",3,1,principal,Principal,"[LM Studio error] ReadTimeout: ",120027,"2026-03-30 09:58:31"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",3,2,middle_manager,"HoD / Middle Manager","[LM Studio error] ReadTimeout: ",120034,"2026-03-30 10:00:31"
+761f982b751648d0b6aebb27bda2acd0,completed,3,3,"2026-03-30 09:44:30",3,3,teacher,Teacher,"[LM Studio error] ReadTimeout: ",120024,"2026-03-30 10:02:31"

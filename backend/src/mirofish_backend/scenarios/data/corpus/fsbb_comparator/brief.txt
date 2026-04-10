@@ -1,0 +1,14 @@
+Full Subject-Based Banding (FSBB) — reference brief (MVP stub corpus)
+
+Purpose: This stub document supports retrieval-augmented prompts in the FSBB comparator scenario. It is not an official MOE text.
+
+1. Banding and posting
+- Secondary 1 posting uses Achievement Levels (AL) from the PSLE.
+- FSBB organises students into mixed-form classes while offering subject-level bands (G1, G2, G3) suited to learner readiness in individual subjects.
+
+2. Implementation posture
+- Schools balance parental expectations, teacher workload, and timetable constraints when assigning students to subject bands.
+- Form teachers and HODs coordinate communication so families understand that banding is subject-specific, not a single “stream label” for the child.
+
+3. Equity and stress
+- Policy intent includes reducing fixation on a single high-stakes score while preserving rigour; schools monitor perceived stigma and support transitions between bands where appropriate.

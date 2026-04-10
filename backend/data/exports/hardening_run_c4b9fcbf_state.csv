@@ -1,0 +1,2 @@
+simulation_id,round_number,agent_id,agent_role,agent_name,age,sex,ethnicity,ses,support_level,resistance_level,workload_stress,belief_posture
+c4b9fcbfee33422eadc7633e0fbb755a,1,principal_001_000,principal,Principal,49,female,Chinese,high,0.62,0.3,0.39,supportive

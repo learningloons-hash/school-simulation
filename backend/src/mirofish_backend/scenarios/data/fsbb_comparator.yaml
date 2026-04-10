@@ -1,0 +1,63 @@
+scenario_id: fsbb_comparator
+name: FSBB Comparator (MVP)
+groups:
+  - group_id: leadership
+    name: School leadership
+  - group_id: teaching_staff
+    name: Teaching staff
+rag_enabled: true
+rag_corpus_paths:
+  - corpus/fsbb_comparator/brief.txt
+policy_events:
+  1: "MOE circular: schools transition to Full Subject-Based Banding; S1 posting uses AL scores with subject-level G1/G2/G3 bands."
+  3: "Town hall: parents and teachers discuss mixed-form classes, communication load, and fairness of subject band movement."
+  5: "Review week: HODs report timetable constraints and whether early support reduces stigma around band labels."
+personas:
+  - persona_id: principal_001
+    role: principal
+    name: Principal
+    role_level: 1
+    implementation_posture: active_sense_maker
+    initial_state:
+      support_level: 0.62
+      resistance_level: 0.30
+      workload_stress: 0.40
+      belief_posture: strategic_support
+    style_cues: Strategic, balances policy compliance with school reputation and community trust.
+    beliefs:
+      trust_in_moe_policy: 0.58
+      risk_aversion: 0.5
+      priority: coherent_posting_messaging
+    groups:
+      - leadership
+  - persona_id: middle_manager_001
+    role: middle_manager
+    name: HOD / Middle Manager
+    role_level: 2
+    initial_state:
+      support_level: 0.55
+      resistance_level: 0.35
+      workload_stress: 0.52
+      belief_posture: operational_balancing
+    style_cues: Operational; focuses on timetabling, teacher capacity, and cross-level coordination.
+    beliefs:
+      workload_sensitivity: 0.72
+      implementation_focus: subject_level_bands
+    groups:
+      - leadership
+  - persona_id: teacher_001
+    role: teacher
+    name: Teacher
+    role_level: 3
+    implementation_posture: compliant_implementer
+    initial_state:
+      support_level: 0.50
+      resistance_level: 0.38
+      workload_stress: 0.58
+      belief_posture: classroom_caution
+    style_cues: Classroom-grounded; discusses student affect, differentiation, and day-to-day band transitions.
+    beliefs:
+      student_wellbeing_priority: 0.75
+      stigma_awareness: 0.65
+    groups:
+      - teaching_staff

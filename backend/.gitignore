@@ -1,0 +1,11 @@
+venv/
+.venv/
+# setuptools / python -m build mirror (prefer uv run pytest against src/)
+build/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+*.sqlite
+data/*.sqlite

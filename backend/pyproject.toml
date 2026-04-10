@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mirofish-backend"
+version = "0.1.0"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.34.0",
+  "pydantic>=2.7.0",
+  "pydantic-settings>=2.2.1",
+  "httpx>=0.28.0",
+  "aiosqlite>=0.20.0",
+  "pyyaml>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+mirofish-backend = "mirofish_backend.main:run_dev"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Ship scenario YAML + corpus text with the wheel/sdist (otherwise only embedded fallback IDs exist at runtime).
+[tool.setuptools.package-data]
+mirofish_backend = [
+  "scenarios/data/*.yaml",
+  "scenarios/data/corpus/*/*.txt",
+]
+
+[tool.pytest.ini_options]
+markers = [
+  "manual: opt-in checks (e.g. SSE); not required for default CI",
+]
+
