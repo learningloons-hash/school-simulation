@@ -14,7 +14,8 @@ Update it at the end of each iteration gate.
 - **Next (Senna):** Await GM next arc handoff (if any). **Backlog:** parallel dispatch, SSE-in-browser, WAL + batch inserts.
 - Last completed Senna work: **Arc 8** (2026-05-19). **Current focus:** thesis / product backlog until next GM arc. Thesis gate: **Iteration 29** (2026-04-08).
 - Last verified run id (QA sample): `ad901483b0a840689c71debb771cf0c1` — FSBB, `agent_limit` 4, `full_round_robin`, 2 rounds (all four agents have turns in DB; see `iteration-10-closeout.md` post-gate notes)
-- Last update date: **2026-05-19** — Arc 8 GM follow-up (profile-aware post-run economics). Last verified: backend **`uv run pytest` 290 passed, 2 skipped**.
+- Last update date: **2026-05-20** — **Git:** Arcs 1–8 pushed to `origin/main` (`7f426fc`); runtime data excluded per `.gitignore`. Ritual: push after GM arc PASS — [`handoffs/SENNA_AGENT_CYCLE.md`](handoffs/SENNA_AGENT_CYCLE.md) § *Git push after arc close*.
+- Last verified: backend **`uv run pytest` 290 passed, 2 skipped**.
 
 ## Environment and Access
 
