@@ -146,6 +146,7 @@ async def test_mixed_tiers_llm_only_for_one_and_two() -> None:
             assert [x["fidelity_tier"] for x in tr] == [1, 2, 3]
             assert tr[2]["raw_response"] == "[Tier 3 — heuristic state update]"
             assert tr[2]["effective_provider"] == "heuristic"
+            assert tr[2]["effective_profile_id"] == "heuristic"
             assert tr[2]["latency_ms"] == 0
             assert len(llm_calls) == 2
             # Parallel gather: completion order ≠ turn order — classify prompts by content.

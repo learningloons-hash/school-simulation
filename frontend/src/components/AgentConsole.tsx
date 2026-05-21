@@ -40,6 +40,15 @@ function useElapsedSeconds(active: boolean): number {
 const QUESTION_PLACEHOLDER =
   "e.g. Plan and run a 1-round PSLE reform simulation and summarize key tensions.";
 
+const sectionHeadingStyle: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#6B7280",
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+  marginBottom: 12,
+};
+
 export function AgentConsole() {
   const [question, setQuestion] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -177,7 +186,7 @@ export function AgentConsole() {
     try {
       const parsed = JSON.parse(executeJson) as ExecutionPlan;
       if (!parsed || !Array.isArray(parsed.runs)) {
-        throw new Error("JSON must be an object with a runs[] array (ExecutionPlan).");
+        throw new Error("The plan must be a JSON object with a runs array.");
       }
       const { runs } = await agentExecute(parsed, { signal: ac.signal });
       setLastExecute({ runs });
@@ -201,7 +210,7 @@ export function AgentConsole() {
     display: "grid",
     gap: 12,
     padding: 12,
-    border: "1px solid #ddd",
+    border: "1px solid #E5E3DC",
     borderRadius: 8,
     marginBottom: 16,
   };
@@ -213,14 +222,13 @@ export function AgentConsole() {
   return (
     <div>
       <p style={{ fontSize: 14, opacity: 0.85, maxWidth: 640, marginBottom: 16 }}>
-        Describe what you want in plain language. The server plans the run, executes simulations, and returns structured
-        analysis. Use <strong>Advanced</strong> to tune timeouts, planner temperature, or run <strong>Plan</strong> /{" "}
-        <strong>Execute</strong> separately.
+        Describe what you want in plain English and Senna will plan and run the simulation automatically. Use Advanced
+        settings to adjust timing or run the planning and execution steps separately.
       </p>
 
       <section style={sectionStyle}>
         <label style={{ display: "grid", gap: 6 }}>
-          <span>Research question (min. 8 characters)</span>
+          <span>What would you like to explore?</span>
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -237,12 +245,12 @@ export function AgentConsole() {
             disabled={askDisabled}
             style={{ padding: "10px 16px", fontWeight: 600 }}
           >
-            {askLoading ? "Running (plan + execute)…" : "Ask"}
+            {askLoading ? "Running…" : "Run"}
           </button>
           {anyLoading ? (
             <>
               <button type="button" onClick={cancelAgentRequest} style={{ padding: "10px 14px" }}>
-                Cancel request
+                Cancel
               </button>
               <span style={{ fontSize: 13, opacity: 0.85 }}>
                 Elapsed: <strong>{elapsedSec}s</strong>
@@ -271,7 +279,7 @@ export function AgentConsole() {
 
       {lastAsk ? (
         <section style={sectionStyle}>
-          <h2 style={{ margin: 0 }}>Results</h2>
+          <div style={sectionHeadingStyle}>Results</div>
           {lastAsk.runs.map((run, i) => (
             <RunResultCard key={`${run.label}-${i}`} run={run} />
           ))}
@@ -281,7 +289,7 @@ export function AgentConsole() {
             onClick={() => setPlanDetailsOpen((o) => !o)}
             style={{ padding: "6px 12px", alignSelf: "start" }}
           >
-            {planDetailsOpen ? "Hide" : "Show"} execution plan (JSON)
+            {planDetailsOpen ? "Hide" : "Show"} technical plan
           </button>
           {planDetailsOpen ? (
             <pre
@@ -307,13 +315,13 @@ export function AgentConsole() {
           onClick={() => setAdvancedOpen((o) => !o)}
           style={{ padding: "8px 12px", justifySelf: "start" }}
         >
-          {advancedOpen ? "▼ Hide advanced" : "▶ Advanced (constraints, plan/execute, tuning)"}
+          {advancedOpen ? "▼ Hide advanced settings" : "▸ Advanced settings"}
         </button>
 
         {advancedOpen ? (
           <>
             <label style={{ display: "grid", gap: 6 }}>
-              <span>Constraints (optional)</span>
+              <span>Extra instructions (optional)</span>
               <textarea
                 value={constraints}
                 onChange={(e) => setConstraints(e.target.value)}
@@ -325,7 +333,7 @@ export function AgentConsole() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <label style={{ display: "grid", gap: 6 }}>
-                <span>Wait timeout per run (seconds)</span>
+                <span>Max wait time per run (seconds)</span>
                 <input
                   type="number"
                   min={30}
@@ -333,10 +341,12 @@ export function AgentConsole() {
                   value={waitTimeoutSeconds}
                   onChange={(e) => setWaitTimeoutSeconds(Number(e.target.value))}
                 />
-                <span style={{ fontSize: 11, opacity: 0.75 }}>Applied each simulation wait; multi-run asks sum wall-clock.</span>
+                <span style={{ fontSize: 11, opacity: 0.75 }}>
+                  Maximum time to wait for each simulation. Longer runs may need a higher value.
+                </span>
               </label>
               <label style={{ display: "grid", gap: 6 }}>
-                <span>Planner temperature (optional, 0–2)</span>
+                <span>Planning creativity (optional, 0–2)</span>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -358,7 +368,7 @@ export function AgentConsole() {
             </div>
 
             <label style={{ display: "grid", gap: 6 }}>
-              <span>Plan max tokens (optional, 256–4096)</span>
+              <span>Planning detail limit (optional, 256–4096)</span>
               <input
                 type="number"
                 inputMode="numeric"
@@ -380,14 +390,15 @@ export function AgentConsole() {
 
             {advancedTuningInvalid ? (
               <span style={{ fontSize: 12, color: "#a60" }}>
-                Fix advanced tuning values above before Ask / Plan / Execute.
+                Fix advanced settings above before running.
               </span>
             ) : null}
 
-            <div style={{ borderTop: "1px solid #eee", paddingTop: 12, display: "grid", gap: 10 }}>
-              <div style={{ fontWeight: 600 }}>Plan only</div>
+            <div style={{ borderTop: "1px solid #E5E3DC", paddingTop: 12, display: "grid", gap: 10 }}>
+              <div style={{ fontWeight: 600 }}>Plan without running</div>
               <span style={{ fontSize: 13, opacity: 0.85 }}>
-                Calls <code>POST /agent/plan</code> with the question above. Fills the execute JSON box below.
+                Generates a plan from your question without running it. The plan will appear in the box below — you can
+                review or edit it before executing.
               </span>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
                 <button
@@ -396,7 +407,7 @@ export function AgentConsole() {
                   disabled={planOnlyDisabled}
                   style={{ padding: 8, justifySelf: "start" }}
                 >
-                  {planOnlyLoading ? "Planning…" : "Run plan only"}
+                  {planOnlyLoading ? "Planning…" : "Generate plan"}
                 </button>
                 {planOnlyLoading ? (
                   <span style={{ fontSize: 13, opacity: 0.85 }}>
@@ -409,10 +420,11 @@ export function AgentConsole() {
               ) : null}
             </div>
 
-            <div style={{ borderTop: "1px solid #eee", paddingTop: 12, display: "grid", gap: 10 }}>
-              <div style={{ fontWeight: 600 }}>Execute plan</div>
+            <div style={{ borderTop: "1px solid #E5E3DC", paddingTop: 12, display: "grid", gap: 10 }}>
+              <div style={{ fontWeight: 600 }}>Run a saved plan</div>
               <span style={{ fontSize: 13, opacity: 0.85 }}>
-                Paste an <code>ExecutionPlan</code> JSON (<code>runs</code> array). Calls <code>POST /agent/execute</code>.
+                Paste or edit a plan (in JSON format) and run it directly. Use the Generate plan step above to produce a
+                plan first.
               </span>
               <textarea
                 value={executeJson}
@@ -427,7 +439,7 @@ export function AgentConsole() {
                   disabled={executeDisabled}
                   style={{ padding: 8, justifySelf: "start" }}
                 >
-                  {executeLoading ? "Executing…" : "Execute JSON plan"}
+                  {executeLoading ? "Executing…" : "Run this plan"}
                 </button>
                 {executeLoading ? (
                   <span style={{ fontSize: 13, opacity: 0.85 }}>
@@ -442,7 +454,7 @@ export function AgentConsole() {
 
             {lastExecute ? (
               <div style={{ marginTop: 8 }}>
-                <strong>Execute results</strong>
+                <div style={sectionHeadingStyle}>Execution results</div>
                 <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
                   {lastExecute.runs.map((run, i) => (
                     <RunResultCard key={`${run.label}-ex-${i}`} run={run} />
@@ -453,7 +465,7 @@ export function AgentConsole() {
 
             {lastPlanOnly && !lastAsk ? (
               <p style={{ fontSize: 12, opacity: 0.8, margin: 0 }}>
-                Last plan loaded — use <strong>Execute JSON plan</strong> to run it without re-planning.
+                Plan loaded — use <strong>Run this plan</strong> to execute it without re-planning.
               </p>
             ) : null}
           </>

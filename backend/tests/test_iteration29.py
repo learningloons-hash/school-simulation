@@ -206,6 +206,19 @@ def test_economics_pure_functions() -> None:
     assert estimated_run_cost_usd_from_transcript([]) == 0.0
     assert (
         estimated_run_cost_usd_from_transcript(
+            [
+                {
+                    "effective_provider": "anthropic",
+                    "effective_profile_id": "anthropic_default",
+                    "input_tokens": 100,
+                    "output_tokens": 20,
+                }
+            ]
+        )
+        == pytest.approx(0.0006, rel=1e-5)
+    )
+    assert (
+        estimated_run_cost_usd_from_transcript(
             [{"effective_provider": "anthropic", "input_tokens": 100, "output_tokens": 20}]
         )
         == pytest.approx(0.0006, rel=1e-5)

@@ -27,7 +27,7 @@ type PersonaRow = {
 };
 type GroupRow = { group_id: string; name: string; description: string };
 
-const STEPS = ["Basics", "Policy rounds", "Personas", "Groups", "RAG", "Review"] as const;
+const STEPS = ["Basics", "Policy rounds", "Participants", "Groups", "Knowledge base", "Review"] as const;
 
 const SECTION_LABELS: Record<string, string> = {
   identity: "Identity",
@@ -198,7 +198,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
       hydrateFromDocument(doc);
       setSaveMode("create");
       setStep(0);
-      setMessage(`Loaded template ${loadTemplateId} into editor (save as a new scenario_id).`);
+      setMessage("Loaded template into editor. Use the Basics step to set a new scenario ID, then save.");
     } catch (e) {
       setError(String((e as Error)?.message ?? e));
     }
@@ -207,7 +207,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
   async function onGenerateFromBrief() {
     const b = briefText.trim();
     if (b.length < 20) {
-      setError("Brief must be at least 20 characters (server validation).");
+      setError("Description must be at least 20 characters.");
       return;
     }
     setBriefLoading(true);
@@ -219,7 +219,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
       setWarnings(res.warnings ?? []);
       setSaveMode("create");
       setStep(0);
-      setMessage("Generated scenario from brief — review fields, then save as a new scenario_id.");
+      setMessage("Generated from your description — review the steps, then save.");
     } catch (e) {
       setError(String((e as Error)?.message ?? e));
     } finally {
@@ -254,7 +254,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
       try {
         beliefs = JSON.parse(p.beliefs_json || "{}") as Record<string, unknown>;
       } catch {
-        throw new Error(`Invalid JSON in persona ${p.persona_id || "?"} beliefs`);
+        throw new Error("Invalid JSON in participant beliefs — check the beliefs field.");
       }
       const obj: Record<string, unknown> = {
         persona_id: p.persona_id.trim(),
@@ -359,11 +359,23 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
     setSelectedRagPaths(next);
   }
 
+  const catalogOptionLabel = (c: ScenarioCatalogItem) =>
+    `${c.name}${c.source === "user" ? " (custom)" : ""}`;
+
   return (
-    <section style={{ display: "grid", gap: 16, padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
+    <section
+      style={{
+        display: "grid",
+        gap: 16,
+        padding: 12,
+        border: "1px solid #E5E3DC",
+        borderRadius: 8,
+        background: "#FFFFFF",
+      }}
+    >
       <div style={{ fontSize: 14, opacity: 0.85 }}>
-        Create or edit <strong>user</strong> scenarios stored in SQLite. Built-in YAML scenarios are read-only; clone
-        or load as template. See <code>docs/plans/scenario-wizard-design.md</code>.
+        Create your own policy scenarios or customise the built-in ones. Built-in scenarios are read-only — clone them to
+        make changes.
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
@@ -375,8 +387,8 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
             style={{
               padding: "6px 10px",
               borderRadius: 6,
-              border: "1px solid #ccc",
-              background: step === i ? "#eef" : "#fff",
+              border: step === i ? "1px solid #4A6FA5" : "1px solid #E5E3DC",
+              background: step === i ? "#EEF3FA" : "#FFFFFF",
             }}
           >
             {i + 1}. {label}
@@ -384,15 +396,15 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
         ))}
       </div>
 
-      <div style={{ border: "1px solid #eee", borderRadius: 6, padding: 12 }}>
-        <strong>Load / clone</strong>
+      <div style={{ border: "1px solid #E5E3DC", borderRadius: 6, padding: 12 }}>
+        <strong>Start from a template</strong>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 8, alignItems: "flex-end" }}>
           <label style={{ display: "grid", gap: 4 }}>
-            <span style={{ fontSize: 12 }}>Load template into editor</span>
+            <span style={{ fontSize: 12 }}>Load scenario into editor</span>
             <select value={loadTemplateId} onChange={(e) => setLoadTemplateId(e.target.value)}>
               {catalog.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} ({c.source})
+                  {catalogOptionLabel(c)}
                 </option>
               ))}
             </select>
@@ -402,35 +414,38 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
           </button>
         </div>
         <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 600 }}>Generate from brief (LLM)</span>
+          <span style={{ fontSize: 12, fontWeight: 600 }}>Generate from a description (AI)</span>
           <textarea
             value={briefText}
             onChange={(e) => setBriefText(e.target.value)}
-            placeholder="Describe the policy context, stakeholders, and what should happen across rounds (20+ characters). The server validates the result."
+            placeholder="Describe the policy scenario, who the participants are, and what should happen in each round. Aim for 20+ characters."
             rows={4}
             style={{ width: "100%", maxWidth: 560, fontFamily: "inherit", fontSize: 13 }}
           />
           <button type="button" disabled={briefLoading} onClick={() => void onGenerateFromBrief()}>
-            {briefLoading ? "Generating…" : "Generate from brief"}
+            {briefLoading ? "Generating…" : "Generate"}
           </button>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12, alignItems: "flex-end" }}>
           <label style={{ display: "grid", gap: 4 }}>
-            <span style={{ fontSize: 12 }}>Clone template → new id</span>
+            <span style={{ fontSize: 12 }}>Copy a scenario</span>
             <select value={cloneTemplateId} onChange={(e) => setCloneTemplateId(e.target.value)}>
               {catalog.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {catalogOptionLabel(c)}
                 </option>
               ))}
             </select>
           </label>
           <label style={{ display: "grid", gap: 4 }}>
-            <span style={{ fontSize: 12 }}>new_scenario_id (slug)</span>
+            <span style={{ fontSize: 12 }}>New scenario ID</span>
+            <span style={{ fontSize: 11, color: "#6B7280" }}>
+              Lowercase letters, numbers, and hyphens only (e.g. my-reform-scenario)
+            </span>
             <input
               value={cloneNewId}
               onChange={(e) => setCloneNewId(e.target.value)}
-              placeholder="analyst_my_run"
+              placeholder="e.g. my-reform-scenario"
               style={{ fontFamily: "monospace", width: 180 }}
             />
           </label>
@@ -447,7 +462,10 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
       {step === 0 && (
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 4 }}>
-            <span>scenario_id (lowercase slug, e.g. analyst_case_a)</span>
+            <span>Scenario ID</span>
+            <span style={{ fontSize: 11, color: "#6B7280" }}>
+              Lowercase letters, numbers, and hyphens only. Cannot be changed after saving.
+            </span>
             <input
               value={scenarioId}
               onChange={(e) => setScenarioId(e.target.value)}
@@ -465,17 +483,17 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
               checked={saveMode === "create"}
               onChange={() => setSaveMode("create")}
             />
-            New scenario (POST)
+            Create new scenario
             <input
               type="radio"
               checked={saveMode === "update"}
               onChange={() => setSaveMode("update")}
             />
-            Update existing user scenario
+            Update existing scenario
           </label>
           {saveMode === "update" ? (
             <label style={{ display: "grid", gap: 4 }}>
-              <span>Pick user scenario to edit</span>
+              <span>Choose scenario to edit</span>
               <select
                 value={scenarioId}
                 onChange={async (e) => {
@@ -550,17 +568,17 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
       {step === 2 && (
         <div style={{ display: "grid", gap: 12 }}>
           {personas.map((p, i) => (
-            <div key={i} style={{ border: "1px solid #dde", padding: 10, borderRadius: 6, display: "grid", gap: 8 }}>
+            <div key={i} style={{ border: "1px solid #E5E3DC", padding: 10, borderRadius: 6, display: "grid", gap: 8 }}>
               {/* Core fields */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 <input
-                  placeholder="persona_id"
+                  placeholder="participant-id (e.g. teacher-1)"
                   value={p.persona_id}
                   onChange={(e) => { const n = [...personas]; n[i] = { ...p, persona_id: e.target.value }; setPersonas(n); }}
                   style={{ fontFamily: "monospace", width: 140 }}
                 />
                 <input
-                  placeholder="name"
+                  placeholder="Display name"
                   value={p.name}
                   onChange={(e) => { const n = [...personas]; n[i] = { ...p, name: e.target.value }; setPersonas(n); }}
                   style={{ width: 120 }}
@@ -569,12 +587,12 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
                   value={p.role}
                   onChange={(e) => { const n = [...personas]; n[i] = { ...p, role: e.target.value }; setPersonas(n); }}
                 >
-                  <option value="principal">principal</option>
-                  <option value="middle_manager">middle_manager</option>
-                  <option value="teacher">teacher</option>
+                  <option value="principal">Principal</option>
+                  <option value="middle_manager">Middle manager</option>
+                  <option value="teacher">Teacher</option>
                 </select>
-                <label style={{ fontSize: 12 }}>
-                  role_level
+                <label style={{ fontSize: 12, display: "grid", gap: 4 }}>
+                  <span>Seniority (1–3)</span>
                   <input
                     type="number" min={1} max={3} value={p.role_level}
                     onChange={(e) => { const n = [...personas]; n[i] = { ...p, role_level: Number(e.target.value) }; setPersonas(n); }}
@@ -583,18 +601,21 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
                 </label>
               </div>
               <textarea
-                placeholder="style_cues"
+                placeholder="Communication style and tone (e.g. formal, data-driven, sceptical)"
                 rows={2}
                 value={p.style_cues}
                 onChange={(e) => { const n = [...personas]; n[i] = { ...p, style_cues: e.target.value }; setPersonas(n); }}
               />
-              <textarea
-                placeholder='beliefs JSON e.g. {"key": 0.5}'
-                rows={2}
-                value={p.beliefs_json}
-                onChange={(e) => { const n = [...personas]; n[i] = { ...p, beliefs_json: e.target.value }; setPersonas(n); }}
-                style={{ fontFamily: "monospace", fontSize: 12 }}
-              />
+              <div style={{ display: "grid", gap: 4 }}>
+                <span style={{ fontSize: 11, color: "#6B7280" }}>Beliefs (JSON format — leave as {"{ }"} if none)</span>
+                <textarea
+                  placeholder='e.g. {"key": 0.5}'
+                  rows={2}
+                  value={p.beliefs_json}
+                  onChange={(e) => { const n = [...personas]; n[i] = { ...p, beliefs_json: e.target.value }; setPersonas(n); }}
+                  style={{ fontFamily: "monospace", fontSize: 12 }}
+                />
+              </div>
 
               {/* Attribute sections */}
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -619,9 +640,9 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
                   disabled={fillLoadingIdx === i}
                   onClick={() => void onLlmFill(i)}
                   style={{ fontSize: 12, padding: "2px 8px" }}
-                  title="Ask LLM to suggest attribute values based on this persona's role and style cues"
+                  title="Use AI to suggest attribute values for this participant"
                 >
-                  {fillLoadingIdx === i ? "Filling…" : "LLM Fill"}
+                  {fillLoadingIdx === i ? "Filling…" : "AI Fill"}
                 </button>
                 {(Object.keys(p.identity).length + Object.keys(p.attitudes).length + Object.keys(p.personal_history).length) > 0 && (
                   <span style={{ fontSize: 11, opacity: 0.7 }}>
@@ -631,7 +652,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
               </div>
 
               {expandedSections[i] && (
-                <div style={{ display: "grid", gap: 8, paddingLeft: 8, borderLeft: "3px solid #eef" }}>
+                <div style={{ display: "grid", gap: 8, paddingLeft: 8, borderLeft: "3px solid #E5E3DC" }}>
                   {(["identity", "attitudes", "personal_history"] as const).map((sec) => (
                     <div key={sec}>
                       <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{SECTION_LABELS[sec]}</div>
@@ -664,6 +685,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
                           />
                           <button
                             type="button"
+                            aria-label="Remove"
                             onClick={() => {
                               const n = [...personas];
                               const updated = { ...p[sec] };
@@ -687,7 +709,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
                         }}
                         style={{ fontSize: 11, padding: "2px 8px" }}
                       >
-                        + Add {SECTION_LABELS[sec]} key
+                        + Add {SECTION_LABELS[sec]} field
                       </button>
                     </div>
                   ))}
@@ -695,12 +717,12 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
               )}
 
               <button type="button" onClick={() => setPersonas(personas.filter((_, j) => j !== i))} disabled={personas.length <= 1}>
-                Remove persona
+                Remove participant
               </button>
             </div>
           ))}
           <button type="button" onClick={() => setPersonas([...personas, emptyPersona()])}>
-            Add persona
+            Add participant
           </button>
         </div>
       )}
@@ -710,7 +732,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
           {groups.map((g, i) => (
             <div key={i} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input
-                placeholder="group_id"
+                placeholder="group-id (e.g. teachers)"
                 value={g.group_id}
                 onChange={(e) => {
                   const n = [...groups];
@@ -720,7 +742,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
                 style={{ fontFamily: "monospace" }}
               />
               <input
-                placeholder="name"
+                placeholder="Group name"
                 value={g.name}
                 onChange={(e) => {
                   const n = [...groups];
@@ -729,7 +751,7 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
                 }}
               />
               <input
-                placeholder="description"
+                placeholder="Brief description"
                 value={g.description}
                 onChange={(e) => {
                   const n = [...groups];
@@ -753,14 +775,16 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
         <div style={{ display: "grid", gap: 8 }}>
           <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input type="checkbox" checked={ragEnabled} onChange={(e) => setRagEnabled(e.target.checked)} />
-            Enable RAG (bundled corpus paths only)
+            Enable knowledge base (uses bundled documents)
           </label>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>Select files under scenarios/data (server-enumerated).</div>
+          <div style={{ fontSize: 12, opacity: 0.8 }}>
+            Select reference documents to include. These are pre-loaded documents from the server.
+          </div>
           <div style={{ display: "grid", gap: 4, maxHeight: 200, overflow: "auto" }}>
             {ragPaths.map((p) => (
               <label key={p} style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <input type="checkbox" checked={selectedRagPaths.has(p)} onChange={() => toggleRagPath(p)} />
-                <code style={{ fontSize: 11 }}>{p}</code>
+                <code style={{ fontSize: 11, color: "#6B7280" }}>{p}</code>
               </label>
             ))}
           </div>
@@ -769,12 +793,15 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
 
       {step === 5 && (
         <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 8 }}>
+            Review the scenario configuration below before saving.
+          </div>
           <pre style={{ fontSize: 11, overflow: "auto", maxHeight: 240, background: "#f8f8f8", padding: 8 }}>
             {JSON.stringify(buildDocument(), null, 2)}
           </pre>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <button type="button" onClick={() => void onSave()}>
-              {saveMode === "create" ? "Save (create)" : "Save (update)"}
+              {saveMode === "create" ? "Save scenario" : "Save changes"}
             </button>
             {scenarioId.trim() ? (
               <a href={scenarioExportYamlUrl(scenarioId.trim())} target="_blank" rel="noreferrer">
@@ -785,8 +812,34 @@ export function ScenarioWizard({ onCatalogRefresh }: Props) {
         </div>
       )}
 
-      {message ? <div style={{ color: "#059669" }}>{message}</div> : null}
-      {error ? <div style={{ color: "#b91c1c" }}>{error}</div> : null}
+      {message ? (
+        <div
+          style={{
+            padding: "10px 14px",
+            background: "#D1FAE5",
+            border: "1px solid #A7F3D0",
+            borderRadius: 8,
+            fontSize: 13,
+            color: "#065F46",
+          }}
+        >
+          {message}
+        </div>
+      ) : null}
+      {error ? (
+        <div
+          style={{
+            padding: "10px 14px",
+            background: "#FEE2E2",
+            border: "1px solid #FECACA",
+            borderRadius: 8,
+            fontSize: 13,
+            color: "#991B1B",
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
       {warnings.length ? (
         <div style={{ fontSize: 13, color: "#a60" }}>
           <strong>Warnings:</strong>

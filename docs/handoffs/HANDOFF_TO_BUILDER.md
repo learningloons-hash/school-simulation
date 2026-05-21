@@ -4,16 +4,604 @@ Copy this into a **new Cursor chat** when starting work on an iteration or slice
 
 ## Bootstrap (paste first message)
 
-You are implementing MiroFish MVP in `mirofish-mvp`. Read in order:
+You are implementing Senna (formerly MiroFish MVP) in `mirofish-mvp`. Read in order:
 
 1. `docs/SESSION_STATE.md`
 2. **`docs/handoffs/BRIEF_FOR_JOAN.md`** — architect briefing (scale, UX sequencing, iterations 8–12 outline); read before deep UX or large-N work.
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` (this file)
-4. **Previous gate closeout** — e.g. starting **Iteration 18** → [`docs/iterations/iteration-17-closeout.md`](../iterations/iteration-17-closeout.md)
-5. **Active starter** — jump to **[Iteration 18 starter](#iteration-18-starter-pre-filled--2026-04-05)** below (or the matching § for your slice)
+4. **Previous gate closeout** — e.g. starting **senna-iter-35** → [`docs/iterations/senna-iter-34-closeout.md`](../iterations/senna-iter-34-closeout.md)
+5. **Active starter** — jump to **[Senna Arc 8 — Cursor Builder](#senna-arc-8--cursor-builder)** below (or the matching § for your slice)
 6. [Optional] Custom scope in the **empty template** § only if there is no pre-filled starter for this slice
 
 **Rules:** Match existing code style; do not expand scope beyond the active starter; run **`uv run pytest`** from `backend/` (or `PYTHONPATH=src pytest tests/` if you are not using `uv`); run **`npm run build`** in `frontend/` when the UI changes; update `SESSION_STATE.md` and add `iteration-N-closeout.md` at the end.
+
+---
+
+## Senna Arc 8 — Cursor Builder
+
+> **Status:** Gates **senna-iter-35**–**39** shipped. **GM review: PASS_WITH_ISSUES** (2026-05-19) — one follow-up before final Arc 8 PASS. **Active:** [Arc 8 follow-up — profile-aware economics](#arc-8-follow-up--profile-aware-post-run-economics) (Architect-seeded).
+
+> **Prior gates:** Seed **one iteration at a time** from [`HANDOFF_SENNA_ARC8.md`](./HANDOFF_SENNA_ARC8.md) (iter-35–39 complete).
+
+**Cycle reference:** [`SENNA_AGENT_CYCLE.md`](./SENNA_AGENT_CYCLE.md).
+
+**Scope:** Model ecosystem and guardrails — planner parity, profile registry/capabilities, commercial OpenAI-compatible profiles, pre-run context/cost warnings, structured-output reliability, and integration validation.
+
+**Canonical spec:** [`HANDOFF_SENNA_ARC8.md`](./HANDOFF_SENNA_ARC8.md). Do not duplicate or fork the full spec in chat.
+
+| Iteration | Spec in `HANDOFF_SENNA_ARC8.md` |
+|-----------|----------------------------------|
+| senna-iter-35 | § **senna-iter-35** — Planner Parity + Arc 7 Cleanup |
+| senna-iter-36 | § **senna-iter-36** — Profile Registry + Model Capability Registry |
+| senna-iter-37 | § **senna-iter-37** — Commercial OpenAI-Compatible Profiles |
+| senna-iter-38 | § **senna-iter-38** — Pre-Run Context and Cost Checks |
+| senna-iter-39 | § **senna-iter-39** — Structured Output Reliability + Arc 8 Integration |
+
+**Architect workflow:** Architect must PASS each iteration before seeding the next. Builder implements only the active section and writes `docs/iterations/senna-iter-N-closeout.md`.
+
+### senna-iter-35 starter (pre-filled — paste into a new Builder chat)
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md` (GM / Architect / Builder ritual)
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 8 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC8.md` → **`## senna-iter-35`** (canonical spec and Definition of Done)
+6. `docs/iterations/senna-iter-34-closeout.md` (prior Senna gate; Arc 7 complete)
+
+**Scope (senna-iter-35 only):**
+- Add optional `model_profile_id` to the agent planner path and ensure it reaches `SimulationRunRequest`.
+- Clean Arc 7 hardening async mock warnings.
+- Set explicit Tier-3 heuristic turn `effective_profile_id` policy, recommended sentinel: `heuristic`.
+- Add/adjust tests required by `HANDOFF_SENNA_ARC8.md` § senna-iter-35.
+
+**Out of scope:** new commercial profiles, capability budgeting, preflight warnings, frontend UI unless a type update is unavoidable.
+
+**Deliver:** `uv run pytest` from `backend/` green; `docs/iterations/senna-iter-35-closeout.md`; update `docs/SESSION_STATE.md` Current Status (iter-35 complete, next iter-36, date). Do not implement senna-iter-36.
+```
+
+### senna-iter-36 starter (Architect seeds only after senna-iter-35 PASS)
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 8 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC8.md` → **`## senna-iter-36`**
+6. `docs/iterations/senna-iter-35-closeout.md`
+
+**Scope:** Implement the profile registry and model capability registry exactly as § senna-iter-36 specifies. Preserve all Arc 7 profile ids and request behavior.
+
+**Deliver:** backend tests green; `docs/iterations/senna-iter-36-closeout.md`; update `SESSION_STATE.md`. Do not implement senna-iter-37.
+```
+
+### senna-iter-37 starter (Architect seeds only after senna-iter-36 PASS)
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 8 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC8.md` → **`## senna-iter-37`**
+6. `docs/iterations/senna-iter-36-closeout.md`
+
+**Scope:** Add commercial OpenAI-compatible profile presets and optional bearer auth support in the generic adapter. Do not add native Gemini/OpenAI Responses APIs or a model manager UI.
+
+**Deliver:** backend tests green without real network/API keys; `docs/iterations/senna-iter-37-closeout.md`; update `SESSION_STATE.md`. Do not implement senna-iter-38.
+```
+
+### senna-iter-38 starter (Architect seeds only after senna-iter-37 PASS)
+
+```markdown
+You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 8 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC8.md` → **`## senna-iter-38`**
+6. `docs/iterations/senna-iter-37-closeout.md`
+
+**Scope:** Add pre-run context/cost preflight warnings, propagate them through `POST /simulations/run`, and surface them in the Run setup UI. Do not add hard spend caps or tokenizer integration.
+
+**Deliver:** backend tests green; `npm run build` from `frontend/` green; `docs/iterations/senna-iter-38-closeout.md`; update `SESSION_STATE.md`. Do not implement senna-iter-39.
+```
+
+### senna-iter-39 starter (Architect seeds only after senna-iter-38 PASS)
+
+```markdown
+You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 8 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC8.md` → **`## senna-iter-39`**
+6. `docs/iterations/senna-iter-38-closeout.md`
+
+**Scope:** Structured-output reliability + Arc 8 integration validation only. Add malformed-output provenance tests, manual LM Studio smoke support skipped by default, and end-to-end mock coverage for local, Anthropic, OpenAI-compatible, and hybrid paths.
+
+**Deliver:** `uv run pytest` from `backend/` green; `npm run build` from `frontend/` green; `docs/iterations/senna-iter-39-closeout.md`; update `SESSION_STATE.md`; mark Arc 8 ready for Architect final sign-off and GrandMaster arc review.
+```
+
+### Arc 8 follow-up — profile-aware post-run economics (GM PASS_WITH_ISSUES — paste into a new Builder chat)
+
+**GM issue:** Post-run economics bill only `effective_provider == "anthropic"`. Completed `openai_default` / `openrouter_default` runs show **$0** in Run Details and exports while preflight estimates paid cost correctly.
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Arc 8 follow-up — profile-aware post-run economics**
+5. `docs/iterations/senna-iter-39-closeout.md` (Arc 8 integration baseline)
+6. Skim `backend/src/mirofish_backend/simulation/economics.py` and `backend/src/mirofish_backend/llm/model_profiles.py` (`pricing_key` on profiles)
+
+**Scope (Arc 8 GM follow-up only — no new features):**
+
+Fix post-run / export economics to bill from **`effective_profile_id` → profile `pricing_key`** where available, not only `effective_provider`.
+
+**Implementation guidance:**
+- Primary touch: `backend/src/mirofish_backend/simulation/economics.py`
+  - Extend `_turn_cost_usd` / `estimated_run_cost_usd_from_transcript` to accept transcript row fields `effective_profile_id` and `effective_provider`.
+  - Resolve billing `provider_key` for `estimate_cost_usd`:
+    - `local_lmstudio_default` → `lmstudio` ($0)
+    - `anthropic_default` → `anthropic`
+    - `openai_default` → `openai`
+    - `openrouter_default` → `openrouter`
+    - `heuristic` (Tier-3 sentinel from `routing_policies.HEURISTIC_PROFILE_SENTINEL`) → $0
+  - Prefer registry lookup (`get_builtin_profile` / built-in `pricing_key`) over hard-coded duplicates where practical.
+  - **Backwards compatibility:** rows with missing/unknown `effective_profile_id` → keep current fallback: bill when `effective_provider == "anthropic"` only; local/heuristic/none → $0.
+- Do **not** require or expose API keys for economics.
+- Preflight (`preflight.py`) already uses `pricing_key` — leave behavior unless a tiny shared helper reduces drift (optional, minimal).
+
+**Required tests** (`test_iteration29.py` and/or new `test_senna_arc8_economics.py`):
+- Pure functions:
+  - `openai_default` profile turn with known tokens → **non-zero** cost
+  - `openrouter_default` → **non-zero**
+  - `local_lmstudio_default` → **zero**
+  - `heuristic` sentinel → **zero**
+  - Legacy row: `effective_provider=anthropic`, no `effective_profile_id` → still bills (regression)
+- Export/API regression (mocked run, no network):
+  - `model_profile_id=openai_default` completed run → `GET /simulations/{id}` and export JSON `run.economics.estimated_cost_usd` **> 0** when mocked turns have token usage
+  - ZIP `agent_turns.csv` still includes `effective_profile_id` column (no regression)
+
+**Out of scope:** UI changes, new profiles, preflight formula changes, live API calls, new iteration spec from GM.
+
+**Deliver:**
+- `uv run pytest` from `backend/` green (run focused: `test_iteration29.py`, `test_senna_arc8_integration.py`, new economics tests)
+- Append **§ Post–GM (economics follow-up)** to `docs/iterations/senna-iter-39-closeout.md` (date, files, test counts)
+- Update `docs/SESSION_STATE.md` — Arc 8 GM follow-up in progress / complete
+- Do **not** start Arc 9 or other backlog items
+```
+
+---
+
+## Senna Arc 7 — Cursor Builder
+
+> **Status:** Complete (GM PASS, 2026-05-19). Retained for reference / audits.
+
+**Cycle reference:** [`SENNA_AGENT_CYCLE.md`](./SENNA_AGENT_CYCLE.md).
+
+**Scope:** Model portability foundation — generic OpenAI-compatible adapter, model profiles, profile-aware capabilities/UI, data-driven routing policies, and migration hardening.
+
+**Canonical spec:** [`HANDOFF_SENNA_ARC7.md`](./HANDOFF_SENNA_ARC7.md). Do not duplicate or fork the full spec in chat.
+
+| Iteration | Spec in `HANDOFF_SENNA_ARC7.md` |
+|-----------|----------------------------------|
+| senna-iter-30 | § **senna-iter-30** — Generic OpenAI-Compatible Provider |
+| senna-iter-31 | § **senna-iter-31** — Model Profiles |
+| senna-iter-32 | § **senna-iter-32** — Capabilities + Simple Frontend Profile Selection |
+| senna-iter-33 | § **senna-iter-33** — Data-Driven Routing Policies |
+| senna-iter-34 | § **senna-iter-34** — Arc 7 Hardening + Migration Checks |
+
+**Architect workflow:** Architect must PASS each iteration before seeding the next. Builder implements only the active section and writes `docs/iterations/senna-iter-N-closeout.md`.
+
+### senna-iter-30 starter (pre-filled — paste into a new Builder chat)
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md` (GM / Architect / Builder ritual)
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 7 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC7.md` → **`## senna-iter-30`** (canonical spec and Definition of Done)
+6. `docs/iterations/senna-iter-29-closeout.md` (prior Senna gate; Arc 6 complete)
+
+**Scope (senna-iter-30 only):**
+- Add a generic OpenAI-compatible adapter module, preferably `backend/src/mirofish_backend/llm/openai_compatible_client.py`.
+- Move or wrap the current logic from `backend/src/mirofish_backend/llm/lmstudio_client.py`.
+- Keep `lmstudio_client.py` as a compatibility wrapper if that is the smallest safe diff.
+- Update `backend/src/mirofish_backend/llm/router.py` so the local path calls the generic adapter.
+- Keep public provider values unchanged: `lmstudio`, `anthropic`, `hybrid`.
+- Add tests required by `HANDOFF_SENNA_ARC7.md` § senna-iter-30.
+
+**Out of scope:** model profiles, frontend changes, new commercial providers, and new public provider names.
+
+**Deliver:** `uv run pytest` from `backend/` green; `docs/iterations/senna-iter-30-closeout.md`; update `docs/SESSION_STATE.md` Current Status (iter-30 complete, next iter-31, date). Do not implement senna-iter-31.
+```
+
+### senna-iter-31 starter (Architect seeds only after senna-iter-30 PASS)
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 7 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC7.md` → **`## senna-iter-31`**
+6. `docs/iterations/senna-iter-30-closeout.md`
+
+**Scope:** Implement the model profile layer and `model_profile_id` request plumbing exactly as § senna-iter-31 specifies. Preserve legacy `llm_provider` behavior.
+
+**Deliver:** backend tests green; `docs/iterations/senna-iter-31-closeout.md`; update `SESSION_STATE.md`. Do not implement senna-iter-32.
+```
+
+### senna-iter-32 starter (Architect seeds only after senna-iter-31 PASS)
+
+```markdown
+You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 7 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC7.md` → **`## senna-iter-32`**
+6. `docs/iterations/senna-iter-31-closeout.md`
+
+**Scope:** Expose model profiles in `/capabilities` and update the Run setup UI to use capability-driven model choices with fallback labels. Keep UI simple; no model manager.
+
+**Deliver:** `uv run pytest` from `backend/` green; `npm run build` from `frontend/` green; `docs/iterations/senna-iter-32-closeout.md`; update `SESSION_STATE.md`. Do not implement senna-iter-33.
+```
+
+### senna-iter-33 starter (Architect seeds only after senna-iter-32 PASS)
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 7 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC7.md` → **`## senna-iter-33`**
+6. `docs/iterations/senna-iter-32-closeout.md`
+
+**Scope:** Replace hardcoded hybrid turn-index routing with named policies (`local_only`, `frontier_only`, `hybrid_first_turn`) while preserving exact current behavior.
+
+**Deliver:** backend tests green; `docs/iterations/senna-iter-33-closeout.md`; update `SESSION_STATE.md`. Do not implement senna-iter-34.
+```
+
+### senna-iter-34 starter (Architect seeds only after senna-iter-33 PASS)
+
+```markdown
+You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 7 — Cursor Builder**
+5. `docs/handoffs/HANDOFF_SENNA_ARC7.md` → **`## senna-iter-34`**
+6. `docs/iterations/senna-iter-33-closeout.md`
+
+**Scope:** Arc 7 hardening only: compatibility tests, export/economics/profile provenance checks, frontend build, short local-run evidence if available.
+
+**Deliver:** `uv run pytest` from `backend/` green; `npm run build` from `frontend/` green; `docs/iterations/senna-iter-34-closeout.md`; update `SESSION_STATE.md`; mark Arc 7 ready for Architect final sign-off and GrandMaster arc review.
+```
+
+---
+
+## Senna Arc 6 — Cursor Builder
+
+> **Status:** **Complete** (2026-04-26) — all gates **senna-iter-26**–**29** shipped; see [`docs/iterations/senna-iter-29-closeout.md`](../iterations/senna-iter-29-closeout.md) and [`HANDOFF_TO_ARCHITECT.md`](./HANDOFF_TO_ARCHITECT.md) § *Senna Arc 6*. The **starters below** are retained for **reference / audits** only.
+
+**Cycle reference:** [`SENNA_AGENT_CYCLE.md`](./SENNA_AGENT_CYCLE.md).
+
+**Scope (historical):** **Backend only** — canonical spec: [`HANDOFF_SENNA_ARC6.md`](./HANDOFF_SENNA_ARC6.md) — **senna-iter-26** through **senna-iter-29** (round-summary DB → orchestrator / prompts → `.md` transcripts → config + tests).
+
+**Naming:** **`senna-iter-NN`** is Senna’s **arc** counter (this file + `HANDOFF_SENNA_ARC*.md`). It is **not** the same counter as the numbered **thesis** platform iterations (e.g. **Iteration 26** = posture / sampling — [`iteration-26-closeout.md`](../iterations/iteration-26-closeout.md); **Iteration 27** = multi-run **experiments** — [`iteration-27-closeout.md`](../iterations/iteration-27-closeout.md)). **Senna** closeouts: `docs/iterations/senna-iter-NN-closeout.md` (e.g. **`senna-iter-27`** ≠ thesis **`iteration-27-closeout.md`**).
+
+| Iteration | Spec in `HANDOFF_SENNA_ARC6.md` |
+|-----------|----------------------------------|
+| senna-iter-26 | § **senna-iter-26** — DB schema + `round_summary` builder + tests |
+| senna-iter-27 | § **senna-iter-27** — Orchestrator wiring & prompt injection |
+| senna-iter-28 | § **senna-iter-28** — `.md` transcript writer |
+| senna-iter-29 | § **senna-iter-29** — Config flag + tests |
+
+**Architect workflow:** same as Senna UX arcs — **PASS** each iter (or **PASS_WITH_ISSUES** with resolution) before seeding the next; Cursor Architect updates [`HANDOFF_TO_ARCHITECT.md`](./HANDOFF_TO_ARCHITECT.md) § *Senna Arc 6*.
+
+### senna-iter-26 starter (pre-filled — paste into a new Builder chat)
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 6 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
+4. `docs/handoffs/HANDOFF_SENNA_ARC6.md` → **`## senna-iter-26`** (canonical spec — code blocks + **Definition of done** at end of that section)
+5. `docs/iterations/senna-iter-25-closeout.md` (prior Senna UX gate; Arc 5 complete)
+
+**Scope (iter-26 only — do not implement iter-27+):**
+- `backend/src/mirofish_backend/db/schema.py` — `round_summaries` table in `init_db()` per handoff
+- `backend/src/mirofish_backend/db/repo.py` — `upsert_round_summary`, `get_round_summaries`, `get_turns_for_round` per handoff
+- `backend/src/mirofish_backend/llm/round_summary.py` — **new** — `build_round_summary()` per handoff
+- **Tests** — `uv run pytest` from `backend/` green; add a unit test for `build_round_summary()` as in handoff Definition of done (two turns: one with valid `<state>`, one without; both non-empty, no exception)
+
+**Out of scope:** `build_user_prompt` / orchestrator / transcript writer / API surface (**senna-iter-27**+), `frontend/`.
+
+**Deliver:** `docs/iterations/senna-iter-26-closeout.md` (files touched, grep notes, pytest summary). Update **`docs/SESSION_STATE.md`** Current Status (iter-26 complete, next iter-27, date). No `senna-iter-27` code in this PR.
+```
+
+### Post-senna-iter-26 hardening (pre-filled — run before senna-iter-27)
+
+> **Status:** **Done** (2026-04-26) — `test_agent_plan_mock_llm` now patches `mirofish_backend.api.agent.llm_build_execution_plan` (evidence: [`senna-iter-26-closeout.md`](../iterations/senna-iter-26-closeout.md) § Verification). The block below is retained as a paper trail.
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. This is a short hardening slice before `senna-iter-27`.
+
+Read in order:
+1. `docs/SESSION_STATE.md`
+2. `docs/handoffs/HANDOFF_TO_ARCHITECT.md` → **Senna Arc 6** row for `senna-iter-26`
+3. `docs/iterations/senna-iter-26-closeout.md`
+4. `backend/tests/test_iteration17.py` and `backend/src/mirofish_backend/api/agent.py`
+
+**Problem:** Architect review of `senna-iter-26` found `uv run pytest` from `backend/` fails at `tests/test_iteration17.py::test_agent_plan_mock_llm`. The test patches `mirofish_backend.agent.orchestrator.llm_build_execution_plan`, but `/agent/plan` calls the symbol imported into `mirofish_backend.api.agent`, so the mock does not intercept and the test attempts a real LLM connection.
+
+**Scope:** Fix this test/harness mismatch only. Prefer the smallest clear fix (for example, patch `mirofish_backend.api.agent.llm_build_execution_plan` in that test, or adjust the API import pattern if you choose that route and all tests stay green). Do **not** implement `senna-iter-27` yet.
+
+**Deliver:** `uv run pytest` from `backend/` green; update `docs/SESSION_STATE.md` and add a short note under `docs/iterations/senna-iter-26-closeout.md` or a post-26 closeout note explaining the hardening. Then proceed to **senna-iter-27**.
+```
+
+### senna-iter-27 starter (pre-filled — paste into a new Builder chat)
+
+Use this when starting **senna-iter-27** only. **Post-senna-iter-26 hardening** is **done** (2026-04-26); full `uv run pytest` from `backend/` is green. Full spec: [`HANDOFF_SENNA_ARC6.md`](./HANDOFF_SENNA_ARC6.md) **`## senna-iter-27`** (orchestrator, `prompt_templates`, `api/simulations` per that section; **no** `.md` transcript file — **senna-iter-28**).
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 6 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
+4. `docs/handoffs/HANDOFF_SENNA_ARC6.md` → **`## senna-iter-27`** (canonical spec — every subsection + **Definition of done**)
+5. `docs/iterations/senna-iter-26-closeout.md` (prior **Senna** gate — not [`iteration-27-closeout.md`](../iterations/iteration-27-closeout.md), which is the shipped **thesis** experiments gate)
+
+**Scope / out of scope:** Exactly as the **`## senna-iter-27`** block in the arc handoff (including `prompt_templates`, `orchestrator`, API call site). **Do not** implement **`## senna-iter-28`** (transcript writer) or **`## senna-iter-29`** unless the arc file lists shared plumbing required for iter-27 to land — follow the arc file.
+
+**Deliver:** `docs/iterations/senna-iter-27-closeout.md` (files touched, grep notes, `pytest` summary). Update **`docs/SESSION_STATE.md`** (iter-27 complete, next iter-28, date).
+```
+
+### senna-iter-28 starter (pre-filled — paste into a new Builder chat)
+
+Use this when starting **senna-iter-28** only. Full spec: [`HANDOFF_SENNA_ARC6.md`](./HANDOFF_SENNA_ARC6.md) **`## senna-iter-28`** (incremental `transcript_writer` + orchestrator; depends on `transcript_dir` + `round_summary_enabled` from config).
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 6 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_SENNA_ARC6.md` → **`## senna-iter-28`**
+5. `docs/iterations/senna-iter-27-closeout.md` (prior Senna gate)
+
+**Scope / out of scope:** Exactly as **`## senna-iter-28`** in the arc (transcript file + hooks in `orchestrator.py`). **Do not** implement **`## senna-iter-29`** unless the arc file requires it in the same PR.
+
+**Deliver:** `docs/iterations/senna-iter-28-closeout.md`; update **`docs/SESSION_STATE.md`** (iter-28 complete, next iter-29, date).
+```
+
+### senna-iter-29 starter (pre-filled — paste into a new Builder chat)
+
+Last Arc 6 gate: confirm `config` / `api` greps, add any missing tests from **`## senna-iter-29`** in [`HANDOFF_SENNA_ARC6.md`](./HANDOFF_SENNA_ARC6.md) (arc may duplicate tests already landed in **senna-iter-26** — align, do not double-file).
+
+```markdown
+You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 6 — Cursor Builder** + `SENNA_AGENT_CYCLE.md`
+4. `docs/handoffs/HANDOFF_SENNA_ARC6.md` → **`## senna-iter-29`**
+5. `docs/iterations/senna-iter-28-closeout.md` (prior Senna gate)
+
+**Scope:** Per arc **Definition of done** (config keys present, `api/simulations` forwards settings, `rg` checks, test files as specified — skip duplicate test logic if already covered).
+
+**Deliver:** `docs/iterations/senna-iter-29-closeout.md`; update **`docs/SESSION_STATE.md`**; **Arc 6** complete in [`HANDOFF_TO_ARCHITECT.md`](./HANDOFF_TO_ARCHITECT.md) § *Senna Arc 6* when architect signs off.
+```
+
+---
+
+## Senna UX — Cursor Builder
+
+**Full Builder + Architect cycle (who updates what):** [`SENNA_AGENT_CYCLE.md`](./SENNA_AGENT_CYCLE.md).
+
+### Token efficiency (chat vs repo)
+
+- **Pasting a long spec into the first chat message** uses tokens in that turn and often duplicates the same text in session logs. The spec can drift from the repo.
+- **Short first message + read files** keeps a **single canonical spec** in `HANDOFF_SENNA_ARC*.md`. The agent still reads those files (similar total context), but your paste stays small and git stays the source of truth.
+
+**Prefer:** the minimal paste block below + the assigned `### senna-iter-NN` section in [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) (or the matching Arc handoff for earlier Senna work).
+
+### Minimal first message (paste into a new Builder chat)
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna UX — Cursor Builder**
+4. `docs/handoffs/HANDOFF_SENNA_ARC4.md` → **`### senna-iter-NN`** (NN = assigned iteration; full Definition of done is there)
+5. Prior gate: `docs/iterations/senna-iter-(NN-1)-closeout.md` (for NN = 16 use `senna-iter-15-closeout.md`)
+
+**Rules:** Frontend only unless the handoff says otherwise. Run `npm run build` in `frontend/`. Write `docs/iterations/senna-iter-NN-closeout.md`. Do not expand scope beyond that iteration’s Definition of done in the Arc handoff.
+```
+
+### Where Senna iteration specs live (do not duplicate here)
+
+| Iteration | Primary file(s) | Handoff (canonical spec) |
+|-----------|-----------------|---------------------------|
+| senna-iter-16 | `frontend/src/components/AgentConsole.tsx` | [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) § **senna-iter-16** |
+| senna-iter-17 | `frontend/src/components/ExperimentConsole.tsx` | § **senna-iter-17** |
+| senna-iter-18 | `frontend/src/App.tsx` (validity / Quality Notes tab) | § **senna-iter-18** |
+| senna-iter-19 | `frontend/src/components/ScenarioWizard.tsx` | § **senna-iter-19** |
+| senna-iter-20 | `ConversationView.tsx`, `App.tsx`, `CLAUDE.md` | § **senna-iter-20** |
+
+Earlier arcs (reference only if backfilling): [`HANDOFF_SENNA_ARC1.md`](./HANDOFF_SENNA_ARC1.md), [`HANDOFF_SENNA_ARC2.md`](./HANDOFF_SENNA_ARC2.md), [`HANDOFF_SENNA_ARC3.md`](./HANDOFF_SENNA_ARC3.md).
+
+**Architect workflow:** sequential iters, PASS before next — see § **Arc 4 — Architect Instructions** in `HANDOFF_SENNA_ARC4.md`.
+
+### senna-iter-18 starter (pre-filled — paste into a new Builder chat)
+
+Use this **instead** of the generic minimal block when starting **senna-iter-18** only. Full label table, intro text, and Definition of done live in [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) `### senna-iter-18` — do not fork the spec into chat.
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna UX — Cursor Builder**
+4. `docs/handoffs/HANDOFF_SENNA_ARC4.md` → **`### senna-iter-18`** (canonical spec — follow every bullet and the Definition of done there)
+5. `docs/iterations/senna-iter-17-closeout.md` (prior gate)
+
+**Scope:** `frontend/src/App.tsx` only — the **validity** / **Quality notes** tab panel (`tabPanelStyle("validity")` region). Plain-English **UI** copy and layout only; **payload field names unchanged** (`face_score`, `construct_score`, `face_rubric`, `construct_rubric`, `predictive_*`, `rater_id`, etc. — still sent to the API exactly as today).
+
+**Deliver:** Implement § senna-iter-18 (heading + intro, form card border/background/padding, all label + placeholder + button + error string + Saved notes section per handoff). Use existing `sectionHeadingStyle` / `emptyStateCardStyle` from `App.tsx` where the handoff calls for them. Run `npm run build` in `frontend/`. Write `docs/iterations/senna-iter-18-closeout.md`. No other files unless unavoidable.
+```
+
+### senna-iter-19 starter (pre-filled — paste into a new Builder chat)
+
+Use this when starting **senna-iter-19** only. The spec is long — follow every bullet and the **Definition of done** in [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) `### senna-iter-19` (intro, step labels, load/clone, Steps 0–5, message wrappers, borders, step active state `#EEF3FA` / `#4A6FA5`).
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna UX — Cursor Builder**
+4. `docs/handoffs/HANDOFF_SENNA_ARC4.md` → **`### senna-iter-19`** (canonical spec — implement completely; check Definition of done at end of that section)
+5. `docs/iterations/senna-iter-18-closeout.md` (prior gate)
+
+**Scope:** `frontend/src/components/ScenarioWizard.tsx` only unless a one-line import/type tweak elsewhere is unavoidable. **User-visible strings, styles, and step chrome** per handoff; **no behaviour or API contract changes** (save, clone, load, LLM/AI fill, YAML export must still work).
+
+**Deliver:** Apply every relabel, placeholder, border, step button active state, and success/error wrapper from § senna-iter-19. No `persona_id`, `group_id`, `role_level`, `style_cues`, `beliefs JSON`, `(builtin)`, `RAG`, `POST /`, or `docs/plans/` in **user-facing** labels or placeholders. Run `npm run build` in `frontend/`. Write `docs/iterations/senna-iter-19-closeout.md`.
+```
+
+### senna-iter-20 starter (pre-filled — paste into a new Builder chat)
+
+Use this when starting **senna-iter-20** only — **Arc 4 final sweep**. Canonical checklist: [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) `### senna-iter-20` (ConversationView label, run list experiment hint, remove redundant tab `<h2>`s, palette colour replacements, **CLAUDE.md** Arc 4 → closed).
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root) — you will **edit** this file for the Arc status line per § senna-iter-20
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna UX — Cursor Builder**
+4. `docs/handoffs/HANDOFF_SENNA_ARC4.md` → **`### senna-iter-20`** (canonical spec — follow the table of `<h2>` removals, colour map, and Definition of done)
+5. `docs/iterations/senna-iter-19-closeout.md` (prior gate)
+
+**Scope:**
+- `frontend/src/components/ConversationView.tsx` — rename visible label **Fidelity tier** → **Detail level** (same `fidelity_tier` value display).
+- `frontend/src/App.tsx` — Recent discussions: replace experiment id fragment with plain **part of a comparison run** copy (per handoff); remove redundant `<h2>` tab panel headings listed in § senna-iter-20 (**keep** Run Details + Quality notes `<h2>`s); replace remaining `coral` / `#a30` / `#a60` and any `#ddd` / `#eee` in user-visible styles with palette values from the handoff table; add `paddingTop: 4` on a tab panel wrapper **only if** removing headings makes layout too tight.
+- **`CLAUDE.md` (repo root)** — set Senna **Arc 4** status to **closed** / ✅ per whatever arc table or bullet exists there (if no table, add a single clear line under Senna UX that Arc 4 is complete and Arc 5 is next preview in `HANDOFF_SENNA_ARC4.md`).
+
+**Deliver:** `npm run build` in `frontend/`. `docs/iterations/senna-iter-20-closeout.md` listing files touched, grep confirmation (no `Fidelity tier` in ConversationView; no experiment id slice in run list), and CLAUDE note. No backend changes.
+```
+
+## Senna Arc 5 — Cursor Builder
+
+**Cycle reference:** [`SENNA_AGENT_CYCLE.md`](./SENNA_AGENT_CYCLE.md).
+
+**Cowork arc verdict:** Arc 4 **PASS** (2026-04-22) — no required follow-ups. **Arc 5** is the final Senna UX arc (**Visual Design & Polish**). Canonical spec only in [`HANDOFF_SENNA_ARC5.md`](./HANDOFF_SENNA_ARC5.md) — **senna-iter-21** through **senna-iter-25**, sequentially.
+
+| Iteration | Spec in `HANDOFF_SENNA_ARC5.md` |
+|-----------|----------------------------------|
+| senna-iter-21 | § **senna-iter-21** — `theme.ts` + `RunResultCard` |
+| senna-iter-22 | § **senna-iter-22** |
+| senna-iter-23 | § **senna-iter-23** |
+| senna-iter-24 | § **senna-iter-24** |
+| senna-iter-25 | § **senna-iter-25** |
+
+**Architect workflow:** same as Arc 4 — PASS each iter before seeding the next; see § **Arc 5 — Architect Instructions** in `HANDOFF_SENNA_ARC5.md`.
+
+### senna-iter-21 starter (pre-filled — paste into a new Builder chat)
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder**
+4. `docs/handoffs/HANDOFF_SENNA_ARC5.md` → **`### senna-iter-21`** (canonical spec — implement Part A + Part B and Definition of done in that section)
+5. `docs/iterations/senna-iter-20-closeout.md` (prior gate)
+
+**Scope:** Per § senna-iter-21 — new `frontend/src/lib/theme.ts`, polish `frontend/src/components/RunResultCard.tsx`, wire imports as the handoff specifies. **No new functionality;** backend untouched.
+
+**Deliver:** `npm run build` in `frontend/`. `docs/iterations/senna-iter-21-closeout.md`.
+```
+
+### senna-iter-22 starter (pre-filled — paste into a new Builder chat)
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
+4. `docs/handoffs/HANDOFF_SENNA_ARC5.md` → **`### senna-iter-22`** (canonical spec — Part A + B + C and Definition of done)
+5. `docs/iterations/senna-iter-21-closeout.md` (prior gate)
+
+**Scope (per handoff — implement fully, no extra refactors):**
+- **`frontend/src/App.tsx`** — Import **`FONT`** from `./lib/theme`. Results tab **outcome indicators** table: apply **`fontFamily: FONT.mono`** (and handoff cell styles) to **numeric** data cells (adoption, disagreements, consistency); **Round** column stays sans-serif. Replace **`<h2>Run Details</h2>`** and **Quality notes** `<h2>` with the **styled `<div>`** blocks in the handoff. **Part C** spacing tweaks only as listed (Download ↔ Session ID `marginTop`, score grid `gap: 8`).
+- **`frontend/src/components/ExperimentConsole.tsx`** — Replace inline **`"monospace"`** with **`FONT.mono`** from `../lib/theme` on metrics table cells.
+- **`frontend/src/components/LiveRunDashboard.tsx`** — Outcomes / round table: **`fontFamily: FONT.mono`** on **numeric** `<td>` cells; import **`FONT`** from `../lib/theme`.
+
+**Out of scope:** Tab bar (iter-23), other Arc 5 iters, backend, broad spacing audit beyond Part C bullets.
+
+**Deliver:** `npm run build` in `frontend/`. `docs/iterations/senna-iter-22-closeout.md`. Update **`docs/SESSION_STATE.md`** Current Status (iter-22 done, next iter-23, date).
+```
+
+### senna-iter-23 starter (pre-filled — paste into a new Builder chat)
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
+4. `docs/handoffs/HANDOFF_SENNA_ARC5.md` → **`### senna-iter-23`** (canonical spec — tab bar Parts A–B and Definition of done)
+5. `docs/iterations/senna-iter-22-closeout.md` (prior gate)
+
+**Scope (per handoff — implement fully, no extra refactors):**
+- **`frontend/src/App.tsx`** — Tab bar: scrollable single-line strip, hidden scrollbar (WebKit + Firefox), right-edge fade, `PRIMARY_TABS` / `SECONDARY_TABS` constants, `role="tablist"` / `role="tab"` / `aria-selected`, refined `tabStyle` per Arc 5 § senna-iter-23. Tab panel wrapper notes from handoff only.
+
+**Out of scope:** Empty states (iter-24), global focus ring / `aria-controls` (iter-25), backend.
+
+**Deliver:** `npm run build` in `frontend/`. `docs/iterations/senna-iter-23-closeout.md`. Update **`docs/SESSION_STATE.md`** Current Status (iter-23 done, next iter-24, date).
+```
+
+### senna-iter-24 starter (pre-filled — paste into a new Builder chat)
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root)
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
+4. `docs/handoffs/HANDOFF_SENNA_ARC5.md` → **`### senna-iter-24`** (canonical spec — empty states, copy tweaks, controlled run ID input, micro-polish; Definition of done)
+5. `docs/iterations/senna-iter-23-closeout.md` (prior gate)
+
+**Scope (per handoff — implement fully, no extra refactors):**
+- **`frontend/src/App.tsx`** — Watch Live: empty + `status === "starting"` states; Conversation tab empty state vs `ConversationView`; Recent discussions **Open** `title`; **Load by ID**: controlled `openRunIdInput` state + disabled Load when empty (no `document.getElementById`).
+- **`frontend/src/components/LiveRunDashboard.tsx`** — Convergence banner `marginBottom: 12`.
+- **`frontend/src/components/ConversationView.tsx`** — Early return when `!turns?.length`.
+- **`frontend/src/components/ExperimentConsole.tsx`** — Empty / “no experiment” copy per handoff.
+
+**Out of scope:** Tab `aria-controls` / global focus CSS (iter-25), backend.
+
+**Deliver:** `npm run build` in `frontend/`. `docs/iterations/senna-iter-24-closeout.md`. Update **`docs/SESSION_STATE.md`** Current Status (iter-24 done, next iter-25, date).
+```
+
+### senna-iter-25 starter (pre-filled — paste into a new Builder chat)
+
+```markdown
+You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+1. `docs/SESSION_STATE.md`
+2. `CLAUDE.md` (repo root) — you will set **Arc 5 → CLOSED** when Definition of done requires it
+3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
+4. `docs/handoffs/HANDOFF_SENNA_ARC5.md` → **`### senna-iter-25`** (canonical spec — Parts A–F and Definition of done; final Arc 5 iteration)
+5. `docs/iterations/senna-iter-24-closeout.md` (prior gate)
+
+**Scope (per handoff — implement fully, no extra refactors):**
+- **`frontend/index.html`** — Global `:focus-visible` / `:focus:not(:focus-visible)`, optional duplicate tablist scrollbar hide + `scroll-behavior` per handoff.
+- **`frontend/src/App.tsx`** — Remove `outline: "none"` from `tabStyle` once global CSS handles focus; `<main>` after `SennaHeader`; all tab buttons: `id`, `aria-controls`; all tab panels: `id`, `role="tabpanel"`, `aria-labelledby` (10 panels); secondary text on **page** bg `#F7F6F2` → `#595F6B` where required.
+- **`frontend/src/lib/theme.ts`** — `COLOR.textSecondary` → **`#595F6B`**.
+- **`frontend/src/components/SennaHeader.tsx`**, **`RunStatusCard.tsx`** — secondary on page bg → `#595F6B` per handoff.
+- **`ConversationView.tsx`**, **`App.tsx`** (refresh), **`ScenarioWizard.tsx`** — `aria-label` on icon-only controls per handoff table.
+
+**Deliver:** `npm run build` in `frontend/`. `docs/iterations/senna-iter-25-closeout.md`. Update **`docs/SESSION_STATE.md`** (Arc 5 complete / next steps). **`CLAUDE.md`** Arc 5 row → **CLOSED**.
+```
 
 ---
 
@@ -21,6 +609,9 @@ You are implementing MiroFish MVP in `mirofish-mvp`. Read in order:
 
 | If you are starting… | Go to |
 |----------------------|--------|
+| **Senna Arc 6** (`senna-iter-26` … `senna-iter-29`, backend) | **§ Senna Arc 6 — Cursor Builder** above, then [`HANDOFF_SENNA_ARC6.md`](./HANDOFF_SENNA_ARC6.md) `## senna-iter-NN` |
+| **Senna Arc 5** (`senna-iter-21` … `senna-iter-25`, UX) | **§ Senna Arc 5 — Cursor Builder** above, then [`HANDOFF_SENNA_ARC5.md`](./HANDOFF_SENNA_ARC5.md) `### senna-iter-NN` |
+| **Senna Arc 4** (`senna-iter-16` … `senna-iter-20`) | **§ Senna UX — Cursor Builder** above, then [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) `### senna-iter-NN` |
 | ~~**Pre-21 housekeeping**~~ (done) | ~~`export_version` fix~~ — shipped in Iteration 21. |
 | ~~**Iteration 21**~~ (done) | ~~Generic engine cleanup~~ — shipped, PASS. |
 | ~~**Pre-22 fixes**~~ (done) | ~~3 fixes from Iter 21 review~~ — applied in Iteration 22. |

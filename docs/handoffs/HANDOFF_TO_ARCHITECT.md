@@ -1,14 +1,131 @@
 # Handoff to architect
 
-## Current focus — Post–29 backlog + next slice
+**Senna cycle (GM vs Architect vs Builder; max five iterations per arc):** [`SENNA_AGENT_CYCLE.md`](./SENNA_AGENT_CYCLE.md). **After GM arc PASS:** commit and `git push origin main` per [`SENNA_AGENT_CYCLE.md`](./SENNA_AGENT_CYCLE.md) § *Git push after arc close*.
 
-**Status:** **Iteration 29** (run economics) **closed** — architect **PASS**; review follow-ups applied (2026-04-08). See [`docs/reviews/review-iteration-29.md`](../reviews/review-iteration-29.md) § *Follow-up resolution*. Suite **191 passed, 1 skipped**. Platform gaps for the thesis study (convergence + economics) are closed.
+## Current focus — Senna Arc 8 / Model Ecosystem and Guardrails
 
-**Recommended next priority (builder / architect):** Thesis scenario prep (Full SBB YAML, Trinidad agent profiles, validation benchmark), or backlog per [`SESSION_STATE.md`](../SESSION_STATE.md) + [`HANDOFF_TO_BUILDER.md`](HANDOFF_TO_BUILDER.md). Backlog: **parallel experiment dispatch**, **SSE-in-browser**, **`aiosqlite` WAL + batch inserts**, **real-time cost ticker**.
+**Status:** **Senna Arc 8 CLOSED — GM final PASS** (2026-05-19). Gates `senna-iter-35`–`39` **PASS**; economics follow-up **PASS**. Suite **290 passed, 2 skipped**.
 
-**Builder entry:** [`SESSION_STATE.md`](../SESSION_STATE.md) + latest closeout + [`HANDOFF_TO_BUILDER.md`](HANDOFF_TO_BUILDER.md) strategic notes. Contracts: [`ADR-001`](../adr/ADR-001-iteration-10-11-contracts.md); **ADR-002** (Iteration 25).
+**Recommended next priority:** Await GM `HANDOFF_SENNA_ARC9.md` (if any) or thesis backlog per [`HANDOFF_TO_BUILDER.md`](HANDOFF_TO_BUILDER.md). Do **not** start a new arc without GM handoff.
+
+**Builder entry:** [`SESSION_STATE.md`](../SESSION_STATE.md) + thesis backlog in [`HANDOFF_TO_BUILDER.md`](HANDOFF_TO_BUILDER.md).
 
 **Still in backlog:** Multi-run parallelism in agent orchestrator; scenario marketplace; MEETING group scoping (Iteration 15 note); SSE in browser; `aiosqlite` WAL + batch inserts (>200-agent).
+
+**Senna:** **Arc 8** (*Model Ecosystem and Guardrails*) **GM PASS** (2026-05-19). **Arc 7** **GM PASS**. **Arc 6**–**5** closed.
+
+---
+
+## Senna Arc 8 — planned sign-off record (model ecosystem and guardrails)
+
+| Gate | Theme | Closeout | Architect |
+|------|-------|----------|-----------|
+| **senna-iter-35** | Planner parity, Arc 7 cleanup, Tier-3 provenance sentinel | [`senna-iter-35-closeout.md`](../iterations/senna-iter-35-closeout.md) | PASS (2026-05-19) |
+| **senna-iter-36** | Profile registry + model capability registry | [`senna-iter-36-closeout.md`](../iterations/senna-iter-36-closeout.md) | PASS (2026-05-19) |
+| **senna-iter-37** | Commercial OpenAI-compatible profiles + optional auth | [`senna-iter-37-closeout.md`](../iterations/senna-iter-37-closeout.md) | PASS (2026-05-19) |
+| **senna-iter-38** | Pre-run context/cost checks + Run setup warnings | [`senna-iter-38-closeout.md`](../iterations/senna-iter-38-closeout.md) | PASS (2026-05-19) |
+| **senna-iter-39** | Structured-output reliability + Arc 8 integration validation | [`senna-iter-39-closeout.md`](../iterations/senna-iter-39-closeout.md) | PASS (2026-05-19) |
+
+**Senna Arc 8 — Cursor gates:** **complete** (iter 35–39 **PASS**, 2026-05-19). **GM follow-up:** **PASS** (2026-05-19) — `resolve_billing_provider_key` + `test_senna_arc8_economics.py`; see [`senna-iter-39-closeout.md`](../iterations/senna-iter-39-closeout.md) § Post–GM.
+
+**GrandMaster:** initial **PASS_WITH_ISSUES** (economics) — follow-up **PASS** — **final arc PASS** (2026-05-19).
+
+### Senna Arc 8 — Architect summary for GrandMaster
+
+| # | `HANDOFF_SENNA_ARC8.md` § Arc 8 Definition of Complete | Evidence |
+|---|--------------------------------------------------------|----------|
+| 1 | Gates `senna-iter-35`–`39` PASS | Sign-off table above; closeouts `senna-iter-35` … `senna-iter-39` |
+| 2 | Planner `model_profile_id` parity | iter-35; `test_iteration17` execute_plan forward |
+| 3 | Registry-derived profile ids | iter-36; `BUILTIN_PROFILE_IDS` from registry |
+| 4 | Capabilities in `/capabilities` + snapshot | iter-36–37; capability blocks on profiles |
+| 5 | Commercial OpenAI-compatible profiles (mock-tested) | iter-37; `openai_default`, `openrouter_default`, bearer auth |
+| 6 | Pre-run context/cost warnings (API + Run UI) | iter-38; `preflight.py`, `POST /simulations/preflight` |
+| 7 | Structured-output provenance in exports | iter-39; `state_update_source` on poll/export/ZIP |
+| 8 | Tier-3 non-null provenance | iter-35 `effective_profile_id=heuristic`; iter-39 integration test |
+
+**What landed well:** Registry + commercial profiles on one adapter; preflight before run; auditable `<state>` parsing (`model_parsed` / `repaired` / `keyword_fallback`); consolidated `test_senna_arc8_integration.py`.
+
+**Accepted deferrals:** No live LM Studio in CI (`scripts/lmstudio_profile_smoke.py` + manual marker); Tier-3 `state_update_source` null (state applied post-round via heuristic — profile provenance on `effective_profile_id`); cost/context estimates remain heuristic.
+
+---
+
+## Senna Arc 7 — sign-off record (model portability)
+
+| Gate | Theme | Closeout | Architect |
+|------|-------|----------|-----------|
+| **senna-iter-30** | Generic OpenAI-compatible provider; keep `lmstudio` compatibility alias | [`senna-iter-30-closeout.md`](../iterations/senna-iter-30-closeout.md) | PASS (2026-05-19) |
+| **senna-iter-31** | Model profiles + `model_profile_id`; legacy `llm_provider` preserved | [`senna-iter-31-closeout.md`](../iterations/senna-iter-31-closeout.md) | PASS (2026-05-19) |
+| **senna-iter-32** | `/capabilities` model profiles + simple frontend profile selector | [`senna-iter-32-closeout.md`](../iterations/senna-iter-32-closeout.md) | PASS (2026-05-19) |
+| **senna-iter-33** | Data-driven routing policies preserving current hybrid behavior | [`senna-iter-33-closeout.md`](../iterations/senna-iter-33-closeout.md) | PASS (2026-05-19) |
+| **senna-iter-34** | Compatibility, export/economics provenance, build/test hardening | [`senna-iter-34-closeout.md`](../iterations/senna-iter-34-closeout.md) | PASS (2026-05-19) |
+
+**Senna Arc 7 — complete.** GM final verdict: **PASS** (2026-05-19). Arc 8 handoff issued: [`HANDOFF_SENNA_ARC8.md`](HANDOFF_SENNA_ARC8.md).
+
+### Senna Arc 7 — Architect summary for GrandMaster
+
+| # | `HANDOFF_SENNA_ARC7.md` § Arc 7 Definition of Complete | Evidence |
+|---|--------------------------------------------------------|----------|
+| 1 | Gates `senna-iter-30`–`34` PASS | Sign-off table above; closeouts `senna-iter-30` … `senna-iter-34` |
+| 2 | Legacy `llm_provider` preserved | `test_senna_arc7_hardening.py` parametrized queue + E2E hybrid |
+| 3 | `model_profile_id` authoritative when used alone | `resolve_run_llm_provider`; `test_post_run_anthropic_profile_only_infers_provider`; `test_queue_anthropic_profile_only_overrides_server_default_lmstudio` |
+| 4 | `GET /capabilities` → `model_profiles` | iter-32 + `test_capabilities_model_profiles_after_arc7` |
+| 5 | Frontend capability-driven selector + fallback | iter-32; `npm run build` green |
+| 6 | Hybrid behavior unchanged | iter-33 + hardening `test_post_run_hybrid_legacy_provider_provenance` |
+| 7 | Export/transcript provenance | hardening `_assert_export_provenance` (JSON/ZIP, economics, tokens) |
+
+**What landed well:** Thin adapter refactor (iter-30), profile layer without breaking API (iter-31), capabilities-driven Run setup (iter-32), named routing policies + `effective_profile_id` (iter-33), consolidated hardening suite (iter-34).
+
+**GM issue closed (2026-05-19):** Profile-only POST no longer falls through to server `lmstudio` when `model_profile_id=anthropic_default`.
+
+**Accepted deferrals:** No live LM Studio in CI (mocked E2E); Agent `PlanSimulationParams` still omits `model_profile_id` (UI path uses `POST /simulations/run` only). Arc 8 owns new commercial presets per GM preview in Arc 7 handoff.
+
+---
+
+## Senna Arc 6 — sign-off record (backend)
+
+| Gate | Theme | Closeout | Architect |
+|------|-------|----------|-----------|
+| **senna-iter-26** | `round_summaries` schema + repo + `llm/round_summary.py` + tests; post-26 hardening: Iter17 `test_agent_plan_mock_llm` mock path | [`senna-iter-26-closeout.md`](../iterations/senna-iter-26-closeout.md) | PASS (2026-04-26) |
+| **senna-iter-27** | Orchestrator wiring, `build_user_prompt` + `round_summaries`, `interaction_last_k` cap 12, settings plumbing | [`senna-iter-27-closeout.md`](../iterations/senna-iter-27-closeout.md) | PASS (2026-04-26) |
+| **senna-iter-28** | `.md` transcript writer + orchestrator wiring | [`senna-iter-28-closeout.md`](../iterations/senna-iter-28-closeout.md) | PASS (2026-04-26) |
+| **senna-iter-29** | Config + tests confirmation (`test_senna_arc6_config`, `test_round_summary`, `test_transcript_writer`); `npm run build` for Arc 6 DoD | [`senna-iter-29-closeout.md`](../iterations/senna-iter-29-closeout.md) | PASS (2026-04-26) |
+
+**Senna Arc 6 — complete.** Optional Cowork **Arc 6** review per [`CLAUDE.md`](../../CLAUDE.md). **Next (product):** thesis backlog + [`SESSION_STATE.md`](../SESSION_STATE.md). **Thesis** **Iteration 27** = experiments — [`iteration-27-closeout.md`](../iterations/iteration-27-closeout.md) (not Senna’s counter).
+
+---
+
+## Senna Arc 5 — sign-off record (frontend)
+
+| Gate | Theme | Closeout | Architect |
+|------|-------|----------|-----------|
+| **senna-iter-21** | `theme.ts` + `RunResultCard` polish (tokens, pills, merged warnings, no `<code>` / off-palette in card) | [`senna-iter-21-closeout.md`](../iterations/senna-iter-21-closeout.md) | PASS (2026-04-22) |
+| **senna-iter-22** | Typography + numeric formatting (`FONT.mono` on Results / Compare / Live tables; Run Details + Quality notes headings; Part C spacing) | [`senna-iter-22-closeout.md`](../iterations/senna-iter-22-closeout.md) | PASS (2026-04-22) |
+| **senna-iter-23** | Tab bar: scroll strip, hidden scrollbars, fade, `PRIMARY_TABS` / `SECONDARY_TABS`, `tablist` + `tab` ARIA, refined `tabStyle` | [`senna-iter-23-closeout.md`](../iterations/senna-iter-23-closeout.md) | PASS (2026-04-22) |
+| **senna-iter-24** | Empty states (Watch Live / Conversation / Compare), controlled run ID load, `ConversationView` guard, convergence banner spacing | [`senna-iter-24-closeout.md`](../iterations/senna-iter-24-closeout.md) | PASS (2026-04-22) |
+| **senna-iter-25** | A11y: `:focus-visible` in `index.html`, tab `id` / `aria-controls` / `tabpanel` / `aria-labelledby`, `<main>`, `aria-label`s, `COLOR.textSecondary` `#595F6B`, `CLAUDE.md` Arc 5 closed | [`senna-iter-25-closeout.md`](../iterations/senna-iter-25-closeout.md) | PASS (2026-04-22) |
+
+**Senna Arc 5 — Cursor gates:** complete (all iterations **PASS**). **Senna Arc 6:** complete — see table above.
+
+**Next (post–Arc 6):** optional Cowork **Arc 5** / **Arc 6** UX or backend recaps; thesis backlog [`HANDOFF_TO_BUILDER.md`](HANDOFF_TO_BUILDER.md) + [`SESSION_STATE.md`](../SESSION_STATE.md).
+
+---
+
+## Senna Arc 4 — sign-off record (frontend)
+
+| Gate | Theme | Closeout | Architect |
+|------|-------|----------|-----------|
+| **senna-iter-16** | Assistant tab: plain-English copy, `sectionHeadingStyle`, palette borders; no API/behaviour change | [`senna-iter-16-closeout.md`](../iterations/senna-iter-16-closeout.md) | PASS |
+| **senna-iter-17** | Compare Runs: strategy + metric display maps, `shortStatusLabel`, token/cost lines aligned with Run Details; `<select>` values unchanged | [`senna-iter-17-closeout.md`](../iterations/senna-iter-17-closeout.md) | PASS (2026-04-22) |
+| **senna-iter-18** | Quality Notes tab: plain-English labels; saved-note display; payloads unchanged | [`senna-iter-18-closeout.md`](../iterations/senna-iter-18-closeout.md) | PASS (2026-04-22) |
+| **senna-iter-19** | Policy Scenarios wizard: plain labels, step chrome, message panels, palette borders; functionality preserved | [`senna-iter-19-closeout.md`](../iterations/senna-iter-19-closeout.md) | PASS (2026-04-22) |
+| **senna-iter-20** | Final sweep: ConversationView label, run list copy, redundant tab `<h2>`s removed, `App.tsx` palette fixes, `CLAUDE.md` Arc 4 closed | [`senna-iter-20-closeout.md`](../iterations/senna-iter-20-closeout.md) | PASS (2026-04-22) |
+
+### Senna Arc 4 — Opus arc review *(complete)*
+
+- **Cowork / Opus verdict (2026-04-22):** **PASS** — all five gates shipped clean; builds green throughout. **No required follow-ups.**
+- **What landed well (Opus):** metric/strategy maps in `ExperimentConsole`; thorough `ScenarioWizard` cleanup without behaviour change; Quality Notes translation (Realism / Accuracy / Predictive).
+- **Deferred (accepted for Arc 5):** `coral` / `#a30` / `#a60` may remain in `AgentConsole` and `RunResultCard` — iter-20 scoped palette pass to `App.tsx` only; global visual pass is Arc 5 scope.
+- **Evidence:** [`HANDOFF_SENNA_ARC4.md`](HANDOFF_SENNA_ARC4.md) § *Definition of Arc Complete*; [`docs/SESSION_STATE.md`](../SESSION_STATE.md); [`CLAUDE.md`](../../CLAUDE.md); closeouts `senna-iter-16` … `senna-iter-20`.
 
 ---
 
@@ -207,10 +324,17 @@ The Joan brief table described Iteration 12 as including a **“batching/queue s
 - [x] **Iteration 28** (convergence stopping criterion) — shipped; **`iteration-28-closeout.md`**; architect review **PASS_WITH_ISSUES**; **post–28 hardening** closed 2026-04-08 — [`review-iteration-28.md`](../reviews/review-iteration-28.md).
 - [x] Post-28 hardening — experiments + agent orchestrator + tests + comparison UI/CSV (see closeout § Post–28).
 - [x] **Iteration 29** (run economics) — shipped; **`iteration-29-closeout.md`** (2026-04-08); architect **PASS** + review follow-ups — [`review-iteration-29.md`](../reviews/review-iteration-29.md) § *Follow-up resolution*.
-- [ ] Next numbered slice or backlog: parallel experiment + agent-plan runs; SSE-in-UI; WAL mode; real-time cost ticker.
+- [x] **Senna senna-iter-16** (Assistant / `AgentConsole`) — shipped 2026-04-22; [`senna-iter-16-closeout.md`](../iterations/senna-iter-16-closeout.md).
+- [x] **Senna senna-iter-17** (Compare Runs / `ExperimentConsole`) — shipped 2026-04-22; [`senna-iter-17-closeout.md`](../iterations/senna-iter-17-closeout.md).
+- [x] **Senna senna-iter-18 → senna-iter-20** — Arc 4 shipped; Cowork **PASS** (2026-04-22); see Arc 4 sign-off table above.
+- [x] **Senna senna-iter-26** (Arc 6) — `round_summaries` + `round_summary.py`; [`senna-iter-26-closeout.md`](../iterations/senna-iter-26-closeout.md) (2026-04-26).
+- [x] **Senna senna-iter-27** (Arc 6) — orchestrator + prompts; [`senna-iter-27-closeout.md`](../iterations/senna-iter-27-closeout.md) (2026-04-26).
+- [x] **Senna senna-iter-28** (Arc 6) — `transcript_writer` + orchestrator; [`senna-iter-28-closeout.md`](../iterations/senna-iter-28-closeout.md) (2026-04-26).
+- [x] **Senna senna-iter-29** (Arc 6) — config + test confirmation; [`senna-iter-29-closeout.md`](../iterations/senna-iter-29-closeout.md) (2026-04-26). **Arc 6** closed.
+- [ ] Next numbered **backend** slice or backlog: parallel experiment + agent-plan runs; SSE-in-UI; WAL mode; real-time cost ticker.
 
 ---
 
 ## Builder next seed
 
-Use **`SESSION_STATE.md`** + **`HANDOFF_TO_BUILDER.md`** for the next builder gate. Refresh this file after that gate.
+Use **`SESSION_STATE.md`** + **`HANDOFF_TO_BUILDER.md`** for the next gate. **Senna Arc 6 (backend) — done** — reference [`HANDOFF_SENNA_ARC6.md`](HANDOFF_SENNA_ARC6.md) and closeouts `senna-iter-26`–`29` only for audits or Cowork review. **Senna UX (Arc 5, done):** **`HANDOFF_SENNA_ARC5.md`**. **Thesis / other backend:** historical starters in this file.

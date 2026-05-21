@@ -139,8 +139,10 @@ async def test_effective_provider_and_model_persisted_for_hybrid() -> None:
             assert len(turns) == 6
             assert turns[0]["effective_provider"] == "anthropic"
             assert turns[0]["effective_model"] == "claude-sonnet-test"
+            assert turns[0]["effective_profile_id"] == "anthropic_default"
             assert turns[1]["effective_provider"] == "lmstudio"
             assert turns[1]["effective_model"] == "local-llm-id"
+            assert turns[1]["effective_profile_id"] == "local_lmstudio_default"
             assert turns[3]["effective_provider"] == "anthropic"
             bundle = await get_simulation_export_bundle(db_path, simulation_id=sim_id)
             assert bundle is not None

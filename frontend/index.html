@@ -3,7 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiroFish MVP</title>
+    <title>Senna</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      :focus-visible {
+        outline: 2px solid #4A6FA5;
+        outline-offset: 2px;
+      }
+
+      :focus:not(:focus-visible) {
+        outline: none;
+      }
+
+      [role="tablist"]::-webkit-scrollbar {
+        display: none;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

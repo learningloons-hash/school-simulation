@@ -181,9 +181,11 @@ async def insert_agent_turn(
     group_ids: tuple[str, ...] | list[str] | None = None,
     effective_provider: str | None = None,
     effective_model: str | None = None,
+    effective_profile_id: str | None = None,
     fidelity_tier: int = 1,
     input_tokens: int | None = None,
     output_tokens: int | None = None,
+    state_update_source: str | None = None,
 ) -> str:
     turn_id = uuid.uuid4().hex
     gid = list(group_ids) if group_ids else []
@@ -196,10 +198,10 @@ async def insert_agent_turn(
               agent_id, agent_role, agent_name,
               interaction_type, target_scope, target_agent_id, target_agent_name, intent_tag,
               raw_prompt, raw_response, latency_ms, group_ids,
-              effective_provider, effective_model, fidelity_tier,
-              input_tokens, output_tokens
+              effective_provider, effective_model, effective_profile_id, fidelity_tier,
+              input_tokens, output_tokens, state_update_source
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 turn_id,
@@ -220,9 +222,11 @@ async def insert_agent_turn(
                 group_ids_json,
                 effective_provider,
                 effective_model,
+                effective_profile_id,
                 fidelity_tier,
                 input_tokens,
                 output_tokens,
+                state_update_source,
             ),
         )
         await db.commit()
@@ -269,8 +273,8 @@ async def get_simulation_status_with_transcript(
               agent_id, agent_role, agent_name,
               interaction_type, target_scope, target_agent_id, target_agent_name, intent_tag,
               raw_response, latency_ms, group_ids,
-              effective_provider, effective_model, fidelity_tier,
-              input_tokens, output_tokens
+              effective_provider, effective_model, effective_profile_id, fidelity_tier,
+              input_tokens, output_tokens, state_update_source
             FROM agent_turns
             WHERE simulation_id = ?
             ORDER BY round_number ASC, turn_index ASC;
@@ -296,9 +300,11 @@ async def get_simulation_status_with_transcript(
                 group_ids_raw,
                 eff_prov,
                 eff_model,
+                eff_profile,
                 fid_tier,
                 in_tok,
                 out_tok,
+                state_src,
             ) = t
             turns.append(
                 {
@@ -318,9 +324,11 @@ async def get_simulation_status_with_transcript(
                     "group_ids": _parse_group_ids_column(group_ids_raw),
                     "effective_provider": eff_prov,
                     "effective_model": eff_model,
+                    "effective_profile_id": eff_profile,
                     "fidelity_tier": int(fid_tier) if fid_tier is not None else 1,
                     "input_tokens": int(in_tok) if in_tok is not None else None,
                     "output_tokens": int(out_tok) if out_tok is not None else None,
+                    "state_update_source": state_src,
                 }
             )
 
@@ -891,8 +899,8 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
               agent_id, agent_role, agent_name,
               interaction_type, target_scope, target_agent_id, target_agent_name, intent_tag,
               raw_prompt, raw_response, latency_ms, group_ids,
-              effective_provider, effective_model, fidelity_tier, created_at,
-              input_tokens, output_tokens
+              effective_provider, effective_model, effective_profile_id, fidelity_tier, created_at,
+              input_tokens, output_tokens, state_update_source
             FROM agent_turns
             WHERE simulation_id = ?
             ORDER BY round_number ASC, turn_index ASC;
@@ -921,10 +929,12 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
                     "group_ids": _parse_group_ids_column(t[15]),
                     "effective_provider": t[16],
                     "effective_model": t[17],
-                    "fidelity_tier": int(t[18]) if t[18] is not None else 1,
-                    "created_at": t[19],
-                    "input_tokens": int(t[20]) if t[20] is not None else None,
-                    "output_tokens": int(t[21]) if t[21] is not None else None,
+                    "effective_profile_id": t[18],
+                    "fidelity_tier": int(t[19]) if t[19] is not None else 1,
+                    "created_at": t[20],
+                    "input_tokens": int(t[21]) if t[21] is not None else None,
+                    "output_tokens": int(t[22]) if t[22] is not None else None,
+                    "state_update_source": t[23],
                 }
             )
 
@@ -1380,4 +1390,88 @@ async def get_merged_round_metrics(
         bucket["conflict_events"] = int(row[2])
         bucket["consistency_index"] = float(row[3])
     return by_round
+
+
+async def upsert_round_summary(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    round_number: int,
+    summary_text: str,
+) -> None:
+    async with aiosqlite.connect(sqlite_path) as db:
+        await db.execute(
+            """
+            INSERT INTO round_summaries (simulation_id, round_number, summary_text)
+            VALUES (?, ?, ?)
+            ON CONFLICT (simulation_id, round_number) DO UPDATE SET summary_text = excluded.summary_text;
+            """,
+            (simulation_id, round_number, summary_text),
+        )
+        await db.commit()
+
+
+async def get_round_summaries(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    up_to_round: int | None = None,
+) -> list[dict[str, Any]]:
+    """Return summaries oldest-first, optionally capped at up_to_round (exclusive)."""
+    async with aiosqlite.connect(sqlite_path) as db:
+        if up_to_round is not None:
+            cursor = await db.execute(
+                """
+                SELECT round_number, summary_text
+                FROM round_summaries
+                WHERE simulation_id = ? AND round_number < ?
+                ORDER BY round_number ASC;
+                """,
+                (simulation_id, up_to_round),
+            )
+        else:
+            cursor = await db.execute(
+                """
+                SELECT round_number, summary_text
+                FROM round_summaries
+                WHERE simulation_id = ?
+                ORDER BY round_number ASC;
+                """,
+                (simulation_id,),
+            )
+        rows = await cursor.fetchall()
+    return [{"round_number": int(r[0]), "summary_text": str(r[1])} for r in rows]
+
+
+async def get_turns_for_round(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    round_number: int,
+) -> list[dict[str, Any]]:
+    """Return all agent turns for a specific round, ordered by turn_index ascending."""
+    async with aiosqlite.connect(sqlite_path) as db:
+        cursor = await db.execute(
+            """
+            SELECT turn_index, agent_id, agent_name, agent_role,
+                   interaction_type, target_agent_name, raw_response
+            FROM agent_turns
+            WHERE simulation_id = ? AND round_number = ?
+            ORDER BY turn_index ASC;
+            """,
+            (simulation_id, round_number),
+        )
+        rows = await cursor.fetchall()
+    return [
+        {
+            "turn_index": int(r[0]),
+            "agent_id": str(r[1]),
+            "agent_name": str(r[2]),
+            "agent_role": str(r[3]),
+            "interaction_type": str(r[4]),
+            "target_agent_name": r[5] or "all",
+            "raw_response": str(r[6]),
+        }
+        for r in rows
+    ]
 

@@ -2,7 +2,11 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from mirofish_backend.llm.claude_client import chat_completion_anthropic
-from mirofish_backend.llm.lmstudio_client import chat_completion_openai_compatible
+from mirofish_backend.llm.openai_compatible_client import chat_completion_openai_compatible
+from mirofish_backend.llm.routing_policies import (
+    resolve_effective_provider as _resolve_effective_provider_for_policy,
+    routing_policy_from_mode,
+)
 
 LLMProvider = Literal["lmstudio", "anthropic"]
 
@@ -18,25 +22,23 @@ class LLMCompletion:
 
 def resolve_effective_provider(
     *,
-    routing_mode: str,
+    routing_mode: str = "",
+    routing_policy: str | None = None,
     round_number: int,
     turn_index: int,
 ) -> LLMProvider:
     """
-    Map routing mode to the provider for this turn.
+    Map routing mode or explicit policy to the provider for this turn.
 
-    hybrid: LM Studio (local) for bulk turns; Anthropic (frontier) on the **first turn of each round**
-    (broadcast / policy anchor). Deterministic and replay-friendly.
+    Prefer ``routing_policy`` when set; otherwise derive from legacy ``routing_mode``
+    (``lmstudio`` | ``anthropic`` | ``hybrid``).
     """
-    _ = round_number  # reserved for future policies (e.g. frontier on policy-event rounds)
-    m = (routing_mode or "lmstudio").strip().lower()
-    if m == "hybrid":
-        if turn_index == 1:
-            return "anthropic"
-        return "lmstudio"
-    if m == "anthropic":
-        return "anthropic"
-    return "lmstudio"
+    policy = routing_policy if routing_policy is not None else routing_policy_from_mode(routing_mode)
+    return _resolve_effective_provider_for_policy(
+        routing_policy=policy,
+        round_number=round_number,
+        turn_index=turn_index,
+    )
 
 
 def effective_model_id(
@@ -63,6 +65,7 @@ async def llm_complete(
     lmstudio_model: str,
     anthropic_api_key: str,
     anthropic_model: str,
+    openai_compatible_api_key: str = "",
 ) -> LLMCompletion:
     """
     Dispatch chat completion by provider. Expects OpenAI-style messages with
@@ -99,5 +102,6 @@ async def llm_complete(
         messages=messages,
         temperature=temperature,
         max_tokens=max_tokens,
+        api_key=openai_compatible_api_key or None,
     )
     return LLMCompletion(text=t, input_tokens=inp, output_tokens=out)

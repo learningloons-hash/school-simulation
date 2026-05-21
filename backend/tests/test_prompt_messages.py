@@ -112,3 +112,20 @@ def test_prompt_round_two_includes_evolution_instruction() -> None:
     assert "Earlier simulation rounds" in user
     assert "[Round 1, turn 2]" in user
     assert "HoD" in user
+
+
+def test_user_prompt_prior_round_summaries_block() -> None:
+    user = build_user_prompt(
+        round_number=2,
+        policy_event="Round 2 policy",
+        interaction_type="broadcast",
+        target_scope="all",
+        target_agent_name=None,
+        intent_tag="policy_update",
+        prior_agent_memory=[],
+        recent_interactions=[],
+        round_summaries=['[Round 1 — intro] A: support=0.1, resistance=0.2, posture=x — "Hi"'],
+    )
+    assert "Prior rounds" in user
+    assert "Current round — what others have said so far" in user
+    assert "compact summaries" in user

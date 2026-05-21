@@ -110,6 +110,18 @@ async def init_db(sqlite_path: str) -> None:
 
         await db.execute(
             """
+            CREATE TABLE IF NOT EXISTS round_summaries (
+              simulation_id TEXT NOT NULL,
+              round_number  INTEGER NOT NULL,
+              summary_text  TEXT NOT NULL,
+              created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (simulation_id, round_number)
+            );
+            """
+        )
+
+        await db.execute(
+            """
             CREATE TABLE IF NOT EXISTS user_scenarios (
               scenario_id TEXT PRIMARY KEY,
               display_name TEXT NOT NULL,
@@ -194,6 +206,8 @@ async def init_db(sqlite_path: str) -> None:
         await _ensure_column(db, "simulation_runs", "total_output_tokens", "INTEGER")
         await _ensure_column(db, "agent_turns", "input_tokens", "INTEGER")
         await _ensure_column(db, "agent_turns", "output_tokens", "INTEGER")
+        await _ensure_column(db, "agent_turns", "effective_profile_id", "TEXT")
+        await _ensure_column(db, "agent_turns", "state_update_source", "TEXT")
 
         await db.commit()
         logger.info("SQLite schema initialized")

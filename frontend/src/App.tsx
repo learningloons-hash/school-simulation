@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   startSimulation,
+  preflightSimulation,
   getSimulation,
   listSimulations,
   exportZipUrl,
@@ -8,17 +9,34 @@ import {
   samplingReportUrl,
   createValidityNote,
   fetchScenarioCatalog,
+  fetchCapabilities,
+  modelChoicesFromCapabilities,
+  modelChoiceToRunRequest,
+  FALLBACK_MODEL_CHOICES,
   type SimulationTurn,
   type SimulationListItem,
   type SimulationStatus,
   type ValidityNoteCreate,
   type ScenarioCatalogItem,
   type RunEconomics,
+  type ModelChoiceOption,
+  type PreflightSummary,
 } from "./lib/api";
 import { AgentConsole } from "./components/AgentConsole";
 import { ExperimentConsole } from "./components/ExperimentConsole";
 import { LiveRunDashboard } from "./components/LiveRunDashboard";
 import { ScenarioWizard } from "./components/ScenarioWizard";
+import { SennaHeader } from "./components/SennaHeader";
+import { ScenarioSelector } from "./components/ScenarioSelector";
+import { RunStatusCard } from "./components/RunStatusCard";
+import { ConversationView } from "./components/ConversationView";
+import {
+  classifyRunStatusTone,
+  getRunStatusLabel,
+  RUN_STATUS_PILL_STYLES,
+  shortStatusLabel,
+} from "./lib/runStatusCopy";
+import { FONT, secondaryBtnStyle } from "./lib/theme";
 
 /** Faster refresh while a run is in progress (Iteration 8). */
 const POLL_MS_WHILE_RUNNING = 750;
@@ -35,15 +53,136 @@ type TabId =
   | "experiments"
   | "scenarios";
 
+const PRIMARY_TABS = [
+  ["controls", "Set Up & Run"],
+  ["live", "Watch Live"],
+  ["transcript", "Conversation"],
+  ["outcomes", "Results"],
+  ["state", "Attitudes"],
+] as const satisfies [TabId, string][];
+
+const SECONDARY_TABS = [
+  ["experiments", "Compare Runs"],
+  ["agent", "Assistant"],
+  ["scenarios", "Policy Scenarios"],
+  ["validity", "Quality Notes"],
+  ["metadata", "Run Details"],
+] as const satisfies [TabId, string][];
+
 const FALLBACK_SCENARIO_CATALOG: ScenarioCatalogItem[] = [
-  { id: "psle_reform_mvp", name: "PSLE Reform (MVP)", rag_enabled: false, source: "builtin" },
-  { id: "fsbb_comparator", name: "FSBB Comparator (MVP)", rag_enabled: true, source: "builtin" },
+  { id: "psle_reform_mvp", name: "PSLE Reform", rag_enabled: false, source: "builtin" },
+  { id: "fsbb_comparator", name: "FSBB Comparator", rag_enabled: true, source: "builtin" },
 ];
+
+const sectionHeadingStyle: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#595F6B",
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+  marginBottom: 12,
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "#FFFFFF",
+  border: "1px solid #E5E3DC",
+  borderRadius: 10,
+  padding: 20,
+};
+
+const emptyStateCardStyle: React.CSSProperties = {
+  background: "#FFFFFF",
+  border: "1px solid #E5E3DC",
+  borderRadius: 10,
+  padding: 24,
+  textAlign: "center",
+  fontSize: 14,
+  color: "#6B7280",
+};
+
+function FieldDivider() {
+  return <hr style={{ border: "none", borderTop: "1px solid #F0EEE8", margin: "4px 0" }} />;
+}
+
+function PreflightSetupPanel({
+  preflight,
+  warnings,
+}: {
+  preflight: PreflightSummary;
+  warnings: string[];
+}) {
+  const cost = preflight.estimated_cost_usd ?? 0;
+  const pressure = preflight.context_pressure_ratio;
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        padding: 12,
+        background: "#F7F6F2",
+        border: "1px solid #E5E3DC",
+        borderRadius: 8,
+        fontSize: 13,
+      }}
+    >
+      <strong style={{ display: "block", marginBottom: 6 }}>Run estimate (preflight)</strong>
+      <ul style={{ margin: "0 0 8px 18px", padding: 0, color: "#1A1A1A" }}>
+        <li>
+          ~{preflight.total_speaking_turns ?? 0} speaking turns ({preflight.llm_turns ?? 0} LLM,{" "}
+          {preflight.heuristic_turns ?? 0} heuristic)
+        </li>
+        <li>
+          Estimated cost envelope: {cost > 0 ? `~$${cost.toFixed(2)}` : "$0 (local / unpaid path)"}
+        </li>
+        {pressure != null ? (
+          <li>Context pressure vs model window: ~{Math.round(pressure * 100)}%</li>
+        ) : null}
+      </ul>
+      {warnings.length > 0 ? (
+        <div
+          style={{
+            padding: 10,
+            background: "#fff8e6",
+            border: "1px solid #e6d08c",
+            borderRadius: 6,
+          }}
+        >
+          <strong>Preflight warnings</strong> (you can still start the run):
+          <ul style={{ margin: "6px 0 0 18px" }}>
+            {warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatRunDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86_400_000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
+function readinessLevel(v: number | null): string {
+  if (v === null) return "unknown";
+  if (v < 0.33) return "low";
+  if (v < 0.66) return "moderate";
+  return "high";
+}
 
 export default function App() {
 
   const [scenarioId, setScenarioId] = useState<string>("psle_reform_mvp");
   const [scenarioCatalog, setScenarioCatalog] = useState<ScenarioCatalogItem[] | null>(null);
+  /** Empty = server default; profile id, __hybrid__, or legacy lmstudio/anthropic/hybrid */
+  const [modelChoice, setModelChoice] = useState<string>("");
+  const [modelChoiceOptions, setModelChoiceOptions] = useState<ModelChoiceOption[]>(FALLBACK_MODEL_CHOICES);
 
   const refreshScenarioCatalog = useCallback(async () => {
     try {
@@ -57,15 +196,33 @@ export default function App() {
     void refreshScenarioCatalog();
   }, [refreshScenarioCatalog]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const cap = await fetchCapabilities();
+        if (!cancelled) {
+          setModelChoiceOptions(modelChoicesFromCapabilities(cap));
+        }
+      } catch {
+        if (!cancelled) {
+          setModelChoiceOptions(FALLBACK_MODEL_CHOICES);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const runScenarioChoices = scenarioCatalog ?? FALLBACK_SCENARIO_CATALOG;
+  const runModelChoices = modelChoiceOptions;
   const [totalRounds, setTotalRounds] = useState<number>(4);
   const [agentLimit, setAgentLimit] = useState<number>(3);
   const [rosterCsv, setRosterCsv] = useState<string>("");
   const [populationCsv, setPopulationCsv] = useState<string>("");
   const [populationSampleMode, setPopulationSampleMode] = useState<string>("weighted");
   const [randomSeed, setRandomSeed] = useState<number>(42);
-  /** Empty = server default */
-  const [llmProviderChoice, setLlmProviderChoice] = useState<string>("");
   const [simulationMode, setSimulationMode] = useState<string>("full_round_robin");
   const [speakersPerRound, setSpeakersPerRound] = useState<number>(2);
   /** Iteration 28: empty = disabled */
@@ -99,8 +256,40 @@ export default function App() {
   const [vnError, setVnError] = useState<string | null>(null);
   /** From POST /simulations/run (Iteration 12), e.g. unknown roster/population group_ids */
   const [runStartWarnings, setRunStartWarnings] = useState<string[] | null>(null);
+  const [setupPreflight, setSetupPreflight] = useState<{
+    warnings: string[];
+    preflight: PreflightSummary;
+  } | null>(null);
+  const [setupPreflightLoading, setSetupPreflightLoading] = useState(false);
+  const [setupPreflightError, setSetupPreflightError] = useState<string | null>(null);
   const [convergedAtRound, setConvergedAtRound] = useState<number | null>(null);
   const [runEconomics, setRunEconomics] = useState<RunEconomics | null>(null);
+  const [openRunIdInput, setOpenRunIdInput] = useState("");
+
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1200,
+  );
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isWideLayout = viewportWidth >= 700;
+
+  const discussionSummaryStats = useMemo(() => {
+    const firstState = stateTimeline[0]?.global_state;
+    const lastState = stateTimeline[stateTimeline.length - 1]?.global_state;
+    return {
+      firstReadiness: firstState?.implementation_readiness ?? null,
+      lastReadiness: lastState?.implementation_readiness ?? null,
+      firstAlignment: firstState?.alignment_index ?? null,
+      lastAlignment: lastState?.alignment_index ?? null,
+      totalConflicts: outcomeIndicators.reduce((sum, o) => sum + (o.conflict_events ?? 0), 0),
+      totalRoundsCompleted: stateTimeline.length,
+    };
+  }, [stateTimeline, outcomeIndicators]);
 
   const refreshRuns = useCallback(async () => {
     try {
@@ -115,6 +304,64 @@ export default function App() {
   useEffect(() => {
     void refreshRuns();
   }, [refreshRuns]);
+
+  useEffect(() => {
+    if (activeTab === "controls") void refreshRuns();
+  }, [activeTab, refreshRuns]);
+
+  useEffect(() => {
+    if (activeTab !== "controls") return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        setSetupPreflightLoading(true);
+        setSetupPreflightError(null);
+        try {
+          const ctRaw = convergenceThreshold.trim();
+          const convOpts =
+            ctRaw !== "" && Number.isFinite(Number(ctRaw))
+              ? { convergence_threshold: Number(ctRaw), convergence_patience: convergencePatience }
+              : {};
+          const result = await preflightSimulation(
+            {
+              scenario_id: scenarioId,
+              total_rounds: totalRounds,
+              agent_limit: agentLimit,
+              random_seed: randomSeed,
+              ...modelChoiceToRunRequest(modelChoice, runModelChoices),
+              simulation_mode: simulationMode,
+              speakers_per_round: speakersPerRound,
+              ...convOpts,
+            },
+            controller.signal,
+          );
+          setSetupPreflight(result);
+        } catch (e) {
+          if ((e as Error).name === "AbortError") return;
+          setSetupPreflight(null);
+          setSetupPreflightError(String((e as Error)?.message ?? e));
+        } finally {
+          setSetupPreflightLoading(false);
+        }
+      })();
+    }, 450);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [
+    activeTab,
+    scenarioId,
+    totalRounds,
+    agentLimit,
+    randomSeed,
+    modelChoice,
+    runModelChoices,
+    simulationMode,
+    speakersPerRound,
+    convergenceThreshold,
+    convergencePatience,
+  ]);
 
   async function poll(simId: string) {
     setStatus("running");
@@ -165,7 +412,7 @@ export default function App() {
         total_rounds: totalRounds,
         agent_limit: agentLimit,
         random_seed: randomSeed,
-        ...(llmProviderChoice ? { llm_provider: llmProviderChoice } : {}),
+        ...modelChoiceToRunRequest(modelChoice, runModelChoices),
         ...(rosterCsv.trim() ? { roster_csv: rosterCsv.trim() } : {}),
         ...(populationCsv.trim()
           ? {
@@ -193,7 +440,7 @@ export default function App() {
     }
   }
 
-  async function loadRunById(id: string) {
+  async function loadRunById(id: string, opts?: { switchTab?: boolean }) {
     const trimmed = id.trim();
     if (!trimmed) return;
     try {
@@ -209,6 +456,10 @@ export default function App() {
       setConfigSnapshot((res.config_snapshot as Record<string, unknown>) ?? null);
       setConvergedAtRound(typeof res.converged_at_round === "number" ? res.converged_at_round : null);
       setRunEconomics(res.economics ?? null);
+      if (opts?.switchTab) {
+        if (res.status === "running" || res.status === "starting") setActiveTab("live");
+        else if (res.status === "completed") setActiveTab("transcript");
+      }
     } catch (e) {
       setStatus(`error: ${String((e as Error)?.message ?? e)}`);
     }
@@ -258,7 +509,7 @@ export default function App() {
       body.predictive_rubric !== undefined ||
       body.notes !== undefined;
     if (!hasAny) {
-      setVnError("Add at least one score, rubric, rater, round, or notes.");
+      setVnError("Add at least one score or note before saving.");
       return;
     }
     setVnSaving(true);
@@ -274,13 +525,23 @@ export default function App() {
     }
   }
 
-  const tabStyle = (id: TabId) => ({
-    padding: "8px 12px",
-    borderRadius: 6,
-    border: "1px solid #ccc",
-    background: activeTab === id ? "#eef" : "#fff",
-    cursor: "pointer" as const,
-  });
+  const tabStyle = (id: TabId): React.CSSProperties => {
+    const active = activeTab === id;
+    return {
+      padding: "7px 12px",
+      borderRadius: 8,
+      border: active ? "1px solid #4A6FA5" : "1px solid #E5E3DC",
+      background: active ? "#EEF3FA" : "#FFFFFF",
+      cursor: "pointer",
+      fontFamily: "inherit",
+      fontSize: 13,
+      fontWeight: active ? 500 : 400,
+      color: active ? "#4A6FA5" : "#1A1A1A",
+      whiteSpace: "nowrap",
+      flexShrink: 0,
+      transition: "background 0.1s ease, border-color 0.1s ease",
+    };
+  };
 
   /** Keep tab content mounted so form state, polls, and in-flight fetches survive tab switches. */
   const tabPanelStyle = (id: TabId): React.CSSProperties => ({
@@ -290,611 +551,1094 @@ export default function App() {
   const tabPanelHidden = (id: TabId) => activeTab !== id;
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
-      <h1>MiroFish MVP Simulation</h1>
+    <div
+      style={{
+        maxWidth: 1100,
+        margin: "0 auto",
+        padding: 24,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        background: "#F7F6F2",
+        minHeight: "100vh",
+      }}
+    >
+      <SennaHeader
+        status={status}
+        currentRound={currentRound}
+        totalRounds={totalRounds}
+        convergedAtRound={convergedAtRound}
+      />
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-        {(
-          [
-            ["controls", "Run"],
-            ["agent", "Agent"],
-            ["live", "Live"],
-            ["transcript", "Transcript"],
-            ["outcomes", "Outcomes"],
-            ["state", "State"],
-            ["metadata", "Run metadata"],
-            ["validity", "Validity"],
-            ["experiments", "Experiments"],
-            ["scenarios", "Scenarios"],
-          ] as const
-        ).map(([id, label]) => (
-          <button key={id} type="button" style={tabStyle(id)} onClick={() => setActiveTab(id)}>
-            {label}
-          </button>
-        ))}
+      <main>
+      <div style={{ position: "relative", marginBottom: 16 }}>
+        <div
+          role="tablist"
+          aria-label="Navigation"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            overflowX: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            paddingBottom: 2,
+          }}
+        >
+          {PRIMARY_TABS.map(([id, label]) => (
+            <button
+              key={id}
+              id={`tab-${id}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              aria-controls={`panel-${id}`}
+              style={tabStyle(id)}
+              onClick={() => setActiveTab(id)}
+            >
+              {label}
+            </button>
+          ))}
+          <div
+            style={{
+              width: 1,
+              alignSelf: "stretch",
+              minHeight: 28,
+              background: "#E5E3DC",
+              margin: "0 4px",
+              flexShrink: 0,
+            }}
+            aria-hidden
+          />
+          {SECONDARY_TABS.map(([id, label]) => (
+            <button
+              key={id}
+              id={`tab-${id}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              aria-controls={`panel-${id}`}
+              style={tabStyle(id)}
+              onClick={() => setActiveTab(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: 32,
+            height: "100%",
+            background: "linear-gradient(to right, transparent, #F7F6F2)",
+            pointerEvents: "none",
+          }}
+        />
       </div>
 
-      <div style={tabPanelStyle("controls")} aria-hidden={tabPanelHidden("controls")}>
-          <section style={{ display: "grid", gap: 12, padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Scenario</span>
-              <select value={scenarioId} onChange={(e) => setScenarioId(e.target.value)}>
-                {runScenarioChoices.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.source}
-                    {s.rag_enabled ? ", RAG" : ""})
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Total rounds</span>
-              <input
-                type="number"
-                value={totalRounds}
-                min={1}
-                max={25}
-                onChange={(e) => setTotalRounds(Number(e.target.value))}
-              />
-            </label>
-
-            <div style={{ display: "grid", gap: 8, padding: 10, background: "#f8fafc", borderRadius: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>Convergence stop (optional, Iteration 28)</div>
-              <label style={{ display: "grid", gap: 6 }}>
-                <span>Threshold (0–1, empty = off)</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="e.g. 0.01"
-                  value={convergenceThreshold}
-                  onChange={(e) => setConvergenceThreshold(e.target.value)}
-                  style={{ maxWidth: 200 }}
+      <section
+        id="panel-controls"
+        role="tabpanel"
+        aria-labelledby="tab-controls"
+        style={tabPanelStyle("controls")}
+        aria-hidden={tabPanelHidden("controls")}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isWideLayout ? "minmax(0, 1fr) minmax(0, 1fr)" : "1fr",
+            gap: 24,
+            alignItems: "start",
+          }}
+        >
+          <div>
+            <div style={sectionHeadingStyle}>Set up your discussion</div>
+            <section style={{ ...cardStyle, display: "grid", gap: 20 }}>
+              <div>
+                <div style={sectionHeadingStyle}>Policy scenario</div>
+                <ScenarioSelector
+                  scenarios={runScenarioChoices}
+                  selected={scenarioId}
+                  onChange={setScenarioId}
                 />
-                <span style={{ fontSize: 12, opacity: 0.8 }}>
-                  Stops when mean population abs change in support / resistance / workload stays below this for N
-                  consecutive rounds.
-                </span>
-              </label>
+              </div>
+
+              <FieldDivider />
+
               <label style={{ display: "grid", gap: 6 }}>
-                <span>Patience (consecutive rounds)</span>
+                <span>Discussion rounds</span>
                 <input
                   type="number"
-                  value={convergencePatience}
+                  value={totalRounds}
                   min={1}
                   max={25}
-                  onChange={(e) => setConvergencePatience(Number(e.target.value))}
-                  style={{ maxWidth: 120 }}
+                  onChange={(e) => setTotalRounds(Number(e.target.value))}
                 />
-              </label>
-            </div>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Agent limit</span>
-              <input
-                type="number"
-                value={agentLimit}
-                min={1}
-                max={50}
-                onChange={(e) => setAgentLimit(Number(e.target.value))}
-              />
-              <span style={{ fontSize: 12, opacity: 0.8 }}>
-                API cap 50 (Iteration 9). Scale / cost notes: <code>docs/plans/SCALE_LIMITS_AND_COST.md</code>
-              </span>
-              {agentLimit > 20 ? (
-                <span style={{ fontSize: 12, color: "#a60" }}>
-                  Heads-up: runs with many agents are sequential LLM calls — expect long wall-clock time.
+                <span style={{ fontSize: 12, color: "#6B7280" }}>
+                  Each round, participants share their views. More rounds = richer deliberation.
                 </span>
-              ) : null}
-            </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>
-                Roster CSV (optional) —{" "}
-                <a href="/simulations/roster-csv-template" target="_blank" rel="noreferrer">
-                  download template
-                </a>
-              </span>
-              <textarea
-                value={rosterCsv}
-                onChange={(e) => setRosterCsv(e.target.value)}
-                rows={5}
-                placeholder="slot,persona_id,role,name,role_level,style_cues,beliefs_json,groups"
-                style={{ fontFamily: "monospace", fontSize: 12 }}
-              />
-            </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>
-                Population pool CSV (optional, Iteration 11) —{" "}
-                <a href="/simulations/population-csv-template" target="_blank" rel="noreferrer">
-                  download template
-                </a>
-              </span>
-              <textarea
-                value={populationCsv}
-                onChange={(e) => setPopulationCsv(e.target.value)}
-                rows={5}
-                placeholder="persona_id,sampling_weight,stratum,age,sex,ethnicity,ses,name,groups"
-                style={{ fontFamily: "monospace", fontSize: 12 }}
-              />
-              <span style={{ fontSize: 12, opacity: 0.8 }}>
-                Draws <code>agent_limit</code> rows from the pool (no replacement) using <code>random_seed</code>.
-                Optional roster CSV merges on top per slot after the draw.
-              </span>
-            </label>
-
-            {populationCsv.trim() ? (
-              <label style={{ display: "grid", gap: 6 }}>
-                <span>Population sample mode</span>
-                <select
-                  value={populationSampleMode}
-                  onChange={(e) => setPopulationSampleMode(e.target.value)}
-                >
-                  <option value="weighted">Weighted (within full pool)</option>
-                  <option value="stratified">Stratified (by stratum column)</option>
-                </select>
               </label>
-            ) : null}
 
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Random seed</span>
-              <input type="number" value={randomSeed} onChange={(e) => setRandomSeed(Number(e.target.value))} />
-            </label>
+              <FieldDivider />
 
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Interaction mode</span>
-              <select value={simulationMode} onChange={(e) => setSimulationMode(e.target.value)}>
-                <option value="full_round_robin">Full round-robin (each agent speaks every round)</option>
-                <option value="sample_k_per_round">Sample K speakers per round (seed-stable)</option>
-              </select>
-              <span style={{ fontSize: 12, opacity: 0.8 }}>
-                Iteration 10. Non-sampled agents keep state; global metrics still use the full roster.
-              </span>
-            </label>
-
-            {simulationMode === "sample_k_per_round" ? (
               <label style={{ display: "grid", gap: 6 }}>
-                <span>Speakers per round (K)</span>
+                <span>How participants take turns</span>
+                <select value={simulationMode} onChange={(e) => setSimulationMode(e.target.value)}>
+                  <option value="full_round_robin">Everyone speaks each round</option>
+                  <option value="sample_k_per_round">Rotating speakers</option>
+                </select>
+                <span style={{ fontSize: 12, color: "#6B7280" }}>
+                  Participants who do not speak in a round keep their current views. Summary scores still reflect the full
+                  group.
+                </span>
+              </label>
+
+              {simulationMode === "sample_k_per_round" ? (
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span>Speakers per round</span>
+                  <input
+                    type="number"
+                    value={speakersPerRound}
+                    min={1}
+                    max={50}
+                    onChange={(e) => setSpeakersPerRound(Number(e.target.value))}
+                  />
+                  <span style={{ fontSize: 12, color: "#6B7280" }}>
+                    How many participants speak in each round when using rotating mode.
+                  </span>
+                </label>
+              ) : null}
+
+              <FieldDivider />
+
+              <label style={{ display: "grid", gap: 6 }}>
+                <span>Number of participants</span>
                 <input
                   type="number"
-                  value={speakersPerRound}
+                  value={agentLimit}
                   min={1}
                   max={50}
-                  onChange={(e) => setSpeakersPerRound(Number(e.target.value))}
+                  onChange={(e) => setAgentLimit(Number(e.target.value))}
                 />
+                <span style={{ fontSize: 12, color: "#6B7280" }}>How many participants take part in the simulation.</span>
+                {agentLimit > 20 ? (
+                  <span style={{ fontSize: 12, color: "#92400E" }}>
+                    For large simulations (over 20 participants), expect longer run times.
+                  </span>
+                ) : null}
               </label>
-            ) : null}
 
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>LLM routing (optional)</span>
-              <select value={llmProviderChoice} onChange={(e) => setLlmProviderChoice(e.target.value)}>
-                <option value="">Server default</option>
-                <option value="lmstudio">lmstudio (local)</option>
-                <option value="anthropic">anthropic</option>
-                <option value="hybrid">hybrid (frontier on first turn of each round)</option>
-              </select>
-            </label>
+              <FieldDivider />
 
-            <button onClick={onStart} disabled={status === "running" || status === "starting"} style={{ padding: 10 }}>
-              {status === "starting" ? "Starting..." : "Start simulation"}
-            </button>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span>AI model</span>
+                <select value={modelChoice} onChange={(e) => setModelChoice(e.target.value)}>
+                  {runModelChoices.map((opt) => (
+                    <option key={opt.value || "__default__"} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            {runStartWarnings && runStartWarnings.length > 0 ? (
-              <div
+              <FieldDivider />
+
+              <details style={{ border: "1px solid #E5E3DC", borderRadius: 8, padding: "8px 12px", background: "#F7F6F2" }}>
+                <summary
+                  style={{
+                    cursor: "pointer",
+                    fontSize: 13,
+                    color: "#4A6FA5",
+                    fontWeight: 500,
+                    listStyle: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  ▸ Advanced options
+                </summary>
+                <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span>Reproducibility seed</span>
+                    <input type="number" value={randomSeed} onChange={(e) => setRandomSeed(Number(e.target.value))} />
+                  </label>
+
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span>
+                      Custom participant list (CSV) —{" "}
+                      <a href="/simulations/roster-csv-template" target="_blank" rel="noreferrer">
+                        download template
+                      </a>
+                    </span>
+                    <textarea
+                      value={rosterCsv}
+                      onChange={(e) => setRosterCsv(e.target.value)}
+                      rows={5}
+                      placeholder="slot,persona_id,role,name,role_level,style_cues,beliefs_json,groups"
+                      style={{ fontFamily: "monospace", fontSize: 12 }}
+                    />
+                    <span style={{ fontSize: 12, color: "#6B7280" }}>
+                      Optional. Upload a CSV to specify exactly who participates.
+                    </span>
+                  </label>
+
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span>
+                      Participant pool (CSV) —{" "}
+                      <a href="/simulations/population-csv-template" target="_blank" rel="noreferrer">
+                        download template
+                      </a>
+                    </span>
+                    <textarea
+                      value={populationCsv}
+                      onChange={(e) => setPopulationCsv(e.target.value)}
+                      rows={5}
+                      placeholder="persona_id,sampling_weight,stratum,age,sex,ethnicity,ses,name,groups"
+                      style={{ fontFamily: "monospace", fontSize: 12 }}
+                    />
+                    <span style={{ fontSize: 12, color: "#6B7280" }}>
+                      Optional. Upload a pool of participants for Senna to sample from. Senna draws up to your
+                      participant count from the pool (no duplicates). Optional roster data can still be merged per slot
+                      after the draw.
+                    </span>
+                  </label>
+
+                  {populationCsv.trim() ? (
+                    <label style={{ display: "grid", gap: 6 }}>
+                      <span>How to select participants</span>
+                      <select
+                        value={populationSampleMode}
+                        onChange={(e) => setPopulationSampleMode(e.target.value)}
+                      >
+                        <option value="weighted">Weighted random</option>
+                        <option value="stratified">Stratified by group</option>
+                      </select>
+                    </label>
+                  ) : null}
+
+                  <div style={{ display: "grid", gap: 8, padding: 10, background: "#fff", borderRadius: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Auto-stop when consensus is reached</div>
+                    <label style={{ display: "grid", gap: 6 }}>
+                      <span>Sensitivity (0.01 = very sensitive, 0.1 = loose)</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="e.g. 0.01"
+                        value={convergenceThreshold}
+                        onChange={(e) => setConvergenceThreshold(e.target.value)}
+                        style={{ maxWidth: 200 }}
+                      />
+                      <span style={{ fontSize: 12, color: "#6B7280" }}>
+                        Leave blank to run all rounds regardless of consensus.
+                      </span>
+                    </label>
+                    <label style={{ display: "grid", gap: 6 }}>
+                      <span>Rounds to confirm consensus</span>
+                      <input
+                        type="number"
+                        value={convergencePatience}
+                        min={1}
+                        max={25}
+                        onChange={(e) => setConvergencePatience(Number(e.target.value))}
+                        style={{ maxWidth: 120 }}
+                      />
+                      <span style={{ fontSize: 12, color: "#6B7280" }}>
+                        Senna will stop after this many rounds of stable opinion.
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              {setupPreflightLoading ? (
+                <p style={{ fontSize: 13, color: "#6B7280", margin: "8px 0 0 0" }}>Estimating run scale…</p>
+              ) : setupPreflightError ? (
+                <p style={{ fontSize: 13, color: "#B45309", margin: "8px 0 0 0" }}>
+                  Could not estimate this setup: {setupPreflightError}
+                </p>
+              ) : setupPreflight ? (
+                <PreflightSetupPanel preflight={setupPreflight.preflight} warnings={setupPreflight.warnings} />
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => void onStart()}
+                disabled={status === "running" || status === "starting"}
                 style={{
-                  marginTop: 12,
-                  padding: 10,
-                  background: "#fff8e6",
-                  border: "1px solid #e6d08c",
-                  borderRadius: 6,
-                  fontSize: 13,
+                  background: status === "running" || status === "starting" ? "#9BAFC7" : "#4A6FA5",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "12px 24px",
+                  fontWeight: 600,
+                  fontSize: 15,
+                  cursor: status === "running" || status === "starting" ? "not-allowed" : "pointer",
+                  width: "100%",
+                  marginTop: 4,
+                  fontFamily: "inherit",
+                  transition: "background 0.15s ease",
                 }}
               >
-                <strong>Warnings from server</strong> (run was still started; check <code>config_snapshot</code> for
-                full detail):
-                <ul style={{ margin: "6px 0 0 18px" }}>
-                  {runStartWarnings.map((w) => (
-                    <li key={w}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </section>
-
-          <section style={{ marginTop: 18 }}>
-            <h2>Current run</h2>
-            <div>Status: {status}</div>
-            <div>Progress (rounds completed): {currentRound}</div>
-            <div style={{ fontSize: 13, opacity: 0.85, maxWidth: 520 }}>
-              This counter moves after each round completes (after all <strong>scheduled</strong> turns in that
-              round). In sample-K mode, fewer turns run per round. While it stays at 0, the model is still
-              working — open the{" "}
-              <strong>Transcript</strong> tab to see each turn appear as it completes.
-            </div>
-            {status === "running" || status === "starting" ? (
-              <div style={{ fontSize: 13, marginTop: 6 }}>
-                Turns in transcript: {transcript.length} · polling ~{POLL_MS_WHILE_RUNNING}ms while running — open{" "}
-                <button type="button" style={{ border: "none", background: "none", color: "#22c", cursor: "pointer", padding: 0, textDecoration: "underline" }} onClick={() => setActiveTab("live")}>
-                  Live
-                </button>{" "}
-                for charts
-              </div>
-            ) : null}
-            {runId && status !== "running" && status !== "starting" ? (
-              <button type="button" style={{ marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "1px solid #ccc", background: "#fff" }} onClick={() => setActiveTab("live")}>
-                Open Live dashboard
+                {status === "starting" ? "Starting…" : status === "running" ? "Running…" : "Start discussion"}
               </button>
-            ) : null}
-            <div style={{ fontSize: 12, opacity: 0.8 }}>Run id: {runId ?? "(none)"}</div>
-            {failureReason ? (
-              <div style={{ marginTop: 8, padding: 8, background: "#ffecec", borderRadius: 6 }}>
-                <strong>Failure</strong>: {failureReason}
+
+              {runStartWarnings && runStartWarnings.length > 0 ? (
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: 10,
+                    background: "#fff8e6",
+                    border: "1px solid #e6d08c",
+                    borderRadius: 6,
+                    fontSize: 13,
+                  }}
+                >
+                  <strong>Warnings from server</strong> (the run still started):
+                  <ul style={{ margin: "6px 0 0 18px" }}>
+                    {runStartWarnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                  <p style={{ margin: "8px 0 0 0", fontSize: 12, color: "#6B7280" }}>
+                    The run started, but check Run Details for the full configuration.
+                  </p>
+                </div>
+              ) : null}
+            </section>
+          </div>
+
+          <div>
+            <div style={sectionHeadingStyle}>Current discussion</div>
+            <RunStatusCard
+              status={status}
+              runId={runId}
+              currentRound={currentRound}
+              totalRounds={totalRounds}
+              convergedAtRound={convergedAtRound}
+              transcriptLength={transcript.length}
+              failureReason={failureReason}
+              onOpenLive={() => setActiveTab("live")}
+              onOpenConversation={() => setActiveTab("transcript")}
+            />
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                marginTop: 28,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Recent discussions</div>
+              <button
+                type="button"
+                aria-label="Refresh run list"
+                onClick={() => void refreshRuns()}
+                style={{ fontSize: 12, color: "#595F6B", background: "none", border: "none", cursor: "pointer" }}
+              >
+                ↻ Refresh
+              </button>
+            </div>
+            {listError ? <div style={{ color: "#E05252", marginTop: 8 }}>{listError}</div> : null}
+            {runList.length === 0 ? (
+              <div style={{ ...emptyStateCardStyle, marginTop: 8 }}>No previous discussions yet. Start one above.</div>
+            ) : (
+              <ul style={{ listStyle: "none", padding: 0, margin: "8px 0 0 0", display: "grid", gap: 10 }}>
+                {runList.map((r) => {
+                  const scenarioName =
+                    runScenarioChoices.find((s) => s.id === r.scenario_id)?.name ?? r.scenario_id;
+                  const tone = classifyRunStatusTone(r.status);
+                  const pillStyle = RUN_STATUS_PILL_STYLES[tone];
+                  const dateLabel = formatRunDate(r.created_at);
+                  return (
+                    <li
+                      key={r.id}
+                      style={{
+                        ...cardStyle,
+                        padding: 16,
+                        display: "grid",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: "#1A1A1A" }}>{scenarioName}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ ...pillStyle, borderRadius: 999, padding: "3px 10px", fontSize: 12, fontWeight: 500 }}>
+                            ● {shortStatusLabel(r.status)}
+                          </span>
+                          {dateLabel ? (
+                            <span style={{ fontSize: 13, color: "#6B7280" }}>{dateLabel}</span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 13, color: "#6B7280" }}>
+                        {r.current_round} of {r.total_rounds} rounds
+                        {r.experiment_id ? (
+                          <span style={{ marginLeft: 8, fontSize: 12, color: "#6B7280" }}>· part of a comparison run</span>
+                        ) : null}
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <button
+                          type="button"
+                          title="Load this discussion"
+                          style={{
+                            background: "#FFFFFF",
+                            color: "#1A1A1A",
+                            border: "1px solid #E5E3DC",
+                            borderRadius: 8,
+                            padding: "8px 14px",
+                            fontSize: 14,
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                          }}
+                          onClick={() => void loadRunById(r.id, { switchTab: true })}
+                        >
+                          Open
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div style={{ marginTop: 20 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#595F6B",
+                  marginBottom: 12,
+                }}
+              >
+                Load a previous discussion by ID
               </div>
-            ) : null}
-            {runId && (status === "completed" || status === "failed" || status === "running") ? (
-              <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                <a href={exportZipUrl(runId)} download style={{ padding: "8px 12px", border: "1px solid #999", borderRadius: 6 }}>
-                  Download ZIP (CSVs)
-                </a>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  value={openRunIdInput}
+                  onChange={(e) => setOpenRunIdInput(e.target.value)}
+                  placeholder="Paste a run ID to reload a previous session"
+                  style={{
+                    flex: "1 1 240px",
+                    padding: "8px 12px",
+                    border: "1px solid #E5E3DC",
+                    borderRadius: 8,
+                    fontFamily: "inherit",
+                  }}
+                />
                 <button
                   type="button"
-                  style={{ padding: "8px 12px", border: "1px solid #999", borderRadius: 6, background: "#fff" }}
-                  onClick={() => downloadExportJson(runId).catch((e) => setStatus(`error: ${String(e)}`))}
+                  disabled={!openRunIdInput.trim()}
+                  style={{
+                    ...secondaryBtnStyle,
+                    opacity: openRunIdInput.trim() ? 1 : 0.5,
+                  }}
+                  onClick={() => void loadRunById(openRunIdInput)}
                 >
-                  Download JSON
+                  Load
                 </button>
-                {status === "completed" || status === "failed" ? (
-                  <a
-                    href={samplingReportUrl(runId)}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ padding: "8px 12px", border: "1px solid #999", borderRadius: 6 }}
-                  >
-                    Sampling report (JSON)
-                  </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="panel-live"
+        role="tabpanel"
+        aria-labelledby="tab-live"
+        style={{ ...tabPanelStyle("live"), paddingTop: 4 }}
+        aria-hidden={tabPanelHidden("live")}
+      >
+        {!runId ? (
+          <div style={emptyStateCardStyle}>
+            Start a discussion from the Set Up &amp; Run tab to see live charts here.
+          </div>
+        ) : status === "starting" ? (
+          <div style={emptyStateCardStyle}>
+            Starting up — charts will appear once the first round begins.
+          </div>
+        ) : (
+          <LiveRunDashboard
+            status={status}
+            currentRound={currentRound}
+            transcriptLength={transcript.length}
+            stateTimeline={stateTimeline}
+            outcomeIndicators={outcomeIndicators}
+            configSnapshot={configSnapshot}
+            convergedAtRound={convergedAtRound}
+          />
+        )}
+      </section>
+
+      <section
+        id="panel-transcript"
+        role="tabpanel"
+        aria-labelledby="tab-transcript"
+        style={{ ...tabPanelStyle("transcript"), paddingTop: 4 }}
+        aria-hidden={tabPanelHidden("transcript")}
+      >
+        {transcript.length === 0 ? (
+          <div style={emptyStateCardStyle}>
+            No conversation yet. Start a discussion and exchanges will appear here as they happen.
+          </div>
+        ) : (
+          <ConversationView turns={transcript} />
+        )}
+      </section>
+
+      <section
+        id="panel-outcomes"
+        role="tabpanel"
+        aria-labelledby="tab-outcomes"
+        style={{ ...tabPanelStyle("outcomes"), paddingTop: 4 }}
+        aria-hidden={tabPanelHidden("outcomes")}
+      >
+        {stateTimeline.length === 0 && outcomeIndicators.length === 0 ? (
+          <div style={emptyStateCardStyle}>Results will appear here once a discussion is complete.</div>
+        ) : (
+          <>
+            {stateTimeline.length > 0 ? (
+              <div
+                style={{
+                  ...cardStyle,
+                  padding: "18px 20px",
+                  marginBottom: outcomeIndicators.length > 0 ? 20 : 0,
+                  lineHeight: 1.7,
+                  fontSize: 14,
+                  color: "#1A1A1A",
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 15 }}>Discussion summary</div>
+                <p style={{ margin: "0 0 8px 0" }}>
+                  After <strong>{discussionSummaryStats.totalRoundsCompleted}</strong>{" "}
+                  {discussionSummaryStats.totalRoundsCompleted === 1 ? "round" : "rounds"} of discussion
+                  {convergedAtRound != null ? (
+                    <>
+                      {", the group reached consensus at Round "}
+                      <strong>{convergedAtRound}</strong>
+                      {" and the discussion stopped early"}
+                    </>
+                  ) : null}
+                  {", readiness to adopt the policy "}
+                  {discussionSummaryStats.firstReadiness !== null && discussionSummaryStats.lastReadiness !== null ? (
+                    <>
+                      moved from <strong>{readinessLevel(discussionSummaryStats.firstReadiness)}</strong> to{" "}
+                      <strong>{readinessLevel(discussionSummaryStats.lastReadiness)}</strong>.
+                    </>
+                  ) : (
+                    "was tracked across all rounds."
+                  )}
+                </p>
+                {discussionSummaryStats.firstAlignment !== null && discussionSummaryStats.lastAlignment !== null ? (
+                  <p style={{ margin: "0 0 8px 0" }}>
+                    Group agreement{" "}
+                    {discussionSummaryStats.lastAlignment > discussionSummaryStats.firstAlignment
+                      ? "rose"
+                      : discussionSummaryStats.lastAlignment < discussionSummaryStats.firstAlignment
+                        ? "fell"
+                        : "held steady"}{" "}
+                    from <strong>{Math.round(discussionSummaryStats.firstAlignment * 100)}%</strong> to{" "}
+                    <strong>{Math.round(discussionSummaryStats.lastAlignment * 100)}%</strong>.
+                  </p>
+                ) : null}
+                {discussionSummaryStats.totalConflicts > 0 ? (
+                  <p style={{ margin: 0 }}>
+                    There {discussionSummaryStats.totalConflicts === 1 ? "was" : "were"}{" "}
+                    <strong>{discussionSummaryStats.totalConflicts}</strong> moment
+                    {discussionSummaryStats.totalConflicts !== 1 ? "s" : ""} of disagreement across the discussion.
+                  </p>
                 ) : null}
               </div>
             ) : null}
-          </section>
-
-          <section style={{ marginTop: 18 }}>
-            <h2>Recent runs</h2>
-            <button type="button" onClick={() => void refreshRuns()} style={{ marginBottom: 8 }}>
-              Refresh list
-            </button>
-            {listError ? <div style={{ color: "coral" }}>{listError}</div> : null}
-            {runList.length === 0 ? (
-              <div>No runs in database yet.</div>
-            ) : (
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 8 }}>
-                {runList.map((r) => (
-                  <li
-                    key={r.id}
-                    style={{ border: "1px solid #eee", borderRadius: 8, padding: 10, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}
-                  >
-                    <span style={{ fontFamily: "monospace", fontSize: 12 }}>{r.id.slice(0, 12)}…</span>
-                    <span>{r.status}</span>
-                    <span>
-                      {r.scenario_id} · r{r.current_round}/{r.total_rounds}
-                      {r.experiment_id ? (
-                        <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.75 }}>
-                          · exp {String(r.experiment_id).slice(0, 8)}…
-                        </span>
-                      ) : null}
-                    </span>
-                    <button type="button" onClick={() => void loadRunById(r.id)}>
-                      Load in UI
-                    </button>
-                    <a href={exportZipUrl(r.id)} download style={{ fontSize: 13 }}>
-                      ZIP
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section style={{ marginTop: 18 }}>
-            <h2>Open run by ID</h2>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <input placeholder="simulation id" style={{ flex: "1 1 240px", padding: 8 }} id="open-run-id" />
-              <button
-                type="button"
-                onClick={() => {
-                  const el = document.getElementById("open-run-id") as HTMLInputElement | null;
-                  void loadRunById(el?.value ?? "");
-                }}
-              >
-                Load
-              </button>
-            </div>
-          </section>
-      </div>
-
-      <section style={tabPanelStyle("live")} aria-hidden={tabPanelHidden("live")}>
-          <h2>Live run dashboard</h2>
-          {!runId ? (
-            <div>Start a run or load one from the Run tab to see live metrics.</div>
-          ) : (
-            <LiveRunDashboard
-              status={status}
-              currentRound={currentRound}
-              transcriptLength={transcript.length}
-              stateTimeline={stateTimeline}
-              outcomeIndicators={outcomeIndicators}
-              configSnapshot={configSnapshot}
-              runId={runId}
-              convergedAtRound={convergedAtRound}
-              pollIntervalMs={status === "running" || status === "starting" ? POLL_MS_WHILE_RUNNING : undefined}
-            />
-          )}
+            {outcomeIndicators.length > 0 ? (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid #E5E3DC" }}>
+                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#6B7280", fontWeight: 600 }}>
+                        Round
+                      </th>
+                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#6B7280", fontWeight: 600 }}>
+                        Adoption score
+                      </th>
+                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#6B7280", fontWeight: 600 }}>
+                        Disagreements
+                      </th>
+                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#6B7280", fontWeight: 600 }}>
+                        Consistency score
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {outcomeIndicators.map((o) => (
+                      <tr key={o.round_number} style={{ borderBottom: "1px solid #F0EEE8" }}>
+                        <td style={{ padding: "8px 12px", color: "#1A1A1A" }}>{o.round_number}</td>
+                        <td style={{ padding: "8px 12px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
+                          {o.adoption_momentum.toFixed(2)}
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
+                          {o.conflict_events}
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
+                          {o.consistency_index.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </>
+        )}
       </section>
 
-      <section style={tabPanelStyle("transcript")} aria-hidden={tabPanelHidden("transcript")}>
-          <h2>Transcript</h2>
-          {transcript.length === 0 ? (
-            <div>No turns loaded. Start a run or load one from the Run tab.</div>
-          ) : (
-            <div style={{ display: "grid", gap: 12 }}>
-              {transcript.map((t, idx) => (
-                <div key={`${t.id ?? "turn"}-${idx}`} style={{ border: "1px solid #eee", borderRadius: 8, padding: 12 }}>
-                  <div style={{ fontSize: 12, opacity: 0.8 }}>
-                    Round {t.round_number} - {t.agent_role} ({t.agent_name})
+      <section
+        id="panel-state"
+        role="tabpanel"
+        aria-labelledby="tab-state"
+        style={{ ...tabPanelStyle("state"), paddingTop: 4 }}
+        aria-hidden={tabPanelHidden("state")}
+      >
+        {stateTimeline.length === 0 ? (
+          <div style={emptyStateCardStyle}>
+            Attitude data will appear here as the discussion progresses.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 16 }}>
+            {stateTimeline.map((round) => (
+              <div key={`state-${round.round_number}`} style={{ ...cardStyle, padding: 16 }}>
+                <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 15, color: "#1A1A1A" }}>
+                  Round {round.round_number}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 12 }}>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "#6B7280",
+                        fontWeight: 500,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.4px",
+                      }}
+                    >
+                      Readiness to adopt
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: "#1A1A1A" }}>
+                      {Math.round((round.global_state?.implementation_readiness ?? 0) * 100)}%
+                    </div>
                   </div>
-                  <div style={{ fontSize: 12, opacity: 0.8 }}>
-                    {t.interaction_type} to {t.target_agent_name ?? t.target_scope} · intent {t.intent_tag ?? "unspecified"}
-                    {" · "}
-                    fidelity tier {t.fidelity_tier ?? 1}
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "#6B7280",
+                        fontWeight: 500,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.4px",
+                      }}
+                    >
+                      Level of agreement
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: "#1A1A1A" }}>
+                      {Math.round((round.global_state?.alignment_index ?? 0) * 100)}%
+                    </div>
                   </div>
-                  {t.effective_provider || t.effective_model ? (
-                    <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>
-                      LLM: {t.effective_provider ?? "?"} / {t.effective_model ?? "?"}
+                  {round.global_state?.convergence_delta != null ? (
+                    <div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "#6B7280",
+                          fontWeight: 500,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.4px",
+                        }}
+                      >
+                        Opinion change rate
+                      </div>
+                      <div style={{ fontSize: 20, fontWeight: 600, color: "#1A1A1A" }}>
+                        {round.global_state.convergence_delta.toFixed(3)}
+                      </div>
                     </div>
                   ) : null}
-                  <pre style={{ whiteSpace: "pre-wrap", margin: "8px 0 0 0" }}>{t.raw_response}</pre>
                 </div>
-              ))}
-            </div>
-          )}
-      </section>
-
-      <section style={tabPanelStyle("outcomes")} aria-hidden={tabPanelHidden("outcomes")}>
-          <h2>Outcome indicators</h2>
-          {outcomeIndicators.length === 0 ? (
-            <div>No outcomes loaded.</div>
-          ) : (
-            <div style={{ display: "grid", gap: 8 }}>
-              {outcomeIndicators.map((o, idx) => (
-                <div key={`outcome-${idx}`} style={{ border: "1px solid #eee", borderRadius: 8, padding: 10 }}>
-                  Round {o.round_number}: adoption={o.adoption_momentum.toFixed(2)} · conflicts={o.conflict_events} ·
-                  consistency={o.consistency_index.toFixed(2)}
-                </div>
-              ))}
-            </div>
-          )}
-      </section>
-
-      <section style={tabPanelStyle("state")} aria-hidden={tabPanelHidden("state")}>
-          <h2>State timeline</h2>
-          {stateTimeline.length === 0 ? (
-            <div>No state timeline loaded.</div>
-          ) : (
-            <div style={{ display: "grid", gap: 12 }}>
-              {stateTimeline.map((round) => (
-                <div key={`state-${round.round_number}`} style={{ border: "1px solid #eee", borderRadius: 8, padding: 12 }}>
-                  <div style={{ fontWeight: 600 }}>Round {round.round_number}</div>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>
-                    Global readiness: {(round.global_state?.implementation_readiness ?? 0).toFixed(2)} · alignment:{" "}
-                    {(round.global_state?.alignment_index ?? 0).toFixed(2)}
-                  </div>
-                  <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
-                    {(round.agents ?? []).map((agent) => (
-                      <div key={`${round.round_number}-${agent.agent_id}`} style={{ fontSize: 12 }}>
-                        {agent.agent_name} ({agent.agent_role}) [{agent.demographics?.age ?? "?"}/{agent.demographics?.sex ?? "?"}/
-                        {agent.demographics?.ethnicity ?? "?"}/{agent.demographics?.ses ?? "?"}] support={agent.support_level.toFixed(2)}{" "}
-                        resistance={agent.resistance_level.toFixed(2)} workload={agent.workload_stress.toFixed(2)} posture={agent.belief_posture}
-                        {agent.attribute_sections &&
-                        (Object.keys(agent.attribute_sections.identity ?? {}).length > 0 ||
-                          Object.keys(agent.attribute_sections.attitudes ?? {}).length > 0 ||
-                          Object.keys(agent.attribute_sections.personal_history ?? {}).length > 0) ? (
-                          <pre
-                            style={{
-                              marginTop: 6,
-                              fontSize: 11,
-                              opacity: 0.88,
-                              whiteSpace: "pre-wrap",
-                              background: "#fafafa",
-                              padding: 6,
-                              borderRadius: 4,
-                            }}
-                          >
-                            {JSON.stringify(agent.attribute_sections, null, 2)}
-                          </pre>
-                        ) : null}
+                <div style={{ display: "grid", gap: 10 }}>
+                  {(round.agents ?? []).map((agent) => (
+                    <div
+                      key={`${round.round_number}-${agent.agent_id}`}
+                      style={{
+                        background: "#F7F6F2",
+                        borderRadius: 8,
+                        padding: "10px 12px",
+                        fontSize: 13,
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, color: "#1A1A1A", marginBottom: 6 }}>
+                        {agent.agent_name}
+                        <span style={{ fontWeight: 400, color: "#6B7280", marginLeft: 6 }}>
+                          {agent.agent_role.replace(/_/g, " ")}
+                        </span>
                       </div>
-                    ))}
-                  </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 16,
+                          fontSize: 12,
+                          color: "#6B7280",
+                        }}
+                      >
+                        <span>
+                          Support <strong style={{ color: "#1A1A1A" }}>{Math.round(agent.support_level * 100)}%</strong>
+                        </span>
+                        <span>
+                          Resistance{" "}
+                          <strong style={{ color: "#1A1A1A" }}>{Math.round(agent.resistance_level * 100)}%</strong>
+                        </span>
+                        <span>
+                          Workload <strong style={{ color: "#1A1A1A" }}>{Math.round(agent.workload_stress * 100)}%</strong>
+                        </span>
+                        <span>
+                          Stance <strong style={{ color: "#1A1A1A" }}>{agent.belief_posture ?? "—"}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      <section style={tabPanelStyle("metadata")} aria-hidden={tabPanelHidden("metadata")}>
-          <h2>Run metadata</h2>
-          <div style={{ fontSize: 12, opacity: 0.85 }}>Run id: {runId ?? "(none)"}</div>
-          <div style={{ fontSize: 12, opacity: 0.85 }}>Status: {status}</div>
-          {runId && (status === "completed" || status === "failed") ? (
-            <div style={{ fontSize: 12, marginTop: 8 }}>
-              <a href={samplingReportUrl(runId)} target="_blank" rel="noreferrer">
-                Open sampling report (JSON)
+      <section
+        id="panel-metadata"
+        role="tabpanel"
+        aria-labelledby="tab-metadata"
+        style={tabPanelStyle("metadata")}
+        aria-hidden={tabPanelHidden("metadata")}
+      >
+        <div style={{ fontSize: 18, fontWeight: 600, color: "#1A1A1A", marginBottom: 20, marginTop: 0 }}>Run Details</div>
+        {runId && (status === "completed" || status === "failed" || status === "running") ? (
+          <div style={{ marginBottom: 0 }}>
+            <div style={sectionHeadingStyle}>Download</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <a
+                href={exportZipUrl(runId)}
+                download
+                style={{
+                  background: "#4A6FA5",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "10px 18px",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  textDecoration: "none",
+                  display: "inline-block",
+                  cursor: "pointer",
+                }}
+              >
+                Download full report
               </a>
-              <span style={{ opacity: 0.75 }}> — tier / role / posture breakdown from persisted audit</span>
+              <button
+                type="button"
+                style={{
+                  background: "#FFFFFF",
+                  color: "#1A1A1A",
+                  border: "1px solid #E5E3DC",
+                  borderRadius: 8,
+                  padding: "10px 18px",
+                  fontSize: 14,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+                onClick={() => {
+                  void downloadExportJson(runId).catch((e) => setStatus(`error: ${String(e)}`));
+                }}
+              >
+                Export as JSON
+              </button>
             </div>
-          ) : null}
-          {failureReason ? (
-            <div style={{ marginTop: 8, padding: 8, background: "#ffecec", borderRadius: 6 }}>Failure: {failureReason}</div>
-          ) : null}
-          {runEconomics ? (
-            <div style={{ marginTop: 14, padding: 12, background: "#f0fdf4", borderRadius: 8, fontSize: 13 }}>
-              <h3 style={{ marginTop: 0, marginBottom: 8 }}>Run economics</h3>
+            <div style={{ fontSize: 12, color: "#595F6B", marginTop: 6 }}>
+              Full report includes conversation transcript, participant attitudes, outcomes, and cost data.
+            </div>
+          </div>
+        ) : null}
+        <div style={{ fontSize: 12, color: "#595F6B", marginTop: 16 }}>
+          Session ID: <span style={{ fontFamily: "monospace" }}>{runId ?? "—"}</span>
+        </div>
+        <div style={{ fontSize: 12, color: "#595F6B", marginTop: 8 }}>
+          {getRunStatusLabel(status, { currentRound, totalRounds, convergedAtRound })}
+        </div>
+        {failureReason ? (
+          <div style={{ marginTop: 8, padding: 8, background: "#ffecec", borderRadius: 6 }}>
+            <strong>Something went wrong:</strong> {failureReason}
+          </div>
+        ) : null}
+        {runEconomics ? (
+          <div
+            style={{
+              background: "#F0FDF4",
+              border: "1px solid #BBF7D0",
+              borderRadius: 10,
+              padding: "14px 16px",
+              marginTop: 16,
+            }}
+          >
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#1A1A1A", marginBottom: 10 }}>AI usage</div>
+            <div style={{ display: "grid", gap: 6, fontSize: 13, color: "#1A1A1A" }}>
               <div>
-                Tokens in / out: {runEconomics.total_input_tokens ?? "—"} / {runEconomics.total_output_tokens ?? "—"}
+                Tokens used: ~
+                {((runEconomics.total_input_tokens ?? 0) + (runEconomics.total_output_tokens ?? 0)).toLocaleString()}
               </div>
-              <div>Estimated cost (USD): {runEconomics.estimated_cost_usd ?? "—"}</div>
-              <div style={{ opacity: 0.85 }}>Provider (request): {runEconomics.llm_provider ?? "—"}</div>
+              <div>
+                Estimated cost:{" "}
+                {runEconomics.estimated_cost_usd != null && runEconomics.estimated_cost_usd > 0
+                  ? `$${runEconomics.estimated_cost_usd.toFixed(4)}`
+                  : runEconomics.llm_provider === "lmstudio" || runEconomics.llm_provider === ""
+                    ? "Free (local model)"
+                    : "—"}
+              </div>
               {runEconomics.tier_breakdown ? (
-                <div style={{ marginTop: 6, fontFamily: "monospace", fontSize: 12 }}>
-                  Tier turns — T1 {runEconomics.tier_breakdown.tier_1_turns ?? 0}, T2{" "}
-                  {runEconomics.tier_breakdown.tier_2_turns ?? 0}, T3 {runEconomics.tier_breakdown.tier_3_turns ?? 0}
+                <div style={{ color: "#6B7280", fontSize: 12, marginTop: 4 }}>
+                  Full AI turns: {runEconomics.tier_breakdown.tier_1_turns ?? 0} &nbsp;·&nbsp; Simplified turns:{" "}
+                  {runEconomics.tier_breakdown.tier_2_turns ?? 0} &nbsp;·&nbsp; Rule-based turns:{" "}
+                  {runEconomics.tier_breakdown.tier_3_turns ?? 0}
                 </div>
               ) : null}
             </div>
-          ) : (
-            <p style={{ fontSize: 12, opacity: 0.75, marginTop: 12 }}>
-              Run economics (tokens + estimated cost) appear here after the backend records usage (Iteration 29).
-            </p>
-          )}
-          <h3 style={{ marginTop: 16 }}>Config snapshot</h3>
-          {configSnapshot ? (
-            <pre style={{ whiteSpace: "pre-wrap", background: "#f7f7f7", padding: 12, borderRadius: 8 }}>
-              {JSON.stringify(configSnapshot, null, 2)}
-            </pre>
-          ) : (
-            <div>No config snapshot loaded (start or load a run).</div>
-          )}
-          {configSnapshot && "state_audit_enabled" in configSnapshot ? (
-            <p style={{ fontSize: 13, opacity: 0.85 }}>
-              <code>state_audit_enabled</code> (reserved for future second-pass audit):{" "}
-              {String(configSnapshot.state_audit_enabled)}
-            </p>
-          ) : null}
-      </section>
-
-      <section style={tabPanelStyle("validity")} aria-hidden={tabPanelHidden("validity")}>
-          <h2>Validity notes</h2>
-          <p style={{ fontSize: 14, opacity: 0.85, maxWidth: 640 }}>
-            Manual face / construct / predictive coding per run or per round. Saved notes appear in{" "}
-            <code>GET /simulations/{"{id}"}</code>, export JSON (<code>export_version</code> 4), and ZIP{" "}
-            <code>validity_notes.csv</code>.
+          </div>
+        ) : runId ? (
+          <p style={{ fontSize: 12, opacity: 0.75, marginTop: 12 }}>
+            Token and cost figures appear here after the backend records usage for this run.
           </p>
-          <div style={{ fontSize: 13, marginBottom: 12 }}>Run id: {runId ?? "(none — load a run first)"}</div>
-          {vnError ? <div style={{ color: "coral", marginBottom: 8 }}>{vnError}</div> : null}
-          <div
+        ) : null}
+        <details style={{ marginTop: 20 }}>
+          <summary
             style={{
-              display: "grid",
-              gap: 10,
-              maxWidth: 560,
-              marginBottom: 20,
-              padding: 12,
-              border: "1px solid #ddd",
-              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 13,
+              color: "#4A6FA5",
+              fontWeight: 500,
+              listStyle: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
-            <label style={{ display: "grid", gap: 4 }}>
-              <span>Round (empty = whole run)</span>
-              <input value={vnRound} onChange={(e) => setVnRound(e.target.value)} placeholder="e.g. 2" style={{ padding: 8 }} />
-            </label>
-            <label style={{ display: "grid", gap: 4 }}>
-              <span>Rater id (optional)</span>
-              <input value={vnRater} onChange={(e) => setVnRater(e.target.value)} placeholder="analyst_id" style={{ padding: 8 }} />
-            </label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-              <label style={{ display: "grid", gap: 4 }}>
-                <span>Face score</span>
-                <input value={vnFaceScore} onChange={(e) => setVnFaceScore(e.target.value)} placeholder="0–1" style={{ padding: 8 }} />
-              </label>
-              <label style={{ display: "grid", gap: 4 }}>
-                <span>Construct score</span>
-                <input
-                  value={vnConstructScore}
-                  onChange={(e) => setVnConstructScore(e.target.value)}
-                  placeholder="0–1"
-                  style={{ padding: 8 }}
-                />
-              </label>
-              <label style={{ display: "grid", gap: 4 }}>
-                <span>Predictive score</span>
-                <input
-                  value={vnPredictiveScore}
-                  onChange={(e) => setVnPredictiveScore(e.target.value)}
-                  placeholder="0–1"
-                  style={{ padding: 8 }}
-                />
-              </label>
-            </div>
-            <label style={{ display: "grid", gap: 4 }}>
-              <span>Face rubric / notes</span>
-              <textarea value={vnFaceRubric} onChange={(e) => setVnFaceRubric(e.target.value)} rows={2} style={{ padding: 8 }} />
-            </label>
-            <label style={{ display: "grid", gap: 4 }}>
-              <span>Construct rubric / notes</span>
-              <textarea
-                value={vnConstructRubric}
-                onChange={(e) => setVnConstructRubric(e.target.value)}
-                rows={2}
-                style={{ padding: 8 }}
-              />
-            </label>
-            <label style={{ display: "grid", gap: 4 }}>
-              <span>Predictive rubric / notes</span>
-              <textarea
-                value={vnPredictiveRubric}
-                onChange={(e) => setVnPredictiveRubric(e.target.value)}
-                rows={2}
-                style={{ padding: 8 }}
-              />
-            </label>
-            <label style={{ display: "grid", gap: 4 }}>
-              <span>General notes</span>
-              <textarea value={vnNotes} onChange={(e) => setVnNotes(e.target.value)} rows={2} style={{ padding: 8 }} />
-            </label>
-            <button type="button" disabled={vnSaving || !runId} onClick={() => void onSaveValidityNote()} style={{ padding: 10 }}>
-              {vnSaving ? "Saving…" : "Save validity note"}
-            </button>
+            ▸ Technical configuration
+          </summary>
+          <div style={{ marginTop: 10 }}>
+            {configSnapshot ? (
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  background: "#F7F6F2",
+                  padding: 12,
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: "#1A1A1A",
+                  overflowX: "auto",
+                }}
+              >
+                {JSON.stringify(configSnapshot, null, 2)}
+              </pre>
+            ) : (
+              <div style={{ fontSize: 13, color: "#595F6B" }}>No configuration loaded.</div>
+            )}
+            {runId && (status === "completed" || status === "failed") ? (
+              <div style={{ marginTop: 10, fontSize: 12 }}>
+                <a href={samplingReportUrl(runId)} target="_blank" rel="noreferrer" style={{ color: "#4A6FA5" }}>
+                  Sampling report
+                </a>
+                <span style={{ color: "#595F6B" }}> — tier, role, and posture breakdown</span>
+              </div>
+            ) : null}
           </div>
-          <h3>Saved notes</h3>
-          {validityNotes.length === 0 ? (
-            <div>None yet for this run.</div>
-          ) : (
-            <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 10 }}>
-              {validityNotes.map((n) => (
-                <li key={n.id} style={{ border: "1px solid #eee", borderRadius: 8, padding: 10, fontSize: 13 }}>
-                  <div>
-                    <strong>{n.round_number == null ? "Run-level" : `Round ${n.round_number}`}</strong>
-                    {n.rater_id ? ` · rater ${n.rater_id}` : ""}
-                    {n.created_at ? ` · ${n.created_at}` : ""}
-                  </div>
-                  <div>face: {n.face_score ?? "—"} / {n.face_rubric ?? "—"}</div>
-                  <div>construct: {n.construct_score ?? "—"} / {n.construct_rubric ?? "—"}</div>
-                  <div>predictive: {n.predictive_score ?? "—"} / {n.predictive_rubric ?? "—"}</div>
-                  {n.notes ? <div style={{ marginTop: 6 }}>notes: {n.notes}</div> : null}
-                </li>
-              ))}
-            </ul>
-          )}
+        </details>
       </section>
 
-      <section style={tabPanelStyle("experiments")} aria-hidden={tabPanelHidden("experiments")}>
-        <h2 style={{ marginTop: 0 }}>Experiments</h2>
+      <section
+        id="panel-validity"
+        role="tabpanel"
+        aria-labelledby="tab-validity"
+        style={tabPanelStyle("validity")}
+        aria-hidden={tabPanelHidden("validity")}
+      >
+        <div style={{ fontSize: 18, fontWeight: 600, color: "#1A1A1A", marginBottom: 16 }}>Quality notes</div>
+        <p style={{ fontSize: 14, color: "#595F6B", maxWidth: 560, marginBottom: 20 }}>
+          Rate how realistic and useful this discussion felt — for the whole run or for individual rounds. Notes are saved
+          with the run and included in all exports.
+        </p>
+        {runId ? (
+          <div style={{ fontSize: 13, color: "#595F6B", marginBottom: 12 }}>
+            Noting quality for session:{" "}
+            <span style={{ fontFamily: "monospace", fontSize: 12 }}>{runId.slice(0, 12)}…</span>
+          </div>
+        ) : (
+          <div style={{ fontSize: 13, color: "#595F6B", marginBottom: 12 }}>Load a run first to add notes.</div>
+        )}
+        {vnError ? <div style={{ color: "#E05252", marginBottom: 8 }}>{vnError}</div> : null}
+        <div
+          style={{
+            display: "grid",
+            gap: 10,
+            maxWidth: 560,
+            marginBottom: 20,
+            padding: 20,
+            border: "1px solid #E5E3DC",
+            borderRadius: 10,
+            background: "#FFFFFF",
+          }}
+        >
+          <label style={{ display: "grid", gap: 4 }}>
+            <span>Round (leave blank for whole run)</span>
+            <input value={vnRound} onChange={(e) => setVnRound(e.target.value)} placeholder="e.g. 2" style={{ padding: 8 }} />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span>Your name or ID (optional)</span>
+            <input
+              value={vnRater}
+              onChange={(e) => setVnRater(e.target.value)}
+              placeholder="e.g. mark, reviewer-1"
+              style={{ padding: 8 }}
+            />
+          </label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span>Realism score</span>
+              <input
+                value={vnFaceScore}
+                onChange={(e) => setVnFaceScore(e.target.value)}
+                placeholder="0.0 – 1.0"
+                style={{ padding: 8 }}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span>Accuracy score</span>
+              <input
+                value={vnConstructScore}
+                onChange={(e) => setVnConstructScore(e.target.value)}
+                placeholder="0.0 – 1.0"
+                style={{ padding: 8 }}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span>Predictive score</span>
+              <input
+                value={vnPredictiveScore}
+                onChange={(e) => setVnPredictiveScore(e.target.value)}
+                placeholder="0.0 – 1.0"
+                style={{ padding: 8 }}
+              />
+            </label>
+          </div>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span>Realism notes</span>
+            <textarea value={vnFaceRubric} onChange={(e) => setVnFaceRubric(e.target.value)} rows={2} style={{ padding: 8 }} />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span>Accuracy notes</span>
+            <textarea
+              value={vnConstructRubric}
+              onChange={(e) => setVnConstructRubric(e.target.value)}
+              rows={2}
+              style={{ padding: 8 }}
+            />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span>Predictive notes</span>
+            <textarea
+              value={vnPredictiveRubric}
+              onChange={(e) => setVnPredictiveRubric(e.target.value)}
+              rows={2}
+              style={{ padding: 8 }}
+            />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span>Other notes</span>
+            <textarea value={vnNotes} onChange={(e) => setVnNotes(e.target.value)} rows={2} style={{ padding: 8 }} />
+          </label>
+          <button type="button" disabled={vnSaving || !runId} onClick={() => void onSaveValidityNote()} style={{ padding: 10 }}>
+            {vnSaving ? "Saving…" : "Save quality note"}
+          </button>
+        </div>
+        <div style={sectionHeadingStyle}>Saved notes</div>
+        {validityNotes.length === 0 ? (
+          <div style={emptyStateCardStyle}>No quality notes yet for this run.</div>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 10 }}>
+            {validityNotes.map((n) => (
+              <li key={n.id} style={{ border: "1px solid #E5E3DC", borderRadius: 8, padding: 10, fontSize: 13 }}>
+                <div>
+                  <strong>{n.round_number == null ? "Whole run" : `Round ${n.round_number}`}</strong>
+                  {n.rater_id ? ` · ${n.rater_id}` : ""}
+                  {n.created_at ? ` · ${formatRunDate(n.created_at)}` : ""}
+                </div>
+                {n.face_score != null || n.face_rubric ? (
+                  <div>
+                    Realism: {n.face_score ?? "—"}
+                    {n.face_rubric ? ` — ${n.face_rubric}` : ""}
+                  </div>
+                ) : null}
+                {n.construct_score != null || n.construct_rubric ? (
+                  <div>
+                    Accuracy: {n.construct_score ?? "—"}
+                    {n.construct_rubric ? ` — ${n.construct_rubric}` : ""}
+                  </div>
+                ) : null}
+                {n.predictive_score != null || n.predictive_rubric ? (
+                  <div>
+                    Predictive: {n.predictive_score ?? "—"}
+                    {n.predictive_rubric ? ` — ${n.predictive_rubric}` : ""}
+                  </div>
+                ) : null}
+                {n.notes ? <div style={{ marginTop: 6 }}>Other notes: {n.notes}</div> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section
+        id="panel-experiments"
+        role="tabpanel"
+        aria-labelledby="tab-experiments"
+        style={{ ...tabPanelStyle("experiments"), paddingTop: 4 }}
+        aria-hidden={tabPanelHidden("experiments")}
+      >
         <ExperimentConsole scenarioChoices={runScenarioChoices} />
       </section>
 
       <section
+        id="panel-agent"
+        role="tabpanel"
+        aria-labelledby="tab-agent"
         style={{
           ...tabPanelStyle("agent"),
           padding: "4px 0 24px",
         }}
         aria-hidden={tabPanelHidden("agent")}
       >
-        <h2 style={{ marginTop: 0 }}>Agent (plan / run / analyze)</h2>
         <AgentConsole />
       </section>
 
-      <div style={tabPanelStyle("scenarios")} aria-hidden={tabPanelHidden("scenarios")}>
+      <section
+        id="panel-scenarios"
+        role="tabpanel"
+        aria-labelledby="tab-scenarios"
+        style={tabPanelStyle("scenarios")}
+        aria-hidden={tabPanelHidden("scenarios")}
+      >
         <ScenarioWizard onCatalogRefresh={refreshScenarioCatalog} />
-      </div>
+      </section>
+      </main>
     </div>
   );
 }

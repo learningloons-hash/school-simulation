@@ -1,16 +1,20 @@
-# MiroFish Session State
+# Senna session state
 
 This file is the single source of truth for cross-session handoff.
 Update it at the end of each iteration gate.
 
+**Who does what (GM vs Architect vs Builder, closeouts, arc review):** [`handoffs/SENNA_AGENT_CYCLE.md`](handoffs/SENNA_AGENT_CYCLE.md).
+
 ## Current Status
 
-- Project: `mirofish-mvp`
-- Active phase: **Thesis platform arc closed** — **Iteration 29** (run economics) **shipped** with **architect PASS** and **review follow-ups applied** (pricing helper, `hybrid` map comment, economics unit tests, anthropic pricing E2E, denormalised-totals note). See [`iteration-29-closeout.md`](iterations/iteration-29-closeout.md) and [`review-iteration-29.md`](reviews/review-iteration-29.md) § *Follow-up resolution*.
-- **Next:** Backlog or thesis scenario prep — **parallel experiment dispatch**, **SSE-in-browser**, **WAL + batch inserts**; no numbered Iteration **30** spec yet — use [`HANDOFF_TO_BUILDER.md`](handoffs/HANDOFF_TO_BUILDER.md) + [`HANDOFF_TO_ARCHITECT.md`](handoffs/HANDOFF_TO_ARCHITECT.md).
-- Last completed gate: **Iteration 29** (2026-04-08, incl. post–review tidy). Prior: **28** + post–28; **27** + post-27; **25**; **26**; **24**; earlier as in history.
+- Project: `mirofish-mvp` (product name: **Senna**)
+- **Senna Arc 8 CLOSED — GM PASS** (2026-05-19) — gates **`senna-iter-35`–`39`** + economics follow-up. **Arc 7 GM PASS**. **Arc 6 CLOSED**.
+- Senna Arc 1: [`senna-iter-1-closeout.md`](iterations/senna-iter-1-closeout.md) … [`senna-iter-5-closeout.md`](iterations/senna-iter-5-closeout.md). Arc 2: [`senna-iter-6-closeout.md`](iterations/senna-iter-6-closeout.md) … [`senna-iter-10-closeout.md`](iterations/senna-iter-10-closeout.md). Arc 3: [`senna-iter-11-closeout.md`](iterations/senna-iter-11-closeout.md) … [`senna-iter-15-closeout.md`](iterations/senna-iter-15-closeout.md). Arc 4: [`senna-iter-16-closeout.md`](iterations/senna-iter-16-closeout.md) … [`senna-iter-20-closeout.md`](iterations/senna-iter-20-closeout.md). Arc 5: [`senna-iter-21-closeout.md`](iterations/senna-iter-21-closeout.md) … [`senna-iter-25-closeout.md`](iterations/senna-iter-25-closeout.md). Arc 6: [`senna-iter-26-closeout.md`](iterations/senna-iter-26-closeout.md) … [`senna-iter-29-closeout.md`](iterations/senna-iter-29-closeout.md). Arc 7: [`senna-iter-30-closeout.md`](iterations/senna-iter-30-closeout.md) … [`senna-iter-34-closeout.md`](iterations/senna-iter-34-closeout.md). Arc 8: [`senna-iter-35-closeout.md`](iterations/senna-iter-35-closeout.md) … [`senna-iter-39-closeout.md`](iterations/senna-iter-39-closeout.md). Specs: [`HANDOFF_SENNA_ARC1.md`](handoffs/HANDOFF_SENNA_ARC1.md) … [`HANDOFF_SENNA_ARC8.md`](handoffs/HANDOFF_SENNA_ARC8.md).
+- Backend / thesis platform: **Iteration 29** (run economics) **shipped** with **architect PASS** and **review follow-ups applied**. See [`iteration-29-closeout.md`](iterations/iteration-29-closeout.md) and [`review-iteration-29.md`](reviews/review-iteration-29.md) § *Follow-up resolution*.
+- **Next (Senna):** Await GM next arc handoff (if any). **Backlog:** parallel dispatch, SSE-in-browser, WAL + batch inserts.
+- Last completed Senna work: **Arc 8** (2026-05-19). **Current focus:** thesis / product backlog until next GM arc. Thesis gate: **Iteration 29** (2026-04-08).
 - Last verified run id (QA sample): `ad901483b0a840689c71debb771cf0c1` — FSBB, `agent_limit` 4, `full_round_robin`, 2 rounds (all four agents have turns in DB; see `iteration-10-closeout.md` post-gate notes)
-- Last update date: **2026-04-08** — **191** backend tests passing, **1** skipped; frontend **`npm run build`** OK (`vite build`).
+- Last update date: **2026-05-19** — Arc 8 GM follow-up (profile-aware post-run economics). Last verified: backend **`uv run pytest` 290 passed, 2 skipped**.
 
 ## Environment and Access
 
@@ -19,6 +23,12 @@ Update it at the end of each iteration gate.
 - Backend default: `0.0.0.0:8100`
 - Frontend default: `0.0.0.0:3100`
 - LLM endpoint: `http://127.0.0.1:1234/v1` (LM Studio on Mac mini)
+
+## Learnings (ops / dev)
+
+| Date | Issue | Prevention |
+|------|-------|------------|
+| 2026-05-20 | Blank white UI at `:3100` — `modelChoiceOptions` used before `useState` (TDZ `ReferenceError`); build still green | [`.cursor/rules/senna-react-hooks-order.mdc`](../.cursor/rules/senna-react-hooks-order.mdc) — declare state before derived `const` / effects that set it; check browser Console |
 
 ## Completed Work
 
@@ -287,6 +297,74 @@ Update it at the end of each iteration gate.
 - **Tests:** `tests/test_iteration25.py` (incl. **E2E** `network_csv` + **`network_centrality`** + **`network_bounded`**); **`test_iteration15_interaction_policy`** extended.
 - **Post–25 hardening (2026-04-07):** Architect follow-ups from **`review-iteration-25.md`** — see [`iteration-25-closeout.md`](iterations/iteration-25-closeout.md) § Post–Iteration 25 hardening.
 
+### Senna iter-39 (Arc 8, completed 2026-05-19)
+
+- **GM follow-up:** `economics.py` bills from `effective_profile_id` → `pricing_key` (OpenAI/OpenRouter non-zero; local/heuristic $0; legacy anthropic-only fallback).
+- **`llm/state_parse.py`:** `resolve_state_from_response` + provenance (`model_parsed`, `repaired`, `keyword_fallback`); duplicate `<state>` blocks and light JSON repair.
+- **`agent_turns.state_update_source`:** transcript poll + export JSON/ZIP.
+- **Tests:** `test_senna_arc8_integration.py`; manual `scripts/lmstudio_profile_smoke.py` (skipped in CI).
+- **Closeout:** [`senna-iter-39-closeout.md`](iterations/senna-iter-39-closeout.md). **Arc 8 Cursor sign-off complete** (2026-05-19) — GM arc review pending.
+
+### Senna iter-38 (Arc 8, completed 2026-05-19)
+
+- **`simulation/preflight.py`:** turn/cost/context estimates; warnings merged into `POST /simulations/run` and `config_snapshot.preflight`.
+- **`POST /simulations/preflight`:** preview without queuing.
+- **Frontend:** debounced Run setup estimate panel + preflight warnings before Start.
+- **Closeout:** [`senna-iter-38-closeout.md`](iterations/senna-iter-38-closeout.md).
+
+### Senna iter-37 (Arc 8, completed 2026-05-19)
+
+- **Commercial profiles:** `openai_default`, `openrouter_default`; settings for base URL, model, API key env names.
+- **Adapter:** optional `Authorization: Bearer` on `chat_completion_openai_compatible`; plumbed via `run_openai_compatible_api_key` → orchestrator → `llm_complete`.
+- **Closeout:** [`senna-iter-37-closeout.md`](iterations/senna-iter-37-closeout.md).
+
+### Senna iter-36 (Arc 8, completed 2026-05-19)
+
+- **`llm/model_profiles.py`:** `@register_builtin_profile` registry; `BUILTIN_PROFILE_IDS` derived from registry; `ModelCapabilities` + `capabilities_dict()`; `is_builtin` on profiles and capability/snapshot payloads.
+- **Tests:** registry id parity, local + frontier capability rows, capabilities API + config snapshot metadata.
+- **Closeout:** [`senna-iter-36-closeout.md`](iterations/senna-iter-36-closeout.md).
+
+### Senna iter-35 (Arc 8, completed 2026-05-19)
+
+- **`PlanSimulationParams.model_profile_id`:** optional; validated against built-in profile ids; forwarded to `SimulationRunRequest` via agent orchestrator; planner template + capability validation updated.
+- **Tier-3 provenance:** `effective_profile_id="heuristic"` sentinel on heuristic turns (`HEURISTIC_PROFILE_SENTINEL`).
+- **Tests:** planner parity + Arc 7 `create_task` mock cleanup in `test_senna_arc7_hardening.py` / `test_model_profiles.py`.
+- **Closeout:** [`senna-iter-35-closeout.md`](iterations/senna-iter-35-closeout.md).
+
+### Senna iter-34 (Arc 7, completed 2026-05-19)
+
+- **`tests/test_senna_arc7_hardening.py`:** legacy + profile request shapes; export JSON/ZIP economics and model provenance; hybrid routing E2E.
+- **Post–GM:** `resolve_run_llm_provider` — profile-only POST infers `llm_provider` from built-in profile id.
+- **Closeout:** [`senna-iter-34-closeout.md`](iterations/senna-iter-34-closeout.md). **Arc 7 Cursor sign-off complete** (2026-05-19) — Architect re-review after GM follow-up.
+
+### Senna iter-33 (Arc 7, completed 2026-05-19)
+
+- **`llm/routing_policies.py`:** `local_only`, `frontier_only`, `hybrid_first_turn`; maps from `llm_provider`.
+- **`config_snapshot`:** `routing_policy`, `routing_profile_local_id`, `routing_profile_frontier_id`; per-turn `effective_profile_id` on `agent_turns`.
+- **Tests:** `tests/test_routing_policies.py`; hybrid trace test extended in `test_iteration12`.
+- **Closeout:** [`senna-iter-33-closeout.md`](iterations/senna-iter-33-closeout.md).
+
+### Senna iter-32 (Arc 7, completed 2026-05-19)
+
+- **`GET /capabilities`:** `model_profiles` block (built-in profiles + hybrid routing metadata).
+- **Frontend Run setup:** capability-driven AI model dropdown; `model_profile_id` on run when a profile is selected; hardcoded fallback if capabilities unavailable.
+- **Closeout:** [`senna-iter-32-closeout.md`](iterations/senna-iter-32-closeout.md).
+
+### Senna iter-31 (Arc 7, completed 2026-05-19)
+
+- **`llm/model_profiles.py`:** built-in `local_lmstudio_default` / `anthropic_default`; resolver; `config_snapshot` provenance helpers.
+- **`api/simulations.py`:** optional `model_profile_id`; profile metadata + resolved model/base URL on runs.
+- **Tests:** `tests/test_model_profiles.py`.
+- **Closeout:** [`senna-iter-31-closeout.md`](iterations/senna-iter-31-closeout.md).
+
+### Senna iter-30 (Arc 7, completed 2026-05-19)
+
+- **`llm/openai_compatible_client.py`:** generic OpenAI-compatible chat completions; error body parsing; usage token aliases.
+- **`llm/lmstudio_client.py`:** compatibility shim re-exporting the generic client (RAG embeddings unchanged import path).
+- **`llm/router.py`:** local provider path calls generic adapter.
+- **Tests:** `tests/test_openai_compatible_client.py` — lmstudio alias, errors, token parsing, router dispatch.
+- **Closeout:** [`senna-iter-30-closeout.md`](iterations/senna-iter-30-closeout.md).
+
 ### Iteration 29 (Completed)
 
 - **Economics:** Per-turn **`input_tokens`** / **`output_tokens`**; run **`total_*_tokens`**; **`economics`** on **`GET /simulations/{id}`** and **`run.economics`** in export JSON; **`export_version` `8`**.
@@ -350,8 +428,11 @@ Update it at the end of each iteration gate.
 
 ## Gate Evidence (Latest)
 
-- Backend tests: **`191 passed`**, **`1 skipped`** (`uv run pytest` from `backend/`; **`tests/test_iteration29.py`**, **`test_iteration28.py`**, E2E paths; manual SSE placeholder skipped)
-- Frontend build: `npm run build` (`frontend/`, Vite) passed
+- Backend tests: **`290 passed`**, **`2 skipped`** (`uv run pytest` from `backend/`; Arc 8 economics follow-up + iter-39 integration; manual SSE + LM Studio smoke skipped)
+- Frontend build: **`npm run build`** OK after **senna-iter-39** (no UI changes; build regression only)
+- Frontend build: **`npm run build`** OK after **senna-iter-38** (Run setup preflight panel)
+- Frontend build: **`npm run build`** OK after **senna-iter-34** (Arc 7 hardening regression)
+- Frontend build: `npm run build` (`frontend/`, Vite) passed after **senna-iter-25** (a11y: `index.html` focus CSS, tab/panel ARIA, `<main>`, contrast token `#595F6B`)
 - Export: `GET /simulations/{id}/export.json` uses **`export_version`: `8`** (Iteration 29: per-turn tokens, **`run.economics`**; Iteration 28: **`convergence_delta`** / **`converged_at_round`**; Iteration 23: **`fidelity_tier`**; earlier: `cohort_summary`, `attribute_sections`, per-turn LLM fields); includes **`validity_notes`**; ZIP includes **`validity_notes.csv`** and **`cohort_summary.csv`**.
 - `config_snapshot` includes **`sampling_strategy`** and **`sampling_audit`** (Iteration 22+); **`per_agent`** may include **`role`**, **`implementation_posture`** (26), **`degree_centrality`** (25). Network + visibility metadata (25). Also: **`aggregation_threshold`** / **`aggregation_mode`** (20); **`llm_concurrency_cap`** (19); **`remainder_config`**, **`synthetic_remainder_count`**, **`core_agent_limit`**, **`tier_3_heuristic`** (24).
 - Manual: Optional roster CSV + template URL; confirm **`config_snapshot.scale_warning`** when **`agent_limit` > 20**; confirm `cohort_summary` present in export.json; **`GET /simulations/{id}/sampling-report`** for tier/posture view (completed/failed runs).

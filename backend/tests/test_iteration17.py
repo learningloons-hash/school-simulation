@@ -11,9 +11,12 @@ from fastapi.testclient import TestClient
 
 from mirofish_backend.agent.orchestrator import (
     ExecutionPlan,
+    PlanSimulationParams,
+    _simulation_run_request,
     execute_plan,
     validate_plan_against_capabilities,
 )
+from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
 from mirofish_backend.api.capabilities import build_capabilities_dict
 from mirofish_backend.api.simulations import SimulationAnalyzeResponse, SimulationRunResponse
 from mirofish_backend.config import get_settings
@@ -27,6 +30,96 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("SQLITE_PATH", str(db))
     with TestClient(app) as c:
         yield c
+
+
+def test_simulation_run_request_forwards_model_profile_id() -> None:
+    sim = PlanSimulationParams(model_profile_id=ANTHROPIC_DEFAULT_ID)
+    req = _simulation_run_request("psle_reform_mvp", sim)
+    assert req.model_profile_id == ANTHROPIC_DEFAULT_ID
+
+
+def test_plan_simulation_params_model_profile_id_optional() -> None:
+    sim = PlanSimulationParams()
+    assert sim.model_profile_id is None
+    req = _simulation_run_request("fsbb_comparator", sim)
+    assert req.model_profile_id is None
+
+
+def test_validate_plan_against_capabilities_rejects_bad_model_profile_id() -> None:
+    with pytest.raises(ValueError, match="model_profile_id must be one of"):
+        ExecutionPlan.model_validate(
+            {
+                "runs": [
+                    {
+                        "research_question": "What happened?",
+                        "scenario_id": "psle_reform_mvp",
+                        "simulation": {"model_profile_id": "not_a_real_profile"},
+                    }
+                ]
+            }
+        )
+
+
+def test_validate_plan_against_capabilities_rejects_unknown_profile_in_capabilities() -> None:
+    cap = build_capabilities_dict()
+    cap["model_profiles"] = {"profiles": [{"profile_id": "local_lmstudio_default"}]}
+    plan = ExecutionPlan.model_validate(
+        {
+            "runs": [
+                {
+                    "research_question": "What happened?",
+                    "scenario_id": "psle_reform_mvp",
+                    "simulation": {"model_profile_id": ANTHROPIC_DEFAULT_ID},
+                }
+            ]
+        }
+    )
+    errs = validate_plan_against_capabilities(cap, plan)
+    assert any("model_profile_id" in e for e in errs)
+
+
+def test_execute_plan_forwards_model_profile_id_to_queue(monkeypatch, tmp_path) -> None:
+    db = tmp_path / "i17_profile.sqlite"
+    monkeypatch.setenv("SQLITE_PATH", str(db))
+    captured: dict[str, str | None] = {}
+
+    async def fake_queue(settings, req):
+        captured["model_profile_id"] = req.model_profile_id
+        return SimulationRunResponse(id="sim_profile", warnings=[])
+
+    async def fake_wait(**kwargs):
+        return {"status": "completed", "id": "sim_profile", "failure_reason": None}
+
+    async def fake_analyze(simulation_id, body):
+        return SimulationAnalyzeResponse(
+            key_findings=["ok"],
+            per_agent_summary={},
+            trajectory_narrative="n",
+            suggested_follow_ups=[],
+        )
+
+    monkeypatch.setattr("mirofish_backend.agent.orchestrator.queue_simulation_run", fake_queue)
+    monkeypatch.setattr("mirofish_backend.agent.orchestrator.wait_for_simulation_terminal", fake_wait)
+    monkeypatch.setattr("mirofish_backend.agent.orchestrator.analyze_simulation_export", fake_analyze)
+
+    plan = ExecutionPlan.model_validate(
+        {
+            "runs": [
+                {
+                    "research_question": "How did agents respond?",
+                    "scenario_id": "psle_reform_mvp",
+                    "simulation": {
+                        "total_rounds": 1,
+                        "agent_limit": 2,
+                        "model_profile_id": LOCAL_LMSTUDIO_DEFAULT_ID,
+                    },
+                }
+            ]
+        }
+    )
+    result = asyncio.run(execute_plan(get_settings(), plan))
+    assert result["runs"][0]["status"] == "completed"
+    assert captured["model_profile_id"] == LOCAL_LMSTUDIO_DEFAULT_ID
 
 
 def test_validate_plan_against_capabilities_rejects_bad_mode() -> None:
@@ -171,7 +264,8 @@ def test_agent_plan_mock_llm(monkeypatch, tmp_path) -> None:
             }
         )
 
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.llm_build_execution_plan", fake_llm_build)
+    # Patch where the route uses the symbol (api.agent imports it), not the defining module.
+    monkeypatch.setattr("mirofish_backend.api.agent.llm_build_execution_plan", fake_llm_build)
 
     with TestClient(app) as client:
         r = client.post(

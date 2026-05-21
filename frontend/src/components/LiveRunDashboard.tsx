@@ -1,9 +1,21 @@
 import React, { useMemo } from "react";
 import { Sparkline } from "./Sparkline";
 import type { SimulationStatus } from "../lib/api";
+import { getRunStatusLabel } from "../lib/runStatusCopy";
+import { FONT } from "../lib/theme";
 
 type Timeline = SimulationStatus["state_timeline"];
 type Outcomes = SimulationStatus["outcome_indicators"];
+
+const emptyStateCardStyle: React.CSSProperties = {
+  background: "#FFFFFF",
+  border: "1px solid #E5E3DC",
+  borderRadius: 10,
+  padding: 24,
+  textAlign: "center",
+  fontSize: 14,
+  color: "#6B7280",
+};
 
 type Props = {
   status: string;
@@ -12,10 +24,8 @@ type Props = {
   stateTimeline: Timeline;
   outcomeIndicators: Outcomes;
   configSnapshot: Record<string, unknown> | null;
-  runId: string | null;
   /** Iteration 28: early stop round when convergence criterion met */
   convergedAtRound?: number | null;
-  pollIntervalMs?: number;
 };
 
 function readinessSeries(timeline: Timeline): number[] {
@@ -59,9 +69,7 @@ export function LiveRunDashboard({
   stateTimeline,
   outcomeIndicators,
   configSnapshot,
-  runId,
   convergedAtRound,
-  pollIntervalMs,
 }: Props) {
   const agentIds = useMemo(() => agentIdsFromTimeline(stateTimeline), [stateTimeline]);
   const readiness = useMemo(() => readinessSeries(stateTimeline), [stateTimeline]);
@@ -76,10 +84,6 @@ export function LiveRunDashboard({
   const speakersPerRound =
     typeof configSnapshot?.speakers_per_round === "number" ? (configSnapshot.speakers_per_round as number) : undefined;
   const populationApplied = configSnapshot?.population_csv_applied === true;
-  const populationSchema =
-    typeof configSnapshot?.population_schema_version === "string"
-      ? (configSnapshot.population_schema_version as string)
-      : undefined;
   const populationPool =
     typeof configSnapshot?.population_pool_row_count === "number"
       ? configSnapshot.population_pool_row_count
@@ -90,10 +94,25 @@ export function LiveRunDashboard({
       : undefined;
 
   const lastRound = stateTimeline?.[stateTimeline.length - 1];
-  const convThreshold =
-    typeof configSnapshot?.convergence_threshold === "number"
-      ? (configSnapshot.convergence_threshold as number)
-      : undefined;
+
+  const totalRoundsForStatus =
+    typeof configSnapshot?.total_rounds === "number" ? configSnapshot.total_rounds : 1;
+  const statusLabel = getRunStatusLabel(status, {
+    currentRound,
+    totalRounds: totalRoundsForStatus,
+    convergedAtRound: convergedAtRound ?? null,
+  });
+
+  const populationPoolSummary = (() => {
+    if (!populationApplied || populationPool == null) return null;
+    if (populationMode === "weighted") {
+      return `Participant pool: ${populationPool} people, weighted sampling`;
+    }
+    if (populationMode === "stratified") {
+      return `Participant pool: ${populationPool} people, stratified by group`;
+    }
+    return `Participant pool: ${populationPool} people`;
+  })();
 
   return (
     <section style={{ display: "grid", gap: 20 }}>
@@ -102,28 +121,15 @@ export function LiveRunDashboard({
           style={{
             padding: "10px 14px",
             borderRadius: 8,
-            background: "#ecfdf5",
-            border: "1px solid #6ee7b7",
+            background: "#ECFDF5",
+            border: "1px solid #6EE7B7",
             fontSize: 14,
+            marginBottom: 12,
           }}
         >
-          Converged at round <strong>{convergedAtRound}</strong>
-          {convThreshold != null ? (
-            <span style={{ opacity: 0.85, marginLeft: 8 }}>
-              (threshold {convThreshold.toFixed(4)}, patience{" "}
-              {typeof configSnapshot?.convergence_patience === "number"
-                ? configSnapshot.convergence_patience
-                : "—"}
-              )
-            </span>
-          ) : null}
+          ✓ Consensus reached at Round <strong>{convergedAtRound}</strong> — the discussion stabilised and stopped early.
         </div>
       ) : null}
-      <div style={{ fontSize: 14, opacity: 0.85, maxWidth: 720 }}>
-        Data updates from the same <code>GET /simulations/{"{id}"}</code> payload as other tabs
-        {pollIntervalMs ? ` (~${pollIntervalMs}ms poll while running).` : "."} See{" "}
-        <code>docs/plans/iteration-8-live-dashboard-design.md</code> for scale and streaming notes.
-      </div>
 
       <div
         style={{
@@ -132,86 +138,90 @@ export function LiveRunDashboard({
           gap: 12,
         }}
       >
-        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
-          <div style={{ fontSize: 12, opacity: 0.75 }}>Status</div>
-          <div style={{ fontWeight: 600 }}>{status}</div>
-          <div style={{ fontSize: 12, marginTop: 6 }}>Run id</div>
-          <div style={{ fontFamily: "monospace", fontSize: 11, wordBreak: "break-all" }}>{runId ?? "—"}</div>
+        <div style={{ border: "1px solid #E5E3DC", borderRadius: 8, padding: 12, background: "#FFFFFF" }}>
+          <div style={{ fontSize: 12, color: "#6B7280" }}>Discussion status</div>
+          <div style={{ fontWeight: 600, marginTop: 4 }}>{statusLabel}</div>
         </div>
-        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
-          <div style={{ fontSize: 12, opacity: 0.75 }}>Progress</div>
-          <div>
-            Rounds completed: <strong>{currentRound}</strong>
-            {totalRounds != null ? ` / ${totalRounds}` : ""}
+        <div style={{ border: "1px solid #E5E3DC", borderRadius: 8, padding: 12, background: "#FFFFFF" }}>
+          <div style={{ fontSize: 12, color: "#6B7280" }}>Rounds completed</div>
+          <div style={{ marginTop: 4 }}>
+            <strong>{currentRound}</strong>
+            {totalRounds != null ? ` of ${totalRounds}` : ""}
           </div>
-          <div style={{ fontSize: 12, marginTop: 6 }}>Transcript turns</div>
+          <div style={{ fontSize: 12, marginTop: 6, color: "#6B7280" }}>Exchanges so far</div>
           <div style={{ fontWeight: 600 }}>{transcriptLength}</div>
           {agentLimit != null ? (
-            <div style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}>
-              agent_limit (config): {agentLimit}
+            <div style={{ fontSize: 12, marginTop: 6, color: "#6B7280" }}>
+              Participants: {agentLimit}
             </div>
           ) : null}
-          {simulationMode ? (
-            <div style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}>
-              simulation_mode: {simulationMode}
-              {simulationMode === "sample_k_per_round" && speakersPerRound != null ? ` · K=${speakersPerRound}` : ""}
+          {simulationMode === "full_round_robin" ? (
+            <div style={{ fontSize: 12, marginTop: 6, color: "#6B7280" }}>Turn style: Everyone speaks each round</div>
+          ) : simulationMode === "sample_k_per_round" ? (
+            <div style={{ fontSize: 12, marginTop: 6, color: "#6B7280" }}>
+              Turn style: Rotating speakers
+              {speakersPerRound != null ? ` (${speakersPerRound} per round)` : ""}
             </div>
+          ) : simulationMode ? (
+            <div style={{ fontSize: 12, marginTop: 6, color: "#6B7280" }}>Turn style: {simulationMode}</div>
           ) : null}
-          {populationApplied ? (
-            <div style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}>
-              population: schema v{populationSchema ?? "?"} · pool {populationPool ?? "—"} rows · {populationMode ?? "—"}
-            </div>
+          {populationPoolSummary ? (
+            <div style={{ fontSize: 12, marginTop: 6, color: "#6B7280" }}>{populationPoolSummary}</div>
           ) : null}
         </div>
       </div>
 
       <div>
-        <h3 style={{ margin: "0 0 8px 0" }}>Global state (by completed round)</h3>
+        <h3 style={{ margin: "0 0 8px 0" }}>Opinion trends by round</h3>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "flex-end" }}>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.75 }}>Implementation readiness</div>
-            <Sparkline values={readiness} color="#059669" label="implementation_readiness" />
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Readiness to adopt</div>
+            <Sparkline values={readiness} color="#059669" label="Readiness to adopt" />
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.75 }}>Alignment index</div>
-            <Sparkline values={alignment} color="#7c3aed" label="alignment_index" />
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Level of agreement</div>
+            <Sparkline values={alignment} color="#7c3aed" label="Level of agreement" />
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.75 }} title="Mean population abs Δ (support/resistance/workload); round 1 omitted">
-              Convergence δ (rounds 2+)
-            </div>
-            <Sparkline values={convDeltas} color="#0e7490" width={160} height={36} label="convergence_delta" />
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Opinion change rate</div>
+            <Sparkline values={convDeltas} color="#0e7490" width={160} height={36} label="Opinion change rate" />
           </div>
         </div>
       </div>
 
       <div>
-        <h3 style={{ margin: "0 0 8px 0" }}>Round outcomes</h3>
+        <h3 style={{ margin: "0 0 8px 0" }}>Round-by-round outcomes</h3>
         {outcomeIndicators.length === 0 ? (
-          <div style={{ fontSize: 13, opacity: 0.8 }}>No outcome rows yet (first row appears after round 1 completes).</div>
+          <div style={emptyStateCardStyle}>Outcomes will appear after the first round completes.</div>
         ) : (
           <>
             <div style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 12, opacity: 0.75 }}>Adoption momentum</span>
-              <Sparkline values={adoption} color="#d97706" width={180} height={40} label="adoption_momentum" />
+              <span style={{ fontSize: 12, color: "#6B7280" }}>Adoption momentum</span>
+              <Sparkline values={adoption} color="#d97706" width={180} height={40} label="Adoption momentum" />
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ borderCollapse: "collapse", fontSize: 13, minWidth: 360 }}>
                 <thead>
                   <tr style={{ textAlign: "left", borderBottom: "1px solid #ccc" }}>
                     <th style={{ padding: "6px 8px" }}>Round</th>
-                    <th style={{ padding: "6px 8px" }}>Adoption</th>
-                    <th style={{ padding: "6px 8px" }}>Conflicts</th>
-                    <th style={{ padding: "6px 8px" }}>Consistency</th>
+                    <th style={{ padding: "6px 8px" }}>Adoption score</th>
+                    <th style={{ padding: "6px 8px" }}>Disagreements</th>
+                    <th style={{ padding: "6px 8px" }}>Consistency score</th>
                   </tr>
                 </thead>
                 <tbody>
                   {outcomeIndicators.map((o) => (
                     <tr key={o.round_number} style={{ borderBottom: "1px solid #eee" }}>
                       <td style={{ padding: "6px 8px" }}>{o.round_number}</td>
-                      <td style={{ padding: "6px 8px", fontFamily: "monospace" }}>{o.adoption_momentum.toFixed(3)}</td>
-                      <td style={{ padding: "6px 8px" }}>{o.conflict_events}</td>
-                      <td style={{ padding: "6px 8px", fontFamily: "monospace" }}>{o.consistency_index.toFixed(3)}</td>
+                      <td style={{ padding: "6px 8px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
+                        {o.adoption_momentum.toFixed(3)}
+                      </td>
+                      <td style={{ padding: "6px 8px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
+                        {o.conflict_events}
+                      </td>
+                      <td style={{ padding: "6px 8px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
+                        {o.consistency_index.toFixed(3)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -222,9 +232,9 @@ export function LiveRunDashboard({
       </div>
 
       <div>
-        <h3 style={{ margin: "0 0 8px 0" }}>Agents (latest round snapshot + series)</h3>
+        <h3 style={{ margin: "0 0 8px 0" }}>Participants</h3>
         {agentIds.length === 0 ? (
-          <div style={{ fontSize: 13, opacity: 0.8 }}>No agent state until at least one round completes.</div>
+          <div style={emptyStateCardStyle}>Participant data will appear after the first round completes.</div>
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
             {agentIds.map((id) => {
@@ -233,28 +243,42 @@ export function LiveRunDashboard({
                 <div
                   key={id}
                   style={{
-                    border: "1px solid #e5e5e5",
+                    border: "1px solid #E5E3DC",
                     borderRadius: 8,
                     padding: 10,
                     display: "grid",
                     gap: 8,
+                    background: "#FFFFFF",
                   }}
                 >
                   <div style={{ fontWeight: 600 }}>
                     {agent?.agent_name ?? id}{" "}
-                    <span style={{ fontWeight: 400, opacity: 0.75, fontSize: 12 }}>({agent?.agent_role ?? "?"})</span>
+                    <span style={{ fontWeight: 400, color: "#6B7280", fontSize: 12 }}>({agent?.agent_role ?? "?"})</span>
                   </div>
-                  <div style={{ fontSize: 12, fontFamily: "monospace" }}>
-                    Latest: support {agent?.support_level.toFixed(2)} · resistance {agent?.resistance_level.toFixed(2)} ·
-                    workload {agent?.workload_stress.toFixed(2)} · {agent?.belief_posture}
+                  <div style={{ fontSize: 12, color: "#6B7280" }}>
+                    Support: {((agent?.support_level ?? 0) * 100).toFixed(0)}% &nbsp;·&nbsp; Resistance:{" "}
+                    {((agent?.resistance_level ?? 0) * 100).toFixed(0)}% &nbsp;·&nbsp; Workload:{" "}
+                    {((agent?.workload_stress ?? 0) * 100).toFixed(0)}% &nbsp;·&nbsp; Stance: {agent?.belief_posture ?? "unknown"}
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-                    <span style={{ fontSize: 11, opacity: 0.7 }}>support</span>
-                    <Sparkline values={seriesForAgent(stateTimeline, id, "support_level")} color="#059669" />
-                    <span style={{ fontSize: 11, opacity: 0.7 }}>resistance</span>
-                    <Sparkline values={seriesForAgent(stateTimeline, id, "resistance_level")} color="#dc2626" />
-                    <span style={{ fontSize: 11, opacity: 0.7 }}>workload</span>
-                    <Sparkline values={seriesForAgent(stateTimeline, id, "workload_stress")} color="#ca8a04" />
+                    <span style={{ fontSize: 11, color: "#6B7280" }}>Support</span>
+                    <Sparkline
+                      values={seriesForAgent(stateTimeline, id, "support_level")}
+                      color="#059669"
+                      label="Support"
+                    />
+                    <span style={{ fontSize: 11, color: "#6B7280" }}>Resistance</span>
+                    <Sparkline
+                      values={seriesForAgent(stateTimeline, id, "resistance_level")}
+                      color="#dc2626"
+                      label="Resistance"
+                    />
+                    <span style={{ fontSize: 11, color: "#6B7280" }}>Workload</span>
+                    <Sparkline
+                      values={seriesForAgent(stateTimeline, id, "workload_stress")}
+                      color="#ca8a04"
+                      label="Workload"
+                    />
                   </div>
                 </div>
               );

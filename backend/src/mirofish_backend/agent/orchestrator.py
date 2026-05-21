@@ -25,6 +25,7 @@ from mirofish_backend.simulation.interaction_policy import VisibilityPolicy
 from mirofish_backend.simulation.sampling_strategy import SAMPLING_STRATEGY_VALUES
 from mirofish_backend.config import Settings
 from mirofish_backend.db.repo import upsert_user_scenario
+from mirofish_backend.llm.model_profiles import BUILTIN_PROFILE_IDS
 from mirofish_backend.llm.router import llm_complete
 
 logger = logging.getLogger("mirofish_backend.agent.orchestrator")
@@ -45,6 +46,10 @@ class PlanSimulationParams(BaseModel):
     speakers_per_round: int = Field(default=2, ge=1, le=300)
     population_sample_mode: str = "weighted"
     llm_provider: str | None = None
+    model_profile_id: str | None = Field(
+        default=None,
+        description="Optional built-in model profile (e.g. local_lmstudio_default, anthropic_default).",
+    )
     turn_order_policy: str = "round_robin"
     visibility_policy: str = "full"
     interaction_overlay: str = "none"
@@ -89,6 +94,20 @@ class PlanSimulationParams(BaseModel):
             if rc.remainder_count >= self.agent_limit:
                 raise ValueError("remainder_config.remainder_count must be less than agent_limit")
         return self
+
+    @field_validator("model_profile_id")
+    @classmethod
+    def _normalize_model_profile_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip()
+        if not s:
+            return None
+        if s not in BUILTIN_PROFILE_IDS:
+            raise ValueError(
+                f"model_profile_id must be one of: {sorted(BUILTIN_PROFILE_IDS)}; got {s!r}"
+            )
+        return s
 
     @field_validator("sampling_strategy")
     @classmethod
@@ -165,6 +184,16 @@ def validate_plan_against_capabilities(capabilities: dict[str, Any], plan: Execu
             errors.append(f"{pfx}.simulation: invalid population_sample_mode {sim.population_sample_mode!r}")
         if sim.llm_provider is not None and sim.llm_provider not in lp:
             errors.append(f"{pfx}.simulation: invalid llm_provider {sim.llm_provider!r}")
+        mp_block = capabilities.get("model_profiles") or {}
+        profile_ids = {
+            str(p.get("profile_id"))
+            for p in (mp_block.get("profiles") or [])
+            if p.get("profile_id")
+        }
+        if sim.model_profile_id is not None and sim.model_profile_id not in profile_ids:
+            errors.append(
+                f"{pfx}.simulation: invalid model_profile_id {sim.model_profile_id!r}"
+            )
         if sim.turn_order_policy not in top:
             errors.append(f"{pfx}.simulation: invalid turn_order_policy {sim.turn_order_policy!r}")
         vis_norm = _visibility_policy_for_capability_check(sim.visibility_policy)
@@ -236,6 +265,7 @@ Output ONLY valid JSON (no markdown fences). The JSON must match this shape:
         "speakers_per_round": 2,
         "population_sample_mode": "weighted",
         "llm_provider": null,
+        "model_profile_id": null,
         "turn_order_policy": "round_robin",
         "visibility_policy": "full",
         "interaction_overlay": "none",
@@ -325,6 +355,7 @@ def _simulation_run_request(scenario_id: str, sim: PlanSimulationParams) -> Simu
         speakers_per_round=sim.speakers_per_round,
         population_sample_mode=sim.population_sample_mode,
         llm_provider=sim.llm_provider,
+        model_profile_id=sim.model_profile_id,
         turn_order_policy=sim.turn_order_policy,
         visibility_policy=sim.visibility_policy,
         interaction_overlay=sim.interaction_overlay,

@@ -23,10 +23,22 @@ from mirofish_backend.simulation.interaction_policy import (
     visible_turns_for_agent,
 )
 from mirofish_backend.llm.prompt_templates import build_system_prompt, build_user_prompt, simplified_persona_prompt
+from mirofish_backend.llm.round_summary import build_round_summary
+from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
+from mirofish_backend.llm.routing_policies import (
+    llm_provider_to_routing_policy,
+    resolve_effective_profile_id,
+    HEURISTIC_PROFILE_SENTINEL,
+)
 from mirofish_backend.llm.router import effective_model_id, llm_complete, resolve_effective_provider
 from mirofish_backend.llm.context_clip import clip_memory_lines, clip_recent_interactions
-from mirofish_backend.llm.state_parse import try_parse_state_from_response
+from mirofish_backend.llm.state_parse import resolve_state_from_response
 from mirofish_backend.rag.retrieve import retrieve_top_k, snippets_for_prompt
+from mirofish_backend.simulation.transcript_writer import (
+    append_round_to_transcript,
+    close_transcript,
+    open_transcript,
+)
 from mirofish_backend.simulation.heuristic import (
     apply_tier3_heuristic_to_states,
     mean_deltas_tier12_for_round,
@@ -35,6 +47,8 @@ from mirofish_backend.simulation.heuristic import (
 from mirofish_backend.db.repo import (
     get_recent_interactions,
     get_last_agent_responses,
+    get_round_summaries,
+    get_turns_for_round,
     insert_agent_state_snapshot,
     insert_agent_turn,
     insert_global_state_snapshot,
@@ -42,6 +56,7 @@ from mirofish_backend.db.repo import (
     merge_simulation_config_snapshot,
     set_simulation_status,
     update_simulation_token_totals,
+    upsert_round_summary,
 )
 
 logger = logging.getLogger("mirofish_backend.simulation.orchestrator")
@@ -270,8 +285,8 @@ def _count_keywords(text: str, keywords: list[str]) -> int:
     return sum(lowered.count(k) for k in keywords)
 
 
-def _apply_state_from_response(state: AgentState, response: str) -> tuple[AgentState, bool]:
-    parsed = try_parse_state_from_response(
+def _apply_state_from_response(state: AgentState, response: str) -> tuple[AgentState, bool, str]:
+    parsed, source = resolve_state_from_response(
         response,
         support_level=state.support_level,
         resistance_level=state.resistance_level,
@@ -288,8 +303,10 @@ def _apply_state_from_response(state: AgentState, response: str) -> tuple[AgentS
                 belief_posture=posture,
             ),
             conflict,
+            source,
         )
-    return _apply_state_update_keyword(state, response)
+    new_state, conflict = _apply_state_update_keyword(state, response)
+    return new_state, conflict, "keyword_fallback"
 
 
 def _apply_state_update_keyword(state: AgentState, response: str) -> tuple[AgentState, bool]:
@@ -437,10 +454,20 @@ async def run_simulation_task(
     visibility_effective: str | None = None,
     convergence_threshold: float | None = None,
     convergence_patience: int = 2,
+    round_summary_enabled: bool = True,
+    transcript_dir: str = "./data/transcripts",
+    routing_policy: str | None = None,
+    routing_profile_local_id: str | None = None,
+    routing_profile_frontier_id: str | None = None,
+    openai_compatible_api_key: str = "",
 ) -> None:
     mode = (llm_provider or "lmstudio").strip().lower()
     if mode not in ("lmstudio", "anthropic", "hybrid"):
         raise ValueError(f"Unknown llm_provider {llm_provider!r}; expected 'lmstudio', 'anthropic', or 'hybrid'")
+
+    policy = routing_policy or llm_provider_to_routing_policy(mode)
+    local_profile_id = routing_profile_local_id or LOCAL_LMSTUDIO_DEFAULT_ID
+    frontier_profile_id = routing_profile_frontier_id or ANTHROPIC_DEFAULT_ID
 
     random.seed(random_seed)
     scenario = scenario_config if scenario_config is not None else get_scenario(scenario_id)
@@ -489,6 +516,17 @@ async def run_simulation_task(
     patience = max(1, int(convergence_patience)) if convergence_threshold is not None else 0
     run_in_acc = 0
     run_out_acc = 0
+
+    if round_summary_enabled:
+        agent_roster = [(a.name, a.role) for a in agents]
+        await open_transcript(
+            transcript_dir,
+            simulation_id=simulation_id,
+            scenario_id=scenario_id,
+            agent_names=agent_roster,
+            total_rounds=total_rounds,
+            model_used=model_used,
+        )
 
     for round_number in range(1, total_rounds + 1):
         policy_event = _policy_event_for_round(scenario, round_number)
@@ -567,6 +605,7 @@ async def run_simulation_task(
                         group_ids=agent.persona.groups,
                         effective_provider="heuristic",
                         effective_model="none",
+                        effective_profile_id=HEURISTIC_PROFILE_SENTINEL,
                         fidelity_tier=3,
                         input_tokens=0,
                         output_tokens=0,
@@ -578,7 +617,7 @@ async def run_simulation_task(
                     # sample_k_per_round: tie window to speaking cohort (Iteration 12).
                     if sim_mode == "sample_k_per_round":
                         interaction_last_k = min(
-                            120,
+                            12,
                             max(
                                 working_memory_last_k * 2,
                                 len(round_agents) * max(1, round_number - 1) * 3,
@@ -586,7 +625,7 @@ async def run_simulation_task(
                         )
                     else:
                         interaction_last_k = min(
-                            120,
+                            12,
                             max(working_memory_last_k * 2, len(agents) * (round_number - 1)),
                         )
                 else:
@@ -623,6 +662,15 @@ async def run_simulation_task(
                     round_speaker_ids=spoke_ids,
                 )
                 recent_interactions = [r for r in recent_visible if r.get("agent_id") != agent.agent_id]
+
+                prior_summaries: list[str] | None = None
+                if round_summary_enabled and round_number > 1:
+                    summary_rows = await get_round_summaries(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        up_to_round=round_number,
+                    )
+                    prior_summaries = [r["summary_text"] for r in summary_rows] if summary_rows else None
 
                 context_snippets: list[dict[str, Any]] | None = None
                 if rag_effective:
@@ -686,21 +734,29 @@ async def run_simulation_task(
                     prior_agent_memory=prior_agent_memory,
                     recent_interactions=recent_interactions,
                     context_snippets=context_snippets,
+                    round_summaries=prior_summaries,
                 )
                 raw_prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
                 effective = resolve_effective_provider(
-                    routing_mode=mode,
+                    routing_policy=policy,
                     round_number=round_number,
                     turn_index=turn_index,
                 )
+                effective_profile_id = resolve_effective_profile_id(
+                    routing_policy=policy,
+                    turn_index=turn_index,
+                    local_profile_id=local_profile_id,
+                    frontier_profile_id=frontier_profile_id,
+                )
                 logger.info(
-                    "llm_turn simulation_id=%s round=%s turn=%s tier=%s routing_mode=%s effective_provider=%s",
+                    "llm_turn simulation_id=%s round=%s turn=%s tier=%s routing_policy=%s effective_provider=%s profile=%s",
                     simulation_id[:12],
                     round_number,
                     turn_index,
                     tier,
-                    mode,
+                    policy,
                     effective,
+                    effective_profile_id,
                 )
                 in_tok: int | None = None
                 out_tok: int | None = None
@@ -717,13 +773,16 @@ async def run_simulation_task(
                         lmstudio_model=lmstudio_model,
                         anthropic_api_key=anthropic_api_key,
                         anthropic_model=anthropic_model,
+                        openai_compatible_api_key=openai_compatible_api_key,
                     )
                     raw_response = completion.text
                     in_tok, out_tok = completion.input_tokens, completion.output_tokens
                 except Exception as llm_err:
                     raw_response = f"[LLM error] {type(llm_err).__name__}: {llm_err}"
 
-                updated_state, conflict_flag = _apply_state_from_response(state, raw_response)
+                updated_state, conflict_flag, state_update_source = _apply_state_from_response(
+                    state, raw_response
+                )
                 # Each agent has a unique key — no contention between parallel turns.
                 agent_states[agent.agent_id] = updated_state
 
@@ -752,9 +811,11 @@ async def run_simulation_task(
                     group_ids=agent.persona.groups,
                     effective_provider=effective,
                     effective_model=eff_model,
+                    effective_profile_id=effective_profile_id,
                     fidelity_tier=tier,
                     input_tokens=in_tok,
                     output_tokens=out_tok,
+                    state_update_source=state_update_source,
                 )
                 return _TurnOutcome(conflict_flag, in_tok, out_tok)
 
@@ -877,6 +938,32 @@ async def run_simulation_task(
                 attribute_sections_json=json.dumps(sections, sort_keys=True),
             )
 
+        if round_summary_enabled:
+            round_turns = await get_turns_for_round(
+                sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+            )
+            summary_text = build_round_summary(
+                round_number=round_number,
+                policy_event=policy_event,
+                turns=round_turns,
+            )
+            await upsert_round_summary(
+                sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                summary_text=summary_text,
+            )
+            await append_round_to_transcript(
+                transcript_dir,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                policy_event=policy_event,
+                turns=round_turns,
+                round_summary=summary_text,
+            )
+
         prev_agent_triples = {
             ag.agent_id: (
                 agent_states[ag.agent_id].support_level,
@@ -906,6 +993,13 @@ async def run_simulation_task(
                     record_converged_at_round=True,
                     converged_at_round=round_number,
                 )
+                if round_summary_enabled:
+                    await close_transcript(
+                        transcript_dir,
+                        simulation_id=simulation_id,
+                        completed_rounds=round_number,
+                        status="converged",
+                    )
                 return
 
         await set_simulation_status(
@@ -915,6 +1009,13 @@ async def run_simulation_task(
             current_round=round_number,
         )
 
+    if round_summary_enabled:
+        await close_transcript(
+            transcript_dir,
+            simulation_id=simulation_id,
+            completed_rounds=total_rounds,
+            status="completed",
+        )
     await set_simulation_status(
         sqlite_path,
         simulation_id=simulation_id,

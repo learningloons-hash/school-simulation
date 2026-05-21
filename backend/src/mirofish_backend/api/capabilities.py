@@ -11,7 +11,9 @@ from mirofish_backend.api.simulations import (
     POPULATION_SAMPLE_MODE_VALUES,
     SIMULATION_MODE_VALUES,
 )
+from mirofish_backend.config import get_settings
 from mirofish_backend.export_bundle import EXPORT_VERSION
+from mirofish_backend.llm.model_profiles import build_model_profiles_capabilities
 from mirofish_backend.simulation.economics import PRICE_MAP_DATE
 from mirofish_backend.population.csv_population import POPULATION_SCHEMA_VERSION
 from mirofish_backend.scenarios.validate import list_allowed_corpus_paths
@@ -36,6 +38,7 @@ def build_capabilities_dict() -> dict:
     """
     Same payload as GET /capabilities — used by the agent orchestrator (Iteration 17) without HTTP.
     """
+    settings = get_settings()
     return {
         "export_version": EXPORT_VERSION,
         "agent_context_version": AGENT_CONTEXT_VERSION,
@@ -103,6 +106,7 @@ def build_capabilities_dict() -> dict:
             },
         },
         "persona_attribute_sections": ["identity", "attitudes", "personal_history"],
+        "model_profiles": build_model_profiles_capabilities(settings),
         "bundled_rag_paths": list_allowed_corpus_paths(),
         "experiments": {
             "description": "Iteration 27: multi-run experiment records; shared scenario_id and random_seed; "

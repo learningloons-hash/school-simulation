@@ -1,5 +1,7 @@
 # Iteration 27 closeout — Multi-run experiments
 
+**Not** **Senna `senna-iter-27`** (Arc 6 *Context bounding* — a separate counter; see [`HANDOFF_SENNA_ARC6.md`](../handoffs/HANDOFF_SENNA_ARC6.md) **`## senna-iter-27`**; closeout `docs/iterations/senna-iter-27-closeout.md` when shipped). This file is the **thesis / platform** experiments iteration.
+
 **Date:** 2026-04-07  
 **Theme:** Persisted **experiments** (shared `scenario_id` + `random_seed`); **sequential** child simulation runs; **comparison** table + exports; **Experiments** UI (replaces standalone **Compare runs** tab).
 

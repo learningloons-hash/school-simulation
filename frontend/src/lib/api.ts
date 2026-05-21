@@ -5,8 +5,10 @@ export type StartSimulationRequest = {
   random_seed: number;
   /** Optional override; server default is typically 1024 */
   max_tokens?: number;
-  /** lmstudio | anthropic — omit to use server default */
+  /** lmstudio | anthropic | hybrid — omit to use server default */
   llm_provider?: string;
+  /** Built-in profile id from GET /capabilities model_profiles (Senna Arc 7) */
+  model_profile_id?: string;
   /** Force RAG on/off; omit to use server flag and scenario rag_enabled */
   rag_enabled?: boolean;
   /** Optional CSV roster (1-based slot); merges onto scenario personas */
@@ -300,9 +302,43 @@ export async function downloadExportJson(simId: string, filename?: string): Prom
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename ?? `mirofish_run_${simId}.json`;
+  a.download = filename ?? `senna_run_${simId}.json`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export type PreflightSummary = {
+  total_speaking_turns?: number;
+  llm_turns?: number;
+  heuristic_turns?: number;
+  anthropic_llm_turns?: number;
+  openai_compatible_llm_turns?: number;
+  estimated_input_tokens?: number;
+  estimated_output_tokens?: number;
+  estimated_cost_usd?: number;
+  context_window?: number | null;
+  context_pressure_ratio?: number | null;
+};
+
+export async function preflightSimulation(
+  req: StartSimulationRequest,
+  signal?: AbortSignal,
+): Promise<{ warnings: string[]; preflight: PreflightSummary }> {
+  const res = await fetch("/simulations/preflight", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+    signal,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Preflight failed: ${res.status} ${text}`);
+  }
+  const json = (await res.json()) as { warnings?: string[]; preflight?: PreflightSummary };
+  return {
+    warnings: json.warnings ?? [],
+    preflight: json.preflight ?? {},
+  };
 }
 
 export async function startSimulation(
@@ -360,14 +396,117 @@ export async function fetchScenarioCatalog(): Promise<ScenarioCatalogItem[]> {
   return (await res.json()) as ScenarioCatalogItem[];
 }
 
+/** Senna Arc 7: built-in model profile row from GET /capabilities. */
+export type ModelProfileCapability = {
+  profile_id: string;
+  label: string;
+  provider_type: "openai_compatible" | "anthropic";
+  model_id: string;
+  is_default: boolean;
+  description: string;
+  supports_usage: boolean;
+  supports_embeddings: boolean;
+};
+
+export type HybridModelRoutingCapability = {
+  label: string;
+  description: string;
+  llm_provider: "hybrid";
+  is_default?: boolean;
+};
+
+export type ModelProfilesCapabilityBlock = {
+  profiles: ModelProfileCapability[];
+  hybrid_routing: HybridModelRoutingCapability;
+};
+
+export type CapabilitiesResponse = {
+  model_profiles?: ModelProfilesCapabilityBlock;
+  simulation_run?: {
+    llm_providers?: string[];
+  };
+};
+
+/** Run-setup AI model dropdown option (capabilities-driven or fallback). */
+export type ModelChoiceOption = {
+  value: string;
+  label: string;
+  kind: "default" | "profile" | "hybrid" | "legacy";
+  llm_provider?: string;
+  model_profile_id?: string;
+};
+
+export const FALLBACK_MODEL_CHOICES: ModelChoiceOption[] = [
+  { value: "", label: "Server default", kind: "default" },
+  { value: "lmstudio", label: "Local model", kind: "legacy", llm_provider: "lmstudio" },
+  { value: "anthropic", label: "Claude (Anthropic)", kind: "legacy", llm_provider: "anthropic" },
+  { value: "hybrid", label: "Mixed (local + Claude)", kind: "legacy", llm_provider: "hybrid" },
+];
+
+export function modelChoicesFromCapabilities(
+  cap: CapabilitiesResponse | Record<string, unknown> | null | undefined,
+): ModelChoiceOption[] {
+  const block = cap?.model_profiles as ModelProfilesCapabilityBlock | undefined;
+  if (!block?.profiles?.length) {
+    return FALLBACK_MODEL_CHOICES;
+  }
+  const choices: ModelChoiceOption[] = [{ value: "", label: "Server default", kind: "default" }];
+  for (const p of block.profiles) {
+    const llm_provider = p.provider_type === "anthropic" ? "anthropic" : "lmstudio";
+    choices.push({
+      value: p.profile_id,
+      label: p.label,
+      kind: "profile",
+      llm_provider,
+      model_profile_id: p.profile_id,
+    });
+  }
+  const hybrid = block.hybrid_routing;
+  if (hybrid?.llm_provider === "hybrid") {
+    choices.push({
+      value: "__hybrid__",
+      label: hybrid.label,
+      kind: "hybrid",
+      llm_provider: "hybrid",
+    });
+  }
+  return choices;
+}
+
+export function modelChoiceToRunRequest(
+  choiceValue: string,
+  choices: ModelChoiceOption[],
+): Pick<StartSimulationRequest, "llm_provider" | "model_profile_id"> {
+  if (!choiceValue) {
+    return {};
+  }
+  const opt = choices.find((c) => c.value === choiceValue);
+  if (!opt) {
+    return {};
+  }
+  if (opt.kind === "profile" && opt.model_profile_id) {
+    return {
+      model_profile_id: opt.model_profile_id,
+      ...(opt.llm_provider ? { llm_provider: opt.llm_provider } : {}),
+    };
+  }
+  if (opt.kind === "hybrid" || (opt.kind === "legacy" && opt.llm_provider === "hybrid")) {
+    return { llm_provider: "hybrid" };
+  }
+  if (opt.llm_provider) {
+    return { llm_provider: opt.llm_provider };
+  }
+  return {};
+}
+
 /** Iteration 16: runtime capability surface (enums, versions, bundled paths). */
-export async function fetchCapabilities(): Promise<Record<string, unknown>> {
+export async function fetchCapabilities(): Promise<CapabilitiesResponse> {
   const res = await fetch("/capabilities");
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`Capabilities failed: ${res.status} ${text}`);
   }
-  return (await res.json()) as Record<string, unknown>;
+  return (await res.json()) as CapabilitiesResponse;
 }
 
 /** Iteration 16: plain-English brief → validated scenario document (LLM). */

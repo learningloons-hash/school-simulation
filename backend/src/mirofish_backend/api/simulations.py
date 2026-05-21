@@ -40,8 +40,20 @@ from mirofish_backend.export_bundle import (
     build_export_zip,
     compute_cohort_summary,
 )
+from mirofish_backend.llm.model_profiles import (
+    BUILTIN_PROFILE_IDS,
+    model_profile_config_snapshot,
+    resolve_run_llm_provider,
+    resolve_run_profiles,
+    routing_policy_config_snapshot,
+    run_llm_credentials,
+    run_openai_compatible_api_key,
+)
+from mirofish_backend.llm.routing_policies import llm_provider_to_routing_policy
 from mirofish_backend.llm.router import llm_complete
+from mirofish_backend.roster.csv_roster import personas_for_run as build_personas_for_agent_limit
 from mirofish_backend.simulation.interaction_policy import VisibilityPolicy
+from mirofish_backend.simulation.preflight import PreflightEstimate, estimate_run_preflight
 from mirofish_backend.simulation.network import (
     degree_centrality,
     parse_network_csv,
@@ -180,6 +192,12 @@ async def run_simulation_task_guarded(
     visibility_effective: str | None = None,
     convergence_threshold: float | None = None,
     convergence_patience: int = 2,
+    round_summary_enabled: bool = True,
+    transcript_dir: str = "./data/transcripts",
+    routing_policy: str | None = None,
+    routing_profile_local_id: str | None = None,
+    routing_profile_frontier_id: str | None = None,
+    openai_compatible_api_key: str = "",
 ) -> None:
     """Run simulation and mark run failed with reason on uncaught errors (used by API and tests)."""
     try:
@@ -223,6 +241,12 @@ async def run_simulation_task_guarded(
             visibility_effective=visibility_effective,
             convergence_threshold=convergence_threshold,
             convergence_patience=convergence_patience,
+            round_summary_enabled=round_summary_enabled,
+            transcript_dir=transcript_dir,
+            routing_policy=routing_policy,
+            routing_profile_local_id=routing_profile_local_id,
+            routing_profile_frontier_id=routing_profile_frontier_id,
+            openai_compatible_api_key=openai_compatible_api_key,
         )
     except Exception as e:
         logger.exception("Simulation task failed for %s", simulation_id)
@@ -259,6 +283,11 @@ class SimulationRunRequest(BaseModel):
     llm_provider: str | None = Field(
         default=None,
         description="lmstudio | anthropic | hybrid; defaults from server settings",
+    )
+    model_profile_id: str | None = Field(
+        default=None,
+        description="Optional built-in model profile (e.g. local_lmstudio_default, anthropic_default). "
+        "Omit to resolve from llm_provider.",
     )
     rag_enabled: bool | None = Field(
         default=None,
@@ -355,6 +384,20 @@ class SimulationRunRequest(BaseModel):
             raise ValueError("llm_provider must be 'lmstudio', 'anthropic', or 'hybrid'")
         return s
 
+    @field_validator("model_profile_id")
+    @classmethod
+    def _normalize_model_profile_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip()
+        if not s:
+            return None
+        if s not in BUILTIN_PROFILE_IDS:
+            raise ValueError(
+                f"model_profile_id must be one of: {sorted(BUILTIN_PROFILE_IDS)}; got {s!r}"
+            )
+        return s
+
     @field_validator("simulation_mode")
     @classmethod
     def _normalize_simulation_mode(cls, v: str) -> str:
@@ -398,6 +441,107 @@ class SimulationRunResponse(BaseModel):
 
     id: str
     warnings: list[str] = Field(default_factory=list)
+
+
+class PreflightResponse(BaseModel):
+    """Pre-run estimates without queuing a simulation (Senna iter-38)."""
+
+    warnings: list[str] = Field(default_factory=list)
+    preflight: dict[str, Any] = Field(default_factory=dict)
+
+
+def _compute_preflight_estimate(
+    settings: Settings,
+    req: SimulationRunRequest,
+    *,
+    llm_provider: str,
+    profile_resolution: Any,
+    agent_count: int,
+    fidelity_tiers: list[int],
+) -> PreflightEstimate:
+    llm_max_tokens = req.max_tokens if req.max_tokens is not None else settings.llm_max_tokens
+    return estimate_run_preflight(
+        total_rounds=req.total_rounds,
+        agent_count=agent_count,
+        simulation_mode=req.simulation_mode,
+        speakers_per_round=req.speakers_per_round,
+        fidelity_tiers=fidelity_tiers,
+        llm_provider=llm_provider,
+        profile_resolution=profile_resolution,
+        llm_max_tokens=llm_max_tokens,
+        round_summary_enabled=settings.round_summary_enabled,
+        peer_context_max_chars=settings.peer_context_max_chars,
+        working_memory_last_k=settings.working_memory_last_k,
+    )
+
+
+async def build_preflight_response(settings: Settings, req: SimulationRunRequest) -> PreflightResponse:
+    """Shared preflight path for POST /simulations/preflight (no DB write)."""
+    llm_provider = resolve_run_llm_provider(
+        request_llm_provider=req.llm_provider,
+        model_profile_id=req.model_profile_id,
+        settings=settings,
+    )
+    try:
+        profile_resolution = resolve_run_profiles(
+            model_profile_id=req.model_profile_id,
+            llm_provider=llm_provider,
+            settings=settings,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+    try:
+        scenario_cfg, _ = await load_scenario_for_run(settings.sqlite_path, req.scenario_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Unknown scenario_id: {req.scenario_id}") from None
+
+    remainder_count = int(req.remainder_config.remainder_count) if req.remainder_config else 0
+    core_limit = req.agent_limit - remainder_count if remainder_count > 0 else req.agent_limit
+    personas = build_personas_for_agent_limit(scenario_cfg, core_limit, None)
+    if remainder_count > 0 and req.remainder_config is not None:
+        from mirofish_backend.simulation.remainder import build_synthetic_remainder_personas
+
+        synth = build_synthetic_remainder_personas(
+            scenario_cfg,
+            remainder_count,
+            random_seed=req.random_seed,
+            support_mean=req.remainder_config.initial_support_distribution.mean,
+            support_std=req.remainder_config.initial_support_distribution.std,
+            resistance_mean=req.remainder_config.initial_resistance_distribution.mean,
+            resistance_std=req.remainder_config.initial_resistance_distribution.std,
+            workload_mean=req.remainder_config.initial_workload_stress_distribution.mean,
+            workload_std=req.remainder_config.initial_workload_stress_distribution.std,
+        )
+        personas = list(personas) + synth
+
+    roster_by_slot = None
+    if req.roster_csv and req.roster_csv.strip():
+        try:
+            roster_parse = parse_roster_csv(
+                req.roster_csv.strip(),
+                agent_limit=req.agent_limit,
+                scenario=scenario_cfg,
+            )
+            roster_by_slot = roster_parse.by_slot
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e)) from e
+
+    tier_list, _ = compute_fidelity_tiers(
+        sampling_strategy=req.sampling_strategy,
+        scenario=scenario_cfg,
+        personas_for_run=personas,
+        roster_by_slot=roster_by_slot,
+    )
+    est = _compute_preflight_estimate(
+        settings,
+        req,
+        llm_provider=llm_provider,
+        profile_resolution=profile_resolution,
+        agent_count=len(personas),
+        fidelity_tiers=tier_list,
+    )
+    return PreflightResponse(warnings=list(est.warnings), preflight=est.to_snapshot())
 
 
 class SimulationListItem(BaseModel):
@@ -475,17 +619,36 @@ async def queue_simulation_run(
     prompt_version = settings.prompt_version
     name = run_display_name if run_display_name else _req.scenario_id
     llm_max_tokens = _req.max_tokens if _req.max_tokens is not None else settings.llm_max_tokens
-    llm_provider = _req.llm_provider if _req.llm_provider is not None else settings.llm_provider
+    llm_provider = resolve_run_llm_provider(
+        request_llm_provider=_req.llm_provider,
+        model_profile_id=_req.model_profile_id,
+        settings=settings,
+    )
     llm_concurrency_cap = (
         _req.llm_concurrency_cap if _req.llm_concurrency_cap is not None else settings.llm_concurrency_cap
     )
 
+    try:
+        profile_resolution = resolve_run_profiles(
+            model_profile_id=_req.model_profile_id,
+            llm_provider=llm_provider,
+            settings=settings,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+    lmstudio_model_run, lmstudio_base_url_run, anthropic_model_run = run_llm_credentials(
+        profile_resolution,
+        settings,
+    )
+    openai_api_key_run = run_openai_compatible_api_key(profile_resolution)
+
     if llm_provider == "anthropic":
-        model_used = settings.anthropic_model
+        model_used = anthropic_model_run
     elif llm_provider == "hybrid":
-        model_used = f"hybrid:{settings.lmstudio_model}|{settings.anthropic_model}"
+        model_used = f"hybrid:{lmstudio_model_run}|{anthropic_model_run}"
     else:
-        model_used = settings.lmstudio_model
+        model_used = lmstudio_model_run
     try:
         scenario_cfg, scenario_source = await load_scenario_for_run(settings.sqlite_path, _req.scenario_id)
     except KeyError:
@@ -557,7 +720,7 @@ async def queue_simulation_run(
         rag_effective = False
     else:
         rag_effective = base_rag
-    embedding_model_used = settings.embedding_model.strip() or settings.lmstudio_model
+    embedding_model_used = settings.embedding_model.strip() or lmstudio_model_run
     scenario_doc_version: str | None = None
     if scenario_source == "user":
         ur = await get_user_scenario_row(settings.sqlite_path, scenario_id=_req.scenario_id)
@@ -658,6 +821,16 @@ async def queue_simulation_run(
             if aid:
                 row["degree_centrality"] = round(float(degree_by_agent.get(str(aid), 0.0)), 6)
 
+    preflight_est = _compute_preflight_estimate(
+        settings,
+        _req,
+        llm_provider=llm_provider,
+        profile_resolution=profile_resolution,
+        agent_count=len(personas_final),
+        fidelity_tiers=tier_list,
+    )
+    run_warnings.extend(preflight_est.warnings)
+
     config_snapshot = {
         "scenario_id": _req.scenario_id,
         "scenario_source": scenario_source,
@@ -668,9 +841,11 @@ async def queue_simulation_run(
         "prompt_version": prompt_version,
         "llm_provider": llm_provider,
         "model_used": model_used,
-        "lmstudio_model": settings.lmstudio_model,
-        "anthropic_model": settings.anthropic_model,
-        "lmstudio_base_url": settings.lmstudio_base_url,
+        **model_profile_config_snapshot(profile_resolution),
+        **routing_policy_config_snapshot(profile_resolution),
+        "lmstudio_model": lmstudio_model_run,
+        "anthropic_model": anthropic_model_run,
+        "lmstudio_base_url": lmstudio_base_url_run,
         "llm_temperature": settings.llm_temperature,
         "llm_max_tokens": llm_max_tokens,
         "working_memory_last_k": settings.working_memory_last_k,
@@ -686,9 +861,6 @@ async def queue_simulation_run(
         "rag_max_inject_chars": settings.rag_max_inject_chars,
         "rag_corpus_paths": list(scenario_cfg.rag_corpus_paths),
         "state_audit_enabled": settings.state_audit_enabled,
-        "hybrid_routing_policy": (
-            "frontier_first_turn_of_round" if llm_provider == "hybrid" else None
-        ),
         "scenario_groups": [
             {"group_id": g.group_id, "name": g.name, "description": g.description} for g in scenario_cfg.groups
         ],
@@ -756,6 +928,7 @@ async def queue_simulation_run(
             else 0
         ),
         # Iteration 19: parallel LLM concurrency
+        "preflight": preflight_est.to_snapshot(),
         "llm_concurrency_cap": llm_concurrency_cap,
         # Iteration 20: population scale and cohort aggregation
         "aggregation_threshold": _req.aggregation_threshold,
@@ -807,14 +980,14 @@ async def queue_simulation_run(
             random_seed=_req.random_seed,
             prompt_version=prompt_version,
             model_used=model_used,
-            lmstudio_model=settings.lmstudio_model,
-            lmstudio_base_url=settings.lmstudio_base_url,
+            lmstudio_model=lmstudio_model_run,
+            lmstudio_base_url=lmstudio_base_url_run,
             llm_temperature=settings.llm_temperature,
             llm_max_tokens=llm_max_tokens,
             working_memory_last_k=settings.working_memory_last_k,
             llm_provider=llm_provider,
             anthropic_api_key=settings.anthropic_api_key,
-            anthropic_model=settings.anthropic_model,
+            anthropic_model=anthropic_model_run,
             peer_context_max_chars=settings.peer_context_max_chars,
             rag_effective=rag_effective,
             embedding_model=embedding_model_used,
@@ -838,6 +1011,12 @@ async def queue_simulation_run(
             visibility_effective=visibility_effective_str,
             convergence_threshold=_req.convergence_threshold,
             convergence_patience=_req.convergence_patience,
+            round_summary_enabled=settings.round_summary_enabled,
+            transcript_dir=settings.transcript_dir,
+            routing_policy=llm_provider_to_routing_policy(llm_provider),
+            routing_profile_local_id=profile_resolution.local_profile.profile_id,
+            routing_profile_frontier_id=profile_resolution.frontier_profile.profile_id,
+            openai_compatible_api_key=openai_api_key_run,
         )
     )
 
@@ -862,6 +1041,13 @@ async def wait_for_simulation_terminal(
             return row
         await asyncio.sleep(poll_interval)
     raise TimeoutError(f"simulation {simulation_id} did not finish within {timeout_seconds}s")
+
+
+@router.post("/simulations/preflight", response_model=PreflightResponse)
+async def preflight_simulation(_req: SimulationRunRequest) -> PreflightResponse:
+    """Estimate turns, cost envelope, and context pressure before queuing a run."""
+    settings = get_settings()
+    return await build_preflight_response(settings, _req)
 
 
 @router.post("/simulations/run", response_model=SimulationRunResponse)

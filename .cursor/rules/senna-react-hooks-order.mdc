@@ -1,0 +1,39 @@
+---
+description: Prevent React TDZ blank-screen bugs — declare useState before use
+globs: frontend/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# Senna frontend — React hook declaration order
+
+## Incident (2026-05-20)
+
+**Symptom:** Browser at `http://localhost:3100/` showed a **blank white screen**. Backend healthy; `npm run build` passed.
+
+**Cause:** In `App.tsx`, `const runModelChoices = modelChoiceOptions` ran **before** `const [modelChoiceOptions, setModelChoiceOptions] = useState(...)`. That triggers a runtime **`ReferenceError: Cannot access 'modelChoiceOptions' before initialization`** (temporal dead zone). React never mounts; the page stays white (default `body` background, not app `#F7F6F2`).
+
+A `useEffect` that called `setModelChoiceOptions` was also registered **above** that `useState` — same class of bug.
+
+## Rules when editing React components
+
+1. **Declare `useState` / `useReducer` for a symbol before any use** of that symbol in the same component:
+   - derived `const` values (`runModelChoices = modelChoiceOptions`)
+   - `useEffect` / `useCallback` bodies that call its setter
+   - JSX that reads the state
+2. **Order hooks consistently:** state declarations first (grouped by feature), then memos/callbacks, then effects that depend on those setters, then derived values used in render.
+3. **Blank white screen checklist:** open DevTools → Console for red errors; suspect TDZ / hook-order if build is green but UI is empty.
+4. **Do not assume `npm run build` catches this** — Vite build does not execute the component render path.
+
+## Fix pattern
+
+Move state up:
+
+```tsx
+const [modelChoiceOptions, setModelChoiceOptions] = useState(FALLBACK);
+
+useEffect(() => {
+  void fetchCapabilities().then((cap) => setModelChoiceOptions(...));
+}, []);
+
+const runModelChoices = modelChoiceOptions; // after useState
+```

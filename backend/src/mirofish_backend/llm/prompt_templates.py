@@ -107,6 +107,7 @@ def build_user_prompt(
     prior_agent_memory: list[str],
     recent_interactions: list[dict[str, Any]],
     context_snippets: list[dict[str, Any]] | None = None,
+    round_summaries: list[str] | None = None,
 ) -> str:
     memory_block = "\n".join([f"- {m}" for m in prior_agent_memory]) if prior_agent_memory else "- (none)"
     interaction_block = (
@@ -136,11 +137,24 @@ def build_user_prompt(
             "(see [Round …, turn …]). Build on that shared history—do not repeat your own earlier "
             "message verbatim unless the new policy event explicitly requires a restatement.\n"
         )
+    summaries_block = ""
+    if round_summaries:
+        joined = "\n\n".join(round_summaries)
+        summaries_block = (
+            "Prior rounds — compact summaries (all agents, structured):\n"
+            f"{joined}\n\n"
+        )
+    peer_heading = (
+        "Current round — what others have said so far (excludes your current line):\n"
+        if round_summaries
+        else "What others have said (chronological in this window; excludes your current line):\n"
+    )
     return (
         f"Round: {round_number}\n"
         f"Policy event: {policy_event}\n"
         f"{rag_block}"
         f"{evolution_note}\n"
+        f"{summaries_block}"
         "Interaction task:\n"
         f"- Type: {interaction_type}\n"
         f"- Target scope: {target_scope}\n"
@@ -148,7 +162,7 @@ def build_user_prompt(
         f"- Intent: {intent_tag}\n\n"
         "Working memory (your own prior lines in this simulation):\n"
         f"{memory_block}\n\n"
-        "What others have said (chronological in this window; excludes your current line):\n"
+        f"{peer_heading}"
         f"{interaction_block}\n\n"
         "Write one policy-relevant message as this agent.\n"
         "Output style: 3-6 concise sentences only. Do not print "
