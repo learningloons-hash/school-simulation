@@ -1,0 +1,47 @@
+{
+  "scenario": "participation",
+  "memory_level": "factual",
+  "source_file": "MemData/FirstAgent/simple.json",
+  "trajectories": [
+    {
+      "tid": 0,
+      "message_list": [
+        {
+          "user": "I want to tell you about my uncle, Landon Pierce. He's 27 years old. (place: Boston, MA; time: '2024-10-01 08:00' Tuesday)",
+          "agent": "That's great! Landon is quite young at 27. What else can you share about him? (place: Boston, MA; time: '2024-10-01 08:00' Tuesday)"
+        },
+        {
+          "user": "He's not very tall, only 166 cm. It's kind of amusing sometimes. (place: Boston, MA; time: '2024-10-01 08:01' Tuesday)",
+          "agent": "It sounds like he might have fun with his height! That's always a nice trait to have. (place: Boston, MA; time: '2024-10-01 08:01' Tuesday)"
+        },
+        {
+          "user": "Definitely! And his birthday is on August 23rd. (place: Boston, MA; time: '2024-10-01 08:02' Tuesday)",
+          "agent": "That's coming up soon! Does your family celebrate his birthday in any special way? (place: Boston, MA; time: '2024-10-01 08:02' Tuesday)"
+        },
+        {
+          "user": "We usually have a small gathering. Landon really enjoys that. (place: Boston, MA; time: '2024-10-01 08:03' Tuesday)",
+          "agent": "Small gatherings can be so special, especially with family. It must be nice for him. (place: Boston, MA; time: '2024-10-01 08:03' Tuesday)"
+        }
+      ],
+      "QA": {
+        "qid": 0,
+        "question": "What is the name of my niece's company?",
+        "answer": "TechInnovate Systems LLC",
+        "target_step_id": [
+          [
+            119,
+            5
+          ]
+        ],
+        "choices": {
+          "A": "TechInnovate Solutions LLC",
+          "B": "TechInnovation Systems LLC",
+          "C": "TechInnovative Systems Inc",
+          "D": "TechInnovate Systems LLC"
+        },
+        "ground_truth": "D",
+        "time": "'2024-10-04 08:49' Friday"
+      }
+    }
+  ]
+}

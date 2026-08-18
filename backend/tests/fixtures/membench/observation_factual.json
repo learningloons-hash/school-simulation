@@ -1,0 +1,32 @@
+{
+  "scenario": "observation",
+  "memory_level": "factual",
+  "source_file": "MemData/ThirdAgent/simple.json",
+  "trajectories": [
+    {
+      "tid": 0,
+      "message_list": [
+        "My subordinate is Maya Carter. (place: Boston, MA; time: '2024-10-01 08:00' Tuesday)",
+        "My subordinate's really into collecting antiques; they have a real knack for finding unique pieces from the past. (place: Boston, MA; time: '2024-10-01 17:30' Tuesday)",
+        "My subordinate works for the Boston Law Enforcement Agency. (place: Boston, MA; time: '2024-10-02 08:08' Wednesday)",
+        "My subordinate hails from Los Angeles, CA. (place: Boston, MA; time: '2024-10-02 14:34' Wednesday)"
+      ],
+      "QA": {
+        "qid": 0,
+        "question": "What is the education level of the subordinate?",
+        "answer": "Associate Degree",
+        "target_step_id": [
+          10
+        ],
+        "choices": {
+          "A": "Bachelor's Degree",
+          "B": "Associate Degree",
+          "C": "High School Diploma",
+          "D": "Master's Degree"
+        },
+        "ground_truth": "B",
+        "time": "'2024-10-12 13:33' Saturday"
+      }
+    }
+  ]
+}

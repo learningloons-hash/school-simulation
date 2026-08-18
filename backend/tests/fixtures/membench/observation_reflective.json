@@ -1,0 +1,43 @@
+{
+  "scenario": "observation",
+  "memory_level": "reflective",
+  "source_file": "MemData/ThirdAgent/highlevel.json (movie)",
+  "trajectories": [
+    {
+      "tid": 0,
+      "message_list": [
+        "I really love Casablanca; the timeless romance and memorable lines always draw me in. (place: Boston, MA; time: '2024-10-01 08:00' Tuesday)",
+        "In a dimly lit caf\u00e9 nestled within the vibrant chaos of a war-torn city, the air is thick with the scent of tobacco and the distant echoes of bittersweet melodies, where love stories entwine with sacrifice, and choices made under the flickering lights could change the course of destiny. (place: Boston, MA; time: '2024-10-01 08:01' Tuesday)",
+        "I'm a big fan of Casablanca, but I also love the movie Diva; that mix of opera and drama really captivates me! (place: Boston, MA; time: '2024-10-01 08:02' Tuesday)",
+        "In a world where opera and the underbelly of society collide, vibrant colors swirl around characters entwined in a deadly chase, their fates linked by a haunting melody that seems to resonate through the shadows. (place: Boston, MA; time: '2024-10-01 08:03' Tuesday)"
+      ],
+      "QA": {
+        "qid": 0,
+        "question": "According to the movies I mentioned, what kind of movies might I prefer to watch?",
+        "answer": "Romance",
+        "target_step_id": [
+          [
+            0,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            6,
+            0
+          ]
+        ],
+        "choices": {
+          "A": "Adventure",
+          "B": "Romance",
+          "C": "Children",
+          "D": "Documentary"
+        },
+        "ground_truth": "B",
+        "time": "'2024-10-01 08:11' Tuesday"
+      }
+    }
+  ]
+}

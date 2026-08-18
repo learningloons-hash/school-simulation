@@ -11,11 +11,11 @@ Update it at the end of each iteration gate.
 - **Senna Arc 8 CLOSED — GM PASS** (2026-05-19) — gates **`senna-iter-35`–`39`** + economics follow-up. **Arc 7 GM PASS**. **Arc 6 CLOSED**.
 - Senna Arc 1: [`senna-iter-1-closeout.md`](iterations/senna-iter-1-closeout.md) … [`senna-iter-5-closeout.md`](iterations/senna-iter-5-closeout.md). Arc 2: [`senna-iter-6-closeout.md`](iterations/senna-iter-6-closeout.md) … [`senna-iter-10-closeout.md`](iterations/senna-iter-10-closeout.md). Arc 3: [`senna-iter-11-closeout.md`](iterations/senna-iter-11-closeout.md) … [`senna-iter-15-closeout.md`](iterations/senna-iter-15-closeout.md). Arc 4: [`senna-iter-16-closeout.md`](iterations/senna-iter-16-closeout.md) … [`senna-iter-20-closeout.md`](iterations/senna-iter-20-closeout.md). Arc 5: [`senna-iter-21-closeout.md`](iterations/senna-iter-21-closeout.md) … [`senna-iter-25-closeout.md`](iterations/senna-iter-25-closeout.md). Arc 6: [`senna-iter-26-closeout.md`](iterations/senna-iter-26-closeout.md) … [`senna-iter-29-closeout.md`](iterations/senna-iter-29-closeout.md). Arc 7: [`senna-iter-30-closeout.md`](iterations/senna-iter-30-closeout.md) … [`senna-iter-34-closeout.md`](iterations/senna-iter-34-closeout.md). Arc 8: [`senna-iter-35-closeout.md`](iterations/senna-iter-35-closeout.md) … [`senna-iter-39-closeout.md`](iterations/senna-iter-39-closeout.md). Specs: [`HANDOFF_SENNA_ARC1.md`](handoffs/HANDOFF_SENNA_ARC1.md) … [`HANDOFF_SENNA_ARC8.md`](handoffs/HANDOFF_SENNA_ARC8.md).
 - Backend / thesis platform: **Iteration 29** (run economics) **shipped** with **architect PASS** and **review follow-ups applied**. See [`iteration-29-closeout.md`](iterations/iteration-29-closeout.md) and [`review-iteration-29.md`](reviews/review-iteration-29.md) § *Follow-up resolution*.
-- **Next (Senna):** Await GM next arc handoff (if any). **Backlog:** parallel dispatch, SSE-in-browser, WAL + batch inserts.
-- Last completed Senna work: **Arc 8** (2026-05-19). **Current focus:** thesis / product backlog until next GM arc. Thesis gate: **Iteration 29** (2026-04-08).
-- Last verified run id (QA sample): `ad901483b0a840689c71debb771cf0c1` — FSBB, `agent_limit` 4, `full_round_robin`, 2 rounds (all four agents have turns in DB; see `iteration-10-closeout.md` post-gate notes)
-- Last update date: **2026-05-20** — **Git:** Arcs 1–8 pushed to `origin/main` (`7f426fc`); runtime data excluded per `.gitignore`. Ritual: push after GM arc PASS — [`handoffs/SENNA_AGENT_CYCLE.md`](handoffs/SENNA_AGENT_CYCLE.md) § *Git push after arc close*.
-- Last verified: backend **`uv run pytest` 290 passed, 2 skipped**.
+- **Senna Arc 10 IN PROGRESS** — Memory diagnostics; spec `HANDOFF_SENNA_ARC10_MEMORY_DIAGNOSTICS.md` (when present locally).
+- **Next (Senna):** **senna-iter-47** (Arc 10).
+- Last completed Senna work: **senna-iter-46** (2026-08-18) — MemBench adapter; **senna-iter-45** (2026-08-18) — memory context instrumentation.
+- Last update date: **2026-08-18** — iter-46 MemBench adapter on `main`.
+- Last verified: backend **`uv run pytest` 318 passed, 2 skipped** (includes `test_membench_adapter.py`).
 
 ## Environment and Access
 
@@ -298,6 +298,17 @@ Update it at the end of each iteration gate.
 - **Tests:** `tests/test_iteration25.py` (incl. **E2E** `network_csv` + **`network_centrality`** + **`network_bounded`**); **`test_iteration15_interaction_policy`** extended.
 - **Post–25 hardening (2026-04-07):** Architect follow-ups from **`review-iteration-25.md`** — see [`iteration-25-closeout.md`](iterations/iteration-25-closeout.md) § Post–Iteration 25 hardening.
 
+### Senna iter-46 (Arc 10, completed 2026-08-18)
+
+- **`scripts/membench_adapter.py`:** MemBench participation/observation × factual/reflective adapter; MemBench memory-accuracy scoring; CLI.
+- **Fixtures:** `backend/tests/fixtures/membench/` (MIT-vendored subset + README).
+- **Closeout:** [`senna-iter-46-closeout.md`](iterations/senna-iter-46-closeout.md).
+
+### Senna iter-45 (Arc 10, completed 2026-08-18)
+
+- Per-turn memory context inclusion instrumentation; export v10; `GET /simulations/{id}/memory-context-report`.
+- **Closeout:** [`senna-iter-45-closeout.md`](iterations/senna-iter-45-closeout.md).
+
 ### Senna iter-39 (Arc 8, completed 2026-05-19)
 
 - **GM follow-up:** `economics.py` bills from `effective_profile_id` → `pricing_key` (OpenAI/OpenRouter non-zero; local/heuristic $0; legacy anthropic-only fallback).
@@ -429,7 +440,7 @@ Update it at the end of each iteration gate.
 
 ## Gate Evidence (Latest)
 
-- Backend tests: **`290 passed`**, **`2 skipped`** (`uv run pytest` from `backend/`; Arc 8 economics follow-up + iter-39 integration; manual SSE + LM Studio smoke skipped)
+- Backend tests: **`318 passed`**, **`2 skipped`** (`uv run pytest` from `backend/`; iter-46 MemBench adapter + iter-45 memory context)
 - Frontend build: **`npm run build`** OK after **senna-iter-39** (no UI changes; build regression only)
 - Frontend build: **`npm run build`** OK after **senna-iter-38** (Run setup preflight panel)
 - Frontend build: **`npm run build`** OK after **senna-iter-34** (Arc 7 hardening regression)
