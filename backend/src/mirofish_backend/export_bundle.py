@@ -11,6 +11,7 @@
 - **7** — ``global_state_snapshots`` include optional ``convergence_delta`` (Iteration 28); run row ``converged_at_round``.
 - **8** — Per-turn ``input_tokens`` / ``output_tokens``; run ``total_*_tokens``; ``run.economics`` (Iteration 29).
 - **9** — ``likert_responses`` + ZIP ``agent_round_likert.csv`` (senna-iter-40).
+- **10** — ``memory_context_log`` + ``memory_context_summary`` (senna-iter-45).
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ import zipfile
 from typing import Any
 
 # Single source of truth for GET /simulations/{id}/export.json and GET /capabilities.
-EXPORT_VERSION = "9"
+EXPORT_VERSION = "10"
 
 
 def compute_cohort_summary(snapshots: list[dict]) -> list[dict]:
@@ -234,6 +235,23 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
         ]
         lk_rows = []
 
+    mem_log = bundle.get("memory_context_log") or []
+    if mem_log:
+        mc_headers = list(mem_log[0].keys())
+        mc_rows = [[x.get(h) for h in mc_headers] for x in mem_log]
+    else:
+        mc_headers = [
+            "round_number",
+            "observer_agent_id",
+            "candidate_turn_id",
+            "included",
+            "exclusion_reason",
+            "target_scope",
+            "char_truncated",
+            "created_at",
+        ]
+        mc_rows = []
+
     bio = io.BytesIO()
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("simulation_run.csv", _csv_bytes(run_headers, run_rows))
@@ -245,6 +263,14 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
         zf.writestr("cohort_summary.csv", _csv_bytes(cohort_headers, cohort_rows))
         if likert:
             zf.writestr("agent_round_likert.csv", _csv_bytes(lk_headers, lk_rows))
+        if mem_log:
+            zf.writestr("memory_context_log.csv", _csv_bytes(mc_headers, mc_rows))
+        summary = bundle.get("memory_context_summary")
+        if summary:
+            zf.writestr(
+                "memory_context_summary.json",
+                json.dumps(summary, indent=2, sort_keys=True).encode("utf-8"),
+            )
     return bio.getvalue()
 
 

@@ -333,6 +333,45 @@ def visible_turns_for_agent(
     return visible
 
 
+def partition_turns_by_visibility(
+    recent_turns: list[dict[str, Any]],
+    agent: Any,
+    policy: InteractionPolicy,
+    *,
+    effective_visibility: VisibilityPolicy | None = None,
+    network_neighbors: dict[str, frozenset[str]] | None = None,
+    round_speaker_ids: frozenset[str] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """
+    Return ``(visible, network_excluded)`` without mutating inputs.
+
+    When visibility is full/broadcast, ``network_excluded`` is empty.
+    """
+    visible = visible_turns_for_agent(
+        recent_turns,
+        agent,
+        policy,
+        effective_visibility=effective_visibility,
+        network_neighbors=network_neighbors,
+        round_speaker_ids=round_speaker_ids,
+    )
+    vis = effective_visibility if effective_visibility is not None else policy.visibility_policy
+    if vis in (VisibilityPolicy.FULL, VisibilityPolicy.BROADCAST):
+        return visible, []
+
+    def _key(turn: dict[str, Any]) -> str:
+        if turn.get("id"):
+            return str(turn["id"])
+        return f"{turn.get('round_number')}:{turn.get('turn_index')}:{turn.get('agent_id')}"
+
+    visible_keys = {_key(t) for t in visible}
+    excluded: list[dict[str, Any]] = []
+    for turn in recent_turns:
+        if _key(turn) not in visible_keys:
+            excluded.append(turn)
+    return visible, excluded
+
+
 # ---------------------------------------------------------------------------
 # Channel selection helper
 # ---------------------------------------------------------------------------

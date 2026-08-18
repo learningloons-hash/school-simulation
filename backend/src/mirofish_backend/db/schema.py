@@ -134,6 +134,23 @@ async def init_db(sqlite_path: str) -> None:
 
         await db.execute(
             """
+            CREATE TABLE IF NOT EXISTS agent_context_inclusion (
+              id TEXT PRIMARY KEY,
+              simulation_id TEXT NOT NULL REFERENCES simulation_runs(id),
+              round_number INTEGER NOT NULL,
+              observer_agent_id TEXT NOT NULL,
+              candidate_turn_id TEXT NOT NULL,
+              included INTEGER NOT NULL,
+              exclusion_reason TEXT,
+              target_scope TEXT NOT NULL,
+              char_truncated INTEGER NOT NULL DEFAULT 0,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+
+        await db.execute(
+            """
             CREATE TABLE IF NOT EXISTS round_summaries (
               simulation_id TEXT NOT NULL,
               round_number  INTEGER NOT NULL,

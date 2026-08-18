@@ -8,6 +8,7 @@ into the next turn can exceed small n_ctx (e.g. 4096) on the local server.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Any, cast
 
 _STATE_WRAPPER = re.compile(r"<state>\s*[\s\S]*?\s*</state>", re.IGNORECASE)
@@ -31,19 +32,35 @@ def _trim_leading_reasoning_blob(text: str) -> str:
     return text
 
 
+    return text
+
+
+@dataclass(frozen=True)
+class PeerClipResult:
+    text: str
+    truncated: bool
+
+
+def prepare_peer_response_for_prompt_with_meta(raw: str, *, max_chars: int) -> PeerClipResult:
+    t = (raw or "").strip()
+    if not t:
+        return PeerClipResult(text=t, truncated=False)
+    t = _strip_state_tags(t)
+    t = _trim_leading_reasoning_blob(t)
+    if max_chars <= 0 or len(t) <= max_chars:
+        return PeerClipResult(text=t, truncated=False)
+    tail = t[-max_chars:].lstrip()
+    return PeerClipResult(
+        text=f"…[truncated from {len(t)} chars]\n{tail}",
+        truncated=True,
+    )
+
+
 def prepare_peer_response_for_prompt(raw: str, *, max_chars: int) -> str:
     """
     Full raw_response stays in the DB/transcript; this is only for cross-agent context.
     """
-    t = (raw or "").strip()
-    if not t:
-        return t
-    t = _strip_state_tags(t)
-    t = _trim_leading_reasoning_blob(t)
-    if max_chars <= 0 or len(t) <= max_chars:
-        return t
-    tail = t[-max_chars:].lstrip()
-    return f"…[truncated from {len(t)} chars]\n{tail}"
+    return prepare_peer_response_for_prompt_with_meta(raw, max_chars=max_chars).text
 
 
 def clip_memory_lines(lines: list[str], *, max_chars: int) -> list[str]:

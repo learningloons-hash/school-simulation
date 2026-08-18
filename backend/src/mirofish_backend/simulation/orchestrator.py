@@ -20,6 +20,7 @@ from mirofish_backend.simulation.interaction_policy import (
     apply_turn_order,
     build_interaction_policy,
     channel_for_turn,
+    partition_turns_by_visibility,
     visible_turns_for_agent,
 )
 from mirofish_backend.llm.prompt_templates import build_system_prompt, build_user_prompt, simplified_persona_prompt
@@ -48,6 +49,10 @@ from mirofish_backend.simulation.transcript_writer import (
     close_transcript,
     open_transcript,
 )
+from mirofish_backend.simulation.memory_context import (
+    CONTEXT_FETCH_CAP,
+    build_memory_context_inclusion_records,
+)
 from mirofish_backend.simulation.heuristic import (
     apply_tier3_heuristic_to_states,
     mean_deltas_tier12_for_round,
@@ -60,6 +65,7 @@ from mirofish_backend.db.repo import (
     get_turns_for_round,
     insert_agent_state_snapshot,
     insert_agent_turn,
+    insert_agent_context_inclusion_batch,
     insert_agent_round_likert,
     insert_global_state_snapshot,
     insert_round_outcome,
@@ -817,6 +823,11 @@ async def run_simulation_task(
                     simulation_id=simulation_id,
                     last_k=interaction_last_k,
                 )
+                extended_candidates = await get_recent_interactions(
+                    sqlite_path,
+                    simulation_id=simulation_id,
+                    last_k=CONTEXT_FETCH_CAP,
+                )
                 recent_clipped = clip_recent_interactions(
                     recent_raw,
                     max_chars=peer_limit,
@@ -830,6 +841,30 @@ async def run_simulation_task(
                     network_neighbors=network_neighbors,
                     round_speaker_ids=spoke_ids,
                 )
+                visible_for_log, _ = partition_turns_by_visibility(
+                    recent_raw,
+                    agent,
+                    interaction_policy,
+                    effective_visibility=effective_visibility,
+                    network_neighbors=network_neighbors,
+                    round_speaker_ids=spoke_ids,
+                )
+                inclusion_records = build_memory_context_inclusion_records(
+                    observer_agent_id=agent.agent_id,
+                    round_number=round_number,
+                    extended_candidates=extended_candidates,
+                    recency_window=recent_raw,
+                    visible_turns=visible_for_log,
+                    peer_limit=peer_limit,
+                )
+                if inclusion_records:
+                    from dataclasses import asdict
+
+                    await insert_agent_context_inclusion_batch(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        records=[asdict(r) for r in inclusion_records],
+                    )
                 recent_interactions = [r for r in recent_visible if r.get("agent_id") != agent.agent_id]
 
                 prior_summaries: list[str] | None = None

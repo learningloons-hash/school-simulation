@@ -287,6 +287,101 @@ async def insert_agent_round_likert(
     return row_id
 
 
+async def insert_agent_context_inclusion_batch(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    records: list[dict[str, Any]],
+) -> int:
+    if not records:
+        return 0
+    async with aiosqlite.connect(sqlite_path) as db:
+        await db.executemany(
+            """
+            INSERT INTO agent_context_inclusion (
+              id, simulation_id, round_number, observer_agent_id, candidate_turn_id,
+              included, exclusion_reason, target_scope, char_truncated
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            [
+                (
+                    uuid.uuid4().hex,
+                    simulation_id,
+                    int(r["round_number"]),
+                    str(r["observer_agent_id"]),
+                    str(r["candidate_turn_id"]),
+                    1 if r.get("included") else 0,
+                    r.get("exclusion_reason"),
+                    str(r.get("target_scope") or "agent"),
+                    1 if r.get("char_truncated") else 0,
+                )
+                for r in records
+            ],
+        )
+        await db.commit()
+    return len(records)
+
+
+async def get_group_addressed_turn_summary(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+) -> dict[str, Any]:
+    async with aiosqlite.connect(sqlite_path) as db:
+        cursor = await db.execute(
+            """
+            SELECT
+              COUNT(*) AS total_turns,
+              SUM(CASE WHEN target_scope = 'all' THEN 1 ELSE 0 END) AS group_addressed_turns
+            FROM agent_turns
+            WHERE simulation_id = ?;
+            """,
+            (simulation_id,),
+        )
+        row = await cursor.fetchone()
+    total = int(row[0] or 0)
+    group = int(row[1] or 0)
+    proportion = round(group / total, 6) if total else 0.0
+    return {
+        "total_turns": total,
+        "group_addressed_turns": group,
+        "group_addressed_proportion": proportion,
+    }
+
+
+async def _load_memory_context_log(
+    db: aiosqlite.Connection,
+    *,
+    simulation_id: str,
+) -> list[dict[str, Any]]:
+    cursor = await db.execute(
+        """
+        SELECT round_number, observer_agent_id, candidate_turn_id, included,
+               exclusion_reason, target_scope, char_truncated, created_at
+        FROM agent_context_inclusion
+        WHERE simulation_id = ?
+        ORDER BY round_number ASC, observer_agent_id ASC, candidate_turn_id ASC;
+        """,
+        (simulation_id,),
+    )
+    out: list[dict[str, Any]] = []
+    async for row in cursor:
+        out.append(
+            {
+                "round_number": int(row[0]),
+                "observer_agent_id": row[1],
+                "candidate_turn_id": row[2],
+                "included": bool(int(row[3])),
+                "exclusion_reason": row[4],
+                "target_scope": row[5],
+                "char_truncated": bool(int(row[6])),
+                "created_at": row[7],
+            }
+        )
+    return out
+
+
 async def _load_likert_responses(
     db: aiosqlite.Connection,
     *,
@@ -543,6 +638,7 @@ async def get_recent_interactions(
         cursor = await db.execute(
             """
             SELECT
+              id,
               round_number,
               turn_index,
               agent_id,
@@ -564,14 +660,15 @@ async def get_recent_interactions(
     ordered = rows[::-1]
     return [
         {
-            "round_number": int(row[0]),
-            "turn_index": int(row[1]),
-            "agent_id": str(row[2]),
-            "agent_name": row[3],
-            "interaction_type": row[4],
-            "target_scope": row[5],
-            "target_agent_name": row[6] or "all",
-            "raw_response": row[7],
+            "id": str(row[0]),
+            "round_number": int(row[1]),
+            "turn_index": int(row[2]),
+            "agent_id": str(row[3]),
+            "agent_name": row[4],
+            "interaction_type": row[5],
+            "target_scope": row[6],
+            "target_agent_name": row[7] or "all",
+            "raw_response": row[8],
         }
         for row in ordered
     ]
@@ -1147,6 +1244,30 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
         state_timeline = await _get_state_timeline(db, simulation_id=simulation_id)
         outcome_indicators = await _get_outcome_indicators(db, simulation_id=simulation_id)
         validity_notes = await _get_validity_notes(db, simulation_id=simulation_id)
+        memory_context_log = await _load_memory_context_log(db, simulation_id=simulation_id)
+        ga_cursor = await db.execute(
+            """
+            SELECT COUNT(*), SUM(CASE WHEN target_scope = 'all' THEN 1 ELSE 0 END)
+            FROM agent_turns WHERE simulation_id = ?;
+            """,
+            (simulation_id,),
+        )
+        ga_row = await ga_cursor.fetchone()
+        total_turns = int(ga_row[0] or 0)
+        group_turns = int(ga_row[1] or 0)
+        from mirofish_backend.simulation.memory_context import (
+            merge_group_addressed_summary,
+            summarize_memory_context_log,
+        )
+
+        memory_context_summary = merge_group_addressed_summary(
+            summarize_memory_context_log(memory_context_log),
+            {
+                "total_turns": total_turns,
+                "group_addressed_turns": group_turns,
+                "group_addressed_proportion": round(group_turns / total_turns, 6) if total_turns else 0.0,
+            },
+        )
 
     return {
         "run": run,
@@ -1158,6 +1279,8 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
         "outcome_indicators": outcome_indicators,
         "validity_notes": validity_notes,
         "likert_responses": likert_responses,
+        "memory_context_log": memory_context_log,
+        "memory_context_summary": memory_context_summary,
     }
 
 
