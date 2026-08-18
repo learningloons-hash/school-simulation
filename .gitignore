@@ -37,3 +37,22 @@ Thumbs.db
 # Local IDE (keep project rules)
 .cursor/*
 !.cursor/rules/
+
+# SSTRF research, MOE case material, proposals — local only
+Proposal.pdf
+Proposal.*
+simulation-study/
+docs/research/
+articles/
+scripts/sstrf_*.py
+backend/tests/test_sstrf_*.py
+backend/tests/test_claude_client.py
+backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml
+docs/handoffs/HANDOFF_SSTRF_*
+docs/handoffs/BRIEF_SENNA_MEMORIES_MVP.md
+
+# Personal / copyright PDFs — local only; do not redistribute
+*CV_Lee*
+*Thesis_Proposal*
+docs/frameworks/*.pdf
+docs/research/sources/*.pdf
