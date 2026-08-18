@@ -252,7 +252,7 @@ async def test_run_persists_memory_context_export() -> None:
 
 
 def test_export_version_bumped() -> None:
-    assert EXPORT_VERSION == "10"
+    assert EXPORT_VERSION == "11"
 
 
 def test_memory_context_report_endpoint(client_mem: TestClient) -> None:

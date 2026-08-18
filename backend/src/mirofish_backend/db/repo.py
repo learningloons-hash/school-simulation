@@ -323,6 +323,106 @@ async def insert_agent_context_inclusion_batch(
     return len(records)
 
 
+async def insert_architectural_interview_response(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    agent_id: str,
+    agent_role: str,
+    agent_name: str,
+    category: str,
+    question_text: str,
+    response_text: str,
+    interview_provider: str | None = None,
+    interview_model: str | None = None,
+    interview_profile_id: str | None = None,
+    input_tokens: int | None = None,
+    output_tokens: int | None = None,
+) -> str:
+    row_id = uuid.uuid4().hex
+    async with aiosqlite.connect(sqlite_path) as db:
+        await db.execute(
+            """
+            INSERT INTO architectural_interview_responses (
+              id, simulation_id, agent_id, agent_role, agent_name, category,
+              question_text, response_text, interview_provider, interview_model,
+              interview_profile_id, input_tokens, output_tokens
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                row_id,
+                simulation_id,
+                agent_id,
+                agent_role,
+                agent_name,
+                category,
+                question_text,
+                response_text,
+                interview_provider,
+                interview_model,
+                interview_profile_id,
+                input_tokens,
+                output_tokens,
+            ),
+        )
+        await db.commit()
+    return row_id
+
+
+async def insert_architectural_interview_score(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    response_id: str,
+    agent_id: str,
+    category: str,
+    score: int,
+    score_label: str,
+    rationale: str | None,
+    judge_raw_response: str,
+    judge_provider: str | None = None,
+    judge_model: str | None = None,
+    judge_profile_id: str | None = None,
+    parse_source: str,
+    rubric_version: str,
+    input_tokens: int | None = None,
+    output_tokens: int | None = None,
+) -> str:
+    row_id = uuid.uuid4().hex
+    async with aiosqlite.connect(sqlite_path) as db:
+        await db.execute(
+            """
+            INSERT INTO architectural_interview_scores (
+              id, simulation_id, response_id, agent_id, category, score, score_label,
+              rationale, judge_raw_response, judge_provider, judge_model,
+              judge_profile_id, parse_source, rubric_version, input_tokens, output_tokens
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                row_id,
+                simulation_id,
+                response_id,
+                agent_id,
+                category,
+                score,
+                score_label,
+                rationale,
+                judge_raw_response,
+                judge_provider,
+                judge_model,
+                judge_profile_id,
+                parse_source,
+                rubric_version,
+                input_tokens,
+                output_tokens,
+            ),
+        )
+        await db.commit()
+    return row_id
+
+
 async def get_group_addressed_turn_summary(
     sqlite_path: str,
     *,
@@ -421,6 +521,85 @@ async def _load_likert_responses(
             }
         )
     return likert_responses
+
+
+async def _load_architectural_interview_responses(
+    db: aiosqlite.Connection,
+    *,
+    simulation_id: str,
+) -> list[dict[str, Any]]:
+    cursor = await db.execute(
+        """
+        SELECT id, agent_id, agent_role, agent_name, category, question_text, response_text,
+               interview_provider, interview_model, interview_profile_id,
+               input_tokens, output_tokens, created_at
+        FROM architectural_interview_responses
+        WHERE simulation_id = ?
+        ORDER BY agent_id ASC, category ASC;
+        """,
+        (simulation_id,),
+    )
+    out: list[dict[str, Any]] = []
+    async for row in cursor:
+        out.append(
+            {
+                "id": row[0],
+                "agent_id": row[1],
+                "agent_role": row[2],
+                "agent_name": row[3],
+                "category": row[4],
+                "question_text": row[5],
+                "response_text": row[6],
+                "interview_provider": row[7],
+                "interview_model": row[8],
+                "interview_profile_id": row[9],
+                "input_tokens": row[10],
+                "output_tokens": row[11],
+                "created_at": row[12],
+            }
+        )
+    return out
+
+
+async def _load_architectural_interview_scores(
+    db: aiosqlite.Connection,
+    *,
+    simulation_id: str,
+) -> list[dict[str, Any]]:
+    cursor = await db.execute(
+        """
+        SELECT id, response_id, agent_id, category, score, score_label, rationale,
+               judge_raw_response, judge_provider, judge_model, judge_profile_id,
+               parse_source, rubric_version, input_tokens, output_tokens, created_at
+        FROM architectural_interview_scores
+        WHERE simulation_id = ?
+        ORDER BY agent_id ASC, category ASC;
+        """,
+        (simulation_id,),
+    )
+    out: list[dict[str, Any]] = []
+    async for row in cursor:
+        out.append(
+            {
+                "id": row[0],
+                "response_id": row[1],
+                "agent_id": row[2],
+                "category": row[3],
+                "score": int(row[4]),
+                "score_label": row[5],
+                "rationale": row[6],
+                "judge_raw_response": row[7],
+                "judge_provider": row[8],
+                "judge_model": row[9],
+                "judge_profile_id": row[10],
+                "parse_source": row[11],
+                "rubric_version": row[12],
+                "input_tokens": row[13],
+                "output_tokens": row[14],
+                "created_at": row[15],
+            }
+        )
+    return out
 
 
 async def get_simulation_status_with_transcript(
@@ -1245,6 +1424,12 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
         outcome_indicators = await _get_outcome_indicators(db, simulation_id=simulation_id)
         validity_notes = await _get_validity_notes(db, simulation_id=simulation_id)
         memory_context_log = await _load_memory_context_log(db, simulation_id=simulation_id)
+        architectural_interview_responses = await _load_architectural_interview_responses(
+            db, simulation_id=simulation_id
+        )
+        architectural_interview_scores = await _load_architectural_interview_scores(
+            db, simulation_id=simulation_id
+        )
         ga_cursor = await db.execute(
             """
             SELECT COUNT(*), SUM(CASE WHEN target_scope = 'all' THEN 1 ELSE 0 END)
@@ -1281,6 +1466,8 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
         "likert_responses": likert_responses,
         "memory_context_log": memory_context_log,
         "memory_context_summary": memory_context_summary,
+        "architectural_interview_responses": architectural_interview_responses,
+        "architectural_interview_scores": architectural_interview_scores,
     }
 
 

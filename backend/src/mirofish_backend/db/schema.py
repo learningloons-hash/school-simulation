@@ -151,6 +151,53 @@ async def init_db(sqlite_path: str) -> None:
 
         await db.execute(
             """
+            CREATE TABLE IF NOT EXISTS architectural_interview_responses (
+              id TEXT PRIMARY KEY,
+              simulation_id TEXT NOT NULL REFERENCES simulation_runs(id),
+              agent_id TEXT NOT NULL,
+              agent_role TEXT NOT NULL,
+              agent_name TEXT NOT NULL,
+              category TEXT NOT NULL,
+              question_text TEXT NOT NULL,
+              response_text TEXT NOT NULL,
+              interview_provider TEXT,
+              interview_model TEXT,
+              interview_profile_id TEXT,
+              input_tokens INTEGER,
+              output_tokens INTEGER,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(simulation_id, agent_id, category)
+            );
+            """
+        )
+
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS architectural_interview_scores (
+              id TEXT PRIMARY KEY,
+              simulation_id TEXT NOT NULL REFERENCES simulation_runs(id),
+              response_id TEXT NOT NULL,
+              agent_id TEXT NOT NULL,
+              category TEXT NOT NULL,
+              score INTEGER NOT NULL,
+              score_label TEXT NOT NULL,
+              rationale TEXT,
+              judge_raw_response TEXT NOT NULL,
+              judge_provider TEXT,
+              judge_model TEXT,
+              judge_profile_id TEXT,
+              parse_source TEXT NOT NULL,
+              rubric_version TEXT NOT NULL,
+              input_tokens INTEGER,
+              output_tokens INTEGER,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(response_id)
+            );
+            """
+        )
+
+        await db.execute(
+            """
             CREATE TABLE IF NOT EXISTS round_summaries (
               simulation_id TEXT NOT NULL,
               round_number  INTEGER NOT NULL,

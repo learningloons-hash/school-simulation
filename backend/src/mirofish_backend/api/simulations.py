@@ -67,6 +67,7 @@ from mirofish_backend.simulation.likert import (
 )
 from mirofish_backend.simulation.remainder import build_synthetic_remainder_personas
 from mirofish_backend.simulation.sampling_report import build_sampling_report_json
+from mirofish_backend.simulation.architectural_interview_report import build_architectural_interview_report_json
 from mirofish_backend.simulation.memory_context_report import build_memory_context_report_json
 from mirofish_backend.simulation.sampling_strategy import (
     SAMPLING_STRATEGY_VALUES,
@@ -1135,6 +1136,31 @@ async def get_simulation_memory_context_report(simulation_id: str) -> dict[str, 
         raise HTTPException(status_code=404, detail="Simulation not found")
     try:
         return build_memory_context_report_json(bundle)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.get("/simulations/{simulation_id}/architectural-interview-report")
+async def get_simulation_architectural_interview_report(simulation_id: str) -> dict[str, Any]:
+    """JSON summary of post-run architectural diagnostic interview (senna-iter-47)."""
+    settings = get_settings()
+    row = await get_simulation_run_status_only(settings.sqlite_path, simulation_id=simulation_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    st = row["status"]
+    if st in ("pending", "running"):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Simulation not finished; architectural-interview-report is available "
+                "after the run completes or fails."
+            ),
+        )
+    bundle = await get_simulation_export_bundle(settings.sqlite_path, simulation_id=simulation_id)
+    if bundle is None:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    try:
+        return build_architectural_interview_report_json(bundle)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 

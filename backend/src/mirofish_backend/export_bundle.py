@@ -12,6 +12,7 @@
 - **8** — Per-turn ``input_tokens`` / ``output_tokens``; run ``total_*_tokens``; ``run.economics`` (Iteration 29).
 - **9** — ``likert_responses`` + ZIP ``agent_round_likert.csv`` (senna-iter-40).
 - **10** — ``memory_context_log`` + ``memory_context_summary`` (senna-iter-45).
+- **11** — ``architectural_interview_responses`` + ``architectural_interview_scores`` (senna-iter-47).
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ import zipfile
 from typing import Any
 
 # Single source of truth for GET /simulations/{id}/export.json and GET /capabilities.
-EXPORT_VERSION = "10"
+EXPORT_VERSION = "11"
 
 
 def compute_cohort_summary(snapshots: list[dict]) -> list[dict]:
@@ -252,6 +253,52 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
         ]
         mc_rows = []
 
+    ai_resp = bundle.get("architectural_interview_responses") or []
+    if ai_resp:
+        ar_headers = list(ai_resp[0].keys())
+        ar_rows = [[x.get(h) for h in ar_headers] for x in ai_resp]
+    else:
+        ar_headers = [
+            "id",
+            "agent_id",
+            "agent_role",
+            "agent_name",
+            "category",
+            "question_text",
+            "response_text",
+            "interview_provider",
+            "interview_model",
+            "interview_profile_id",
+            "input_tokens",
+            "output_tokens",
+            "created_at",
+        ]
+        ar_rows = []
+
+    ai_scores = bundle.get("architectural_interview_scores") or []
+    if ai_scores:
+        as_headers = list(ai_scores[0].keys())
+        as_rows = [[x.get(h) for h in as_headers] for x in ai_scores]
+    else:
+        as_headers = [
+            "id",
+            "response_id",
+            "agent_id",
+            "category",
+            "score",
+            "score_label",
+            "rationale",
+            "judge_provider",
+            "judge_model",
+            "judge_profile_id",
+            "parse_source",
+            "rubric_version",
+            "input_tokens",
+            "output_tokens",
+            "created_at",
+        ]
+        as_rows = []
+
     bio = io.BytesIO()
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("simulation_run.csv", _csv_bytes(run_headers, run_rows))
@@ -270,6 +317,16 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
             zf.writestr(
                 "memory_context_summary.json",
                 json.dumps(summary, indent=2, sort_keys=True).encode("utf-8"),
+            )
+        if ai_resp:
+            zf.writestr(
+                "architectural_interview_responses.csv",
+                _csv_bytes(ar_headers, ar_rows),
+            )
+        if ai_scores:
+            zf.writestr(
+                "architectural_interview_scores.csv",
+                _csv_bytes(as_headers, as_rows),
             )
     return bio.getvalue()
 
