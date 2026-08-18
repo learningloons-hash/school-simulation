@@ -102,7 +102,7 @@ def test_export_json_run_has_economics_and_export_version(client_i29: TestClient
     assert ej.status_code == 200
     payload = ej.json()
     assert payload.get("export_version") == EXPORT_VERSION
-    assert EXPORT_VERSION == "8"
+    assert EXPORT_VERSION == "9"
     run = payload.get("run") or {}
     assert "economics" in run
     assert run["economics"].get("total_input_tokens") == 100

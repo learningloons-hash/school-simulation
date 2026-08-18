@@ -71,6 +71,7 @@ def estimate_run_preflight(
     round_summary_enabled: bool,
     peer_context_max_chars: int,
     working_memory_last_k: int,
+    likert_self_report_enabled: bool = False,
 ) -> PreflightEstimate:
     """
     Pure preflight estimator: turn counts, rough token/cost envelope, context pressure warnings.
@@ -98,6 +99,9 @@ def estimate_run_preflight(
                 heuristic_turns += 1
             else:
                 llm_turns += 1
+
+    likert_llm_turns = rounds * agents if likert_self_report_enabled and agents > 0 else 0
+    llm_turns += likert_llm_turns
 
     policy = routing_policy_from_mode(llm_provider_to_routing_policy(llm_provider))
     anthropic_llm = 0

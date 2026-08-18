@@ -41,6 +41,7 @@ class PersonaTemplate:
     initial_state: dict[str, Any] = field(default_factory=dict)
     # Opaque implementation archetype label for sampling (Iteration 26), e.g. active_sense_maker.
     implementation_posture: str = ""
+    likert_anchor_labels: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -57,6 +58,9 @@ class ScenarioConfig:
     rag_corpus_paths: tuple[str, ...] = ()
     # Iteration 15: IAD overlay flag. "school_trinidad" activates Trinidad's authority-based channel defaults.
     interaction_overlay: str = "none"
+    # senna-iter-40: optional round-end Likert anchors (six labels per indicator).
+    likert_self_report_enabled: bool = False
+    likert_anchor_labels: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
 
 _DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -176,6 +180,17 @@ def _groups_tuple_from_persona(raw: Any) -> tuple[str, ...]:
     raise ValueError("persona.groups must be a list of group_id strings when present")
 
 
+def _parse_likert_anchor_labels(raw: Any) -> dict[str, tuple[str, ...]]:
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, tuple[str, ...]] = {}
+    for key, labels in raw.items():
+        if not isinstance(labels, list) or len(labels) != 6:
+            continue
+        out[str(key)] = tuple(str(x) for x in labels)
+    return out
+
+
 def _persona_from_mapping(p: dict[str, Any]) -> PersonaTemplate:
     groups_raw = p.get("groups")
     groups = _groups_tuple_from_persona(groups_raw) if groups_raw is not None else ()
@@ -194,6 +209,7 @@ def _persona_from_mapping(p: dict[str, Any]) -> PersonaTemplate:
         groups=groups,
         initial_state=_mapping_dict(p.get("initial_state")),
         implementation_posture=str(p.get("implementation_posture") or "").strip(),
+        likert_anchor_labels=_parse_likert_anchor_labels(p.get("likert_anchor_labels")),
     )
 
 
@@ -229,6 +245,8 @@ def _scenario_from_mapping(raw: dict[str, Any]) -> ScenarioConfig:
         rag_corpus_paths = ()
     groups = _groups_from_scenario(raw.get("groups"))
     interaction_overlay = str(raw.get("interaction_overlay") or "none").strip().lower()
+    likert_enabled = bool(raw.get("likert_self_report_enabled", False))
+    likert_anchors = _parse_likert_anchor_labels(raw.get("likert_anchor_labels"))
     return ScenarioConfig(
         scenario_id=str(raw["scenario_id"]),
         name=str(raw["name"]),
@@ -238,6 +256,8 @@ def _scenario_from_mapping(raw: dict[str, Any]) -> ScenarioConfig:
         rag_enabled=rag_enabled,
         rag_corpus_paths=rag_corpus_paths,
         interaction_overlay=interaction_overlay,
+        likert_self_report_enabled=likert_enabled,
+        likert_anchor_labels=likert_anchors,
     )
 
 

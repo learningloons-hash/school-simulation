@@ -110,6 +110,30 @@ async def init_db(sqlite_path: str) -> None:
 
         await db.execute(
             """
+            CREATE TABLE IF NOT EXISTS agent_round_likert (
+              id TEXT PRIMARY KEY,
+              simulation_id TEXT NOT NULL REFERENCES simulation_runs(id),
+              round_number INTEGER NOT NULL,
+              agent_id TEXT NOT NULL,
+              indicator TEXT NOT NULL,
+              anchor_label TEXT NOT NULL,
+              ordinal_value INTEGER NOT NULL,
+              mapped_float REAL NOT NULL,
+              source TEXT NOT NULL,
+              float_value REAL,
+              divergence REAL,
+              input_tokens INTEGER,
+              output_tokens INTEGER,
+              effective_provider TEXT,
+              effective_model TEXT,
+              effective_profile_id TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+
+        await db.execute(
+            """
             CREATE TABLE IF NOT EXISTS round_summaries (
               simulation_id TEXT NOT NULL,
               round_number  INTEGER NOT NULL,
@@ -208,6 +232,11 @@ async def init_db(sqlite_path: str) -> None:
         await _ensure_column(db, "agent_turns", "output_tokens", "INTEGER")
         await _ensure_column(db, "agent_turns", "effective_profile_id", "TEXT")
         await _ensure_column(db, "agent_turns", "state_update_source", "TEXT")
+        await _ensure_column(db, "agent_round_likert", "input_tokens", "INTEGER")
+        await _ensure_column(db, "agent_round_likert", "output_tokens", "INTEGER")
+        await _ensure_column(db, "agent_round_likert", "effective_provider", "TEXT")
+        await _ensure_column(db, "agent_round_likert", "effective_model", "TEXT")
+        await _ensure_column(db, "agent_round_likert", "effective_profile_id", "TEXT")
 
         await db.commit()
         logger.info("SQLite schema initialized")

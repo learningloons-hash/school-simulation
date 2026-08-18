@@ -118,7 +118,7 @@ def test_export_json_includes_convergence_fields(client_i28) -> None:
     ej = client.get(f"/simulations/{sid}/export.json")
     assert ej.status_code == 200, ej.text
     payload = ej.json()
-    assert payload.get("export_version") == "8"
+    assert payload.get("export_version") == "9"
     run = payload.get("run") or {}
     assert run.get("converged_at_round") == 3
     globs = payload.get("global_state_snapshots") or []

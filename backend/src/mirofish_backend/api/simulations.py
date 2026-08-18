@@ -60,6 +60,11 @@ from mirofish_backend.simulation.network import (
     undirected_neighbor_map,
 )
 from mirofish_backend.simulation.orchestrator import run_simulation_task
+from mirofish_backend.simulation.likert import (
+    likert_config_snapshot_fields,
+    resolve_likert_enabled,
+    resolve_likert_indicators,
+)
 from mirofish_backend.simulation.remainder import build_synthetic_remainder_personas
 from mirofish_backend.simulation.sampling_report import build_sampling_report_json
 from mirofish_backend.simulation.sampling_strategy import (
@@ -198,6 +203,8 @@ async def run_simulation_task_guarded(
     routing_profile_local_id: str | None = None,
     routing_profile_frontier_id: str | None = None,
     openai_compatible_api_key: str = "",
+    likert_self_report_enabled: bool = False,
+    likert_indicators: tuple[str, ...] | None = None,
 ) -> None:
     """Run simulation and mark run failed with reason on uncaught errors (used by API and tests)."""
     try:
@@ -247,6 +254,8 @@ async def run_simulation_task_guarded(
             routing_profile_local_id=routing_profile_local_id,
             routing_profile_frontier_id=routing_profile_frontier_id,
             openai_compatible_api_key=openai_compatible_api_key,
+            likert_self_report_enabled=likert_self_report_enabled,
+            likert_indicators=likert_indicators,
         )
     except Exception as e:
         logger.exception("Simulation task failed for %s", simulation_id)
@@ -362,6 +371,10 @@ class SimulationRunRequest(BaseModel):
         le=25,
         description="Consecutive sub-threshold rounds required; only used when convergence_threshold is set.",
     )
+    likert_self_report_enabled: bool | None = Field(
+        default=None,
+        description="Round-end Likert self-report (senna-iter-40). Omit to use scenario default; explicit false disables.",
+    )
 
     @model_validator(mode="after")
     def _remainder_fits_agent_limit(self) -> "SimulationRunRequest":
@@ -458,6 +471,7 @@ def _compute_preflight_estimate(
     profile_resolution: Any,
     agent_count: int,
     fidelity_tiers: list[int],
+    likert_self_report_enabled: bool = False,
 ) -> PreflightEstimate:
     llm_max_tokens = req.max_tokens if req.max_tokens is not None else settings.llm_max_tokens
     return estimate_run_preflight(
@@ -472,6 +486,7 @@ def _compute_preflight_estimate(
         round_summary_enabled=settings.round_summary_enabled,
         peer_context_max_chars=settings.peer_context_max_chars,
         working_memory_last_k=settings.working_memory_last_k,
+        likert_self_report_enabled=likert_self_report_enabled,
     )
 
 
@@ -533,6 +548,10 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         personas_for_run=personas,
         roster_by_slot=roster_by_slot,
     )
+    likert_preflight = resolve_likert_enabled(
+        request_flag=req.likert_self_report_enabled,
+        scenario=scenario_cfg,
+    )
     est = _compute_preflight_estimate(
         settings,
         req,
@@ -540,6 +559,7 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         profile_resolution=profile_resolution,
         agent_count=len(personas),
         fidelity_tiers=tier_list,
+        likert_self_report_enabled=likert_preflight,
     )
     return PreflightResponse(warnings=list(est.warnings), preflight=est.to_snapshot())
 
@@ -821,6 +841,17 @@ async def queue_simulation_run(
             if aid:
                 row["degree_centrality"] = round(float(degree_by_agent.get(str(aid), 0.0)), 6)
 
+    likert_effective = resolve_likert_enabled(
+        request_flag=_req.likert_self_report_enabled,
+        scenario=scenario_cfg,
+    )
+    likert_indicators = resolve_likert_indicators(scenario_cfg.likert_anchor_labels)
+    if likert_effective and not scenario_cfg.likert_anchor_labels:
+        raise HTTPException(
+            status_code=422,
+            detail="likert_self_report_enabled requires scenario likert_anchor_labels with six labels per indicator",
+        )
+
     preflight_est = _compute_preflight_estimate(
         settings,
         _req,
@@ -828,6 +859,7 @@ async def queue_simulation_run(
         profile_resolution=profile_resolution,
         agent_count=len(personas_final),
         fidelity_tiers=tier_list,
+        likert_self_report_enabled=likert_effective,
     )
     run_warnings.extend(preflight_est.warnings)
 
@@ -944,6 +976,11 @@ async def queue_simulation_run(
             "dampening": tier_3_dampening,
             "noise_std": tier_3_noise_std,
         },
+        **likert_config_snapshot_fields(
+            enabled=likert_effective,
+            anchor_labels=scenario_cfg.likert_anchor_labels,
+            indicators=likert_indicators,
+        ),
     }
     if _req.convergence_threshold is not None:
         config_snapshot["convergence_threshold"] = _req.convergence_threshold
@@ -1017,6 +1054,8 @@ async def queue_simulation_run(
             routing_profile_local_id=profile_resolution.local_profile.profile_id,
             routing_profile_frontier_id=profile_resolution.frontier_profile.profile_id,
             openai_compatible_api_key=openai_api_key_run,
+            likert_self_report_enabled=likert_effective,
+            likert_indicators=likert_indicators,
         )
     )
 

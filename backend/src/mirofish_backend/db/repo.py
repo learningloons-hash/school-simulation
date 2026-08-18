@@ -233,6 +233,101 @@ async def insert_agent_turn(
     return turn_id
 
 
+async def insert_agent_round_likert(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    round_number: int,
+    agent_id: str,
+    indicator: str,
+    anchor_label: str,
+    ordinal_value: int,
+    mapped_float: float,
+    source: str,
+    float_value: float | None = None,
+    divergence: float | None = None,
+    input_tokens: int | None = None,
+    output_tokens: int | None = None,
+    effective_provider: str | None = None,
+    effective_model: str | None = None,
+    effective_profile_id: str | None = None,
+) -> str:
+    row_id = uuid.uuid4().hex
+    async with aiosqlite.connect(sqlite_path) as db:
+        await db.execute(
+            """
+            INSERT INTO agent_round_likert (
+              id, simulation_id, round_number, agent_id, indicator,
+              anchor_label, ordinal_value, mapped_float, source,
+              float_value, divergence, input_tokens, output_tokens,
+              effective_provider, effective_model, effective_profile_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                row_id,
+                simulation_id,
+                round_number,
+                agent_id,
+                indicator,
+                anchor_label,
+                ordinal_value,
+                mapped_float,
+                source,
+                float_value,
+                divergence,
+                input_tokens,
+                output_tokens,
+                effective_provider,
+                effective_model,
+                effective_profile_id,
+            ),
+        )
+        await db.commit()
+    return row_id
+
+
+async def _load_likert_responses(
+    db: aiosqlite.Connection,
+    *,
+    simulation_id: str,
+) -> list[dict[str, Any]]:
+    likert_cursor = await db.execute(
+        """
+        SELECT round_number, agent_id, indicator, anchor_label, ordinal_value,
+               mapped_float, source, float_value, divergence, created_at,
+               input_tokens, output_tokens, effective_provider, effective_model,
+               effective_profile_id
+        FROM agent_round_likert
+        WHERE simulation_id = ?
+        ORDER BY round_number ASC, agent_id ASC, indicator ASC;
+        """,
+        (simulation_id,),
+    )
+    likert_responses: list[dict[str, Any]] = []
+    async for lr in likert_cursor:
+        likert_responses.append(
+            {
+                "round_number": int(lr[0]),
+                "agent_id": lr[1],
+                "indicator": lr[2],
+                "anchor_label": lr[3],
+                "ordinal_value": int(lr[4]),
+                "mapped_float": float(lr[5]),
+                "source": lr[6],
+                "float_value": float(lr[7]) if lr[7] is not None else None,
+                "divergence": float(lr[8]) if lr[8] is not None else None,
+                "created_at": lr[9],
+                "input_tokens": int(lr[10]) if lr[10] is not None else None,
+                "output_tokens": int(lr[11]) if lr[11] is not None else None,
+                "effective_provider": lr[12],
+                "effective_model": lr[13],
+                "effective_profile_id": lr[14],
+            }
+        )
+    return likert_responses
+
+
 async def get_simulation_status_with_transcript(
     sqlite_path: str,
     *,
@@ -334,11 +429,13 @@ async def get_simulation_status_with_transcript(
 
         tin = int(total_input_tokens_raw) if total_input_tokens_raw is not None else None
         tout = int(total_output_tokens_raw) if total_output_tokens_raw is not None else None
+        likert_responses = await _load_likert_responses(db, simulation_id=simulation_id)
         economics = build_run_economics_payload(
             turns,
             total_input_tokens=tin,
             total_output_tokens=tout,
             llm_provider=llm_pv,
+            likert_responses=likert_responses,
         )
 
         return {
@@ -938,11 +1035,14 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
                 }
             )
 
+        likert_responses = await _load_likert_responses(db, simulation_id=simulation_id)
+
         run["economics"] = build_run_economics_payload(
             transcript,
             total_input_tokens=tin_run,
             total_output_tokens=tout_run,
             llm_provider=llm_pv,
+            likert_responses=likert_responses,
         )
 
         snap_cursor = await db.execute(
@@ -1057,6 +1157,7 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
         "state_timeline": state_timeline,
         "outcome_indicators": outcome_indicators,
         "validity_notes": validity_notes,
+        "likert_responses": likert_responses,
     }
 
 
@@ -1314,7 +1415,9 @@ async def get_simulation_economics_summary(
         tout_i = int(tout) if tout is not None else None
         tcur = await db.execute(
             """
-            SELECT fidelity_tier, effective_provider, input_tokens, output_tokens
+            SELECT
+              fidelity_tier, effective_provider, effective_model,
+              effective_profile_id, input_tokens, output_tokens
             FROM agent_turns
             WHERE simulation_id = ?
             ORDER BY round_number ASC, turn_index ASC;
@@ -1322,6 +1425,7 @@ async def get_simulation_economics_summary(
             (simulation_id,),
         )
         rows = await tcur.fetchall()
+        likert_responses = await _load_likert_responses(db, simulation_id=simulation_id)
     transcript_minimal: list[dict[str, Any]] = []
     for r in rows:
         fid = r[0]
@@ -1333,8 +1437,10 @@ async def get_simulation_economics_summary(
             {
                 "fidelity_tier": ft,
                 "effective_provider": r[1],
-                "input_tokens": int(r[2]) if r[2] is not None else None,
-                "output_tokens": int(r[3]) if r[3] is not None else None,
+                "effective_model": r[2],
+                "effective_profile_id": r[3],
+                "input_tokens": int(r[4]) if r[4] is not None else None,
+                "output_tokens": int(r[5]) if r[5] is not None else None,
             }
         )
     return build_run_economics_payload(
@@ -1342,6 +1448,7 @@ async def get_simulation_economics_summary(
         total_input_tokens=tin_i,
         total_output_tokens=tout_i,
         llm_provider=llm_pv,
+        likert_responses=likert_responses,
     )
 
 

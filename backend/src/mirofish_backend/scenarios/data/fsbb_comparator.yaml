@@ -12,6 +12,30 @@ policy_events:
   1: "MOE circular: schools transition to Full Subject-Based Banding; S1 posting uses AL scores with subject-level G1/G2/G3 bands."
   3: "Town hall: parents and teachers discuss mixed-form classes, communication load, and fairness of subject band movement."
   5: "Review week: HODs report timetable constraints and whether early support reduces stigma around band labels."
+# Example Likert anchors for senna-iter-40 tests (flag off — legacy runs unchanged).
+likert_self_report_enabled: false
+likert_anchor_labels:
+  support:
+    - strongly oppose
+    - oppose
+    - somewhat oppose
+    - somewhat support
+    - support
+    - strongly support
+  resistance:
+    - no resistance
+    - minimal resistance
+    - low resistance
+    - moderate resistance
+    - high resistance
+    - very high resistance
+  workload_stress:
+    - no stress
+    - minimal stress
+    - manageable stress
+    - moderate stress
+    - high stress
+    - overwhelming stress
 personas:
   - persona_id: principal_001
     role: principal

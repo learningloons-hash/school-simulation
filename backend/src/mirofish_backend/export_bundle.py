@@ -10,6 +10,7 @@
 - **6** — Transcript rows include ``fidelity_tier`` (Iteration 23; agent_turns CSV + JSON bundle).
 - **7** — ``global_state_snapshots`` include optional ``convergence_delta`` (Iteration 28); run row ``converged_at_round``.
 - **8** — Per-turn ``input_tokens`` / ``output_tokens``; run ``total_*_tokens``; ``run.economics`` (Iteration 29).
+- **9** — ``likert_responses`` + ZIP ``agent_round_likert.csv`` (senna-iter-40).
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ import zipfile
 from typing import Any
 
 # Single source of truth for GET /simulations/{id}/export.json and GET /capabilities.
-EXPORT_VERSION = "8"
+EXPORT_VERSION = "9"
 
 
 def compute_cohort_summary(snapshots: list[dict]) -> list[dict]:
@@ -214,6 +215,25 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
         for rd in r["rounds"]
     ]
 
+    likert = bundle.get("likert_responses") or []
+    if likert:
+        lk_headers = list(likert[0].keys())
+        lk_rows = [[x.get(h) for h in lk_headers] for x in likert]
+    else:
+        lk_headers = [
+            "round_number",
+            "agent_id",
+            "indicator",
+            "anchor_label",
+            "ordinal_value",
+            "mapped_float",
+            "source",
+            "float_value",
+            "divergence",
+            "created_at",
+        ]
+        lk_rows = []
+
     bio = io.BytesIO()
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("simulation_run.csv", _csv_bytes(run_headers, run_rows))
@@ -223,6 +243,8 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
         zf.writestr("round_outcomes.csv", _csv_bytes(o_headers, o_rows))
         zf.writestr("validity_notes.csv", _csv_bytes(v_headers, v_rows))
         zf.writestr("cohort_summary.csv", _csv_bytes(cohort_headers, cohort_rows))
+        if likert:
+            zf.writestr("agent_round_likert.csv", _csv_bytes(lk_headers, lk_rows))
     return bio.getvalue()
 
 

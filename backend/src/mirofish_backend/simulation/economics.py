@@ -131,18 +131,52 @@ def estimated_run_cost_usd_from_transcript(transcript: list[dict[str, Any]]) -> 
     return round(total, 6)
 
 
+def likert_billing_rows_from_responses(likert_responses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """One USD billing row per agent-round Likert LLM call (dedupe per-indicator rows)."""
+    seen: set[tuple[int, str]] = set()
+    rows: list[dict[str, Any]] = []
+    for lr in likert_responses:
+        rnd = int(lr.get("round_number") or 0)
+        agent_id = str(lr.get("agent_id") or "")
+        key = (rnd, agent_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        inp = lr.get("input_tokens")
+        out = lr.get("output_tokens")
+        if inp is None and out is None:
+            continue
+        rows.append(
+            {
+                "effective_provider": lr.get("effective_provider"),
+                "effective_model": lr.get("effective_model"),
+                "effective_profile_id": lr.get("effective_profile_id"),
+                "input_tokens": inp,
+                "output_tokens": out,
+            }
+        )
+    return rows
+
+
 def build_run_economics_payload(
     transcript: list[dict[str, Any]],
     *,
     total_input_tokens: int | None,
     total_output_tokens: int | None,
     llm_provider: str,
+    likert_responses: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Shape returned on ``GET /simulations/{id}``, export ``run.economics``, and experiment run rows.
     """
+    billing_rows = list(transcript)
+    billing_rows.extend(likert_billing_rows_from_responses(likert_responses or []))
     tier = tier_breakdown_from_transcript(transcript)
-    cost = estimated_run_cost_usd_from_transcript(transcript)
+    likert_turns = len(likert_billing_rows_from_responses(likert_responses or []))
+    if likert_turns:
+        tier = dict(tier)
+        tier["likert_self_report_turns"] = likert_turns
+    cost = estimated_run_cost_usd_from_transcript(billing_rows)
     return {
         "total_input_tokens": total_input_tokens,
         "total_output_tokens": total_output_tokens,

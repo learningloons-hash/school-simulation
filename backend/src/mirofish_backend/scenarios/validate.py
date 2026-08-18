@@ -136,6 +136,19 @@ def validate_scenario_document(
                         f"rag_corpus_paths entry {ps!r} is not an allowed bundled path under scenarios/data",
                     )
 
+    if "likert_self_report_enabled" in doc and not isinstance(doc.get("likert_self_report_enabled"), bool):
+        errors.append("likert_self_report_enabled must be a boolean when present")
+    likert_anchors = doc.get("likert_anchor_labels")
+    if likert_anchors is not None and not isinstance(likert_anchors, dict):
+        errors.append("likert_anchor_labels must be an object when present")
+    elif isinstance(likert_anchors, dict):
+        for ind, labels in likert_anchors.items():
+            if not isinstance(labels, list) or len(labels) != 6:
+                errors.append(f"likert_anchor_labels.{ind} must have exactly 6 anchor strings")
+    if doc.get("likert_self_report_enabled") is True:
+        if not isinstance(likert_anchors, dict) or not likert_anchors:
+            errors.append("likert_self_report_enabled requires non-empty likert_anchor_labels on the scenario")
+
     if errors:
         return errors, warnings
 

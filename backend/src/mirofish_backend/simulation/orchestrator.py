@@ -33,6 +33,15 @@ from mirofish_backend.llm.routing_policies import (
 from mirofish_backend.llm.router import effective_model_id, llm_complete, resolve_effective_provider
 from mirofish_backend.llm.context_clip import clip_memory_lines, clip_recent_interactions
 from mirofish_backend.llm.state_parse import resolve_state_from_response
+from mirofish_backend.llm.likert_parse import resolve_likert_per_indicator
+from mirofish_backend.simulation.likert import (
+    build_likert_self_report_prompt,
+    compute_divergence,
+    format_likert_visible_history,
+    float_value_for_indicator,
+    resolve_likert_anchor_labels,
+    resolve_likert_indicators,
+)
 from mirofish_backend.rag.retrieve import retrieve_top_k, snippets_for_prompt
 from mirofish_backend.simulation.transcript_writer import (
     append_round_to_transcript,
@@ -51,6 +60,7 @@ from mirofish_backend.db.repo import (
     get_turns_for_round,
     insert_agent_state_snapshot,
     insert_agent_turn,
+    insert_agent_round_likert,
     insert_global_state_snapshot,
     insert_round_outcome,
     merge_simulation_config_snapshot,
@@ -309,6 +319,163 @@ def _apply_state_from_response(state: AgentState, response: str) -> tuple[AgentS
     return new_state, conflict, "keyword_fallback"
 
 
+async def _collect_round_end_likert(
+    *,
+    sqlite_path: str,
+    simulation_id: str,
+    round_number: int,
+    agents: list[AgentInstance],
+    agent_states: dict[str, AgentState],
+    scenario: ScenarioConfig,
+    scenario_id: str,
+    prompt_version: str,
+    indicators: tuple[str, ...],
+    interaction_policy: InteractionPolicy,
+    effective_visibility: VisibilityPolicy,
+    network_neighbors: dict[str, frozenset[str]] | None,
+    spoke_ids: frozenset[str],
+    peer_context_max_chars: int,
+    llm_temperature: float,
+    llm_max_tokens: int,
+    lmstudio_base_url: str,
+    lmstudio_model: str,
+    anthropic_api_key: str,
+    anthropic_model: str,
+    openai_compatible_api_key: str,
+    routing_policy: str,
+    routing_profile_local_id: str,
+    routing_profile_frontier_id: str,
+) -> tuple[int, int]:
+    """One LLM call per agent; persists Likert rows without mutating float state."""
+    in_acc = 0
+    out_acc = 0
+    interaction_last_k = max(24, len(agents) * max(1, round_number) * 3)
+
+    for agent in agents:
+        anchor_labels = resolve_likert_anchor_labels(scenario, agent.persona)
+        agent_indicators = resolve_likert_indicators(anchor_labels) if anchor_labels else indicators
+        if not agent_indicators:
+            continue
+        missing = [ind for ind in agent_indicators if len(anchor_labels.get(ind, ())) != 6]
+        if missing:
+            logger.warning(
+                "likert_skip simulation_id=%s round=%s agent=%s missing anchors for %s",
+                simulation_id[:12],
+                round_number,
+                agent.agent_id,
+                missing,
+            )
+            continue
+
+        recent_raw = await get_recent_interactions(
+            sqlite_path,
+            simulation_id=simulation_id,
+            last_k=interaction_last_k,
+        )
+        recent_clipped = clip_recent_interactions(
+            recent_raw,
+            max_chars=peer_context_max_chars,
+        )
+        recent_visible = visible_turns_for_agent(
+            recent_clipped,
+            agent,
+            interaction_policy,
+            effective_visibility=effective_visibility,
+            network_neighbors=network_neighbors,
+            round_speaker_ids=spoke_ids,
+        )
+        visible_history = format_likert_visible_history(
+            recent_visible,
+            agent_id=agent.agent_id,
+        )
+
+        state = agent_states[agent.agent_id]
+        float_values = {ind: float_value_for_indicator(ind, state) for ind in agent_indicators}
+        system_prompt, user_prompt = build_likert_self_report_prompt(
+            round_number=round_number,
+            scenario_id=scenario_id,
+            persona=agent.persona,
+            agent_name=agent.name,
+            agent_role=agent.role,
+            demographics=agent.demographics,
+            prompt_version=prompt_version,
+            indicators=agent_indicators,
+            anchor_labels=anchor_labels,
+            visible_history=visible_history,
+        )
+        effective = resolve_effective_provider(
+            routing_policy=routing_policy,
+            round_number=round_number,
+            turn_index=999,
+        )
+        profile_id = resolve_effective_profile_id(
+            routing_policy=routing_policy,
+            turn_index=999,
+            local_profile_id=routing_profile_local_id,
+            frontier_profile_id=routing_profile_frontier_id,
+        )
+        eff_model = effective_model_id(
+            provider=effective,
+            lmstudio_model=lmstudio_model,
+            anthropic_model=anthropic_model,
+        )
+        in_tokens: int | None = None
+        out_tokens: int | None = None
+        try:
+            completion = await llm_complete(
+                provider=effective,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=llm_temperature,
+                max_tokens=llm_max_tokens,
+                lmstudio_base_url=lmstudio_base_url,
+                lmstudio_model=lmstudio_model,
+                anthropic_api_key=anthropic_api_key,
+                anthropic_model=anthropic_model,
+                openai_compatible_api_key=openai_compatible_api_key,
+            )
+            raw_response = completion.text
+            in_tokens = completion.input_tokens
+            out_tokens = completion.output_tokens
+            if in_tokens is not None:
+                in_acc += in_tokens
+            if out_tokens is not None:
+                out_acc += out_tokens
+        except Exception as llm_err:
+            raw_response = f"[LLM error] {type(llm_err).__name__}: {llm_err}"
+
+        per_indicator = resolve_likert_per_indicator(
+            raw_response,
+            indicators=agent_indicators,
+            anchor_labels=anchor_labels,
+            float_values=float_values,
+        )
+        for ind, (anchor_label, ordinal, mapped_float, ind_source) in per_indicator.items():
+            fv = float_values.get(ind)
+            divergence = compute_divergence(fv, mapped_float)
+            await insert_agent_round_likert(
+                sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                agent_id=agent.agent_id,
+                indicator=ind,
+                anchor_label=anchor_label,
+                ordinal_value=ordinal,
+                mapped_float=mapped_float,
+                source=ind_source,
+                float_value=fv,
+                divergence=divergence,
+                input_tokens=in_tokens,
+                output_tokens=out_tokens,
+                effective_provider=effective,
+                effective_model=eff_model,
+                effective_profile_id=profile_id,
+            )
+    return in_acc, out_acc
+
+
 def _apply_state_update_keyword(state: AgentState, response: str) -> tuple[AgentState, bool]:
     support_hits = _count_keywords(response, ["support", "align", "feasible", "improve", "ready"])
     resistance_hits = _count_keywords(response, ["concern", "resist", "risk", "unclear", "difficult"])
@@ -460,6 +627,8 @@ async def run_simulation_task(
     routing_profile_local_id: str | None = None,
     routing_profile_frontier_id: str | None = None,
     openai_compatible_api_key: str = "",
+    likert_self_report_enabled: bool = False,
+    likert_indicators: tuple[str, ...] | None = None,
 ) -> None:
     mode = (llm_provider or "lmstudio").strip().lower()
     if mode not in ("lmstudio", "anthropic", "hybrid"):
@@ -881,6 +1050,37 @@ async def run_simulation_task(
                 noise_std=tier_3_noise_std,
                 rng=h_rng,
             )
+
+        if likert_self_report_enabled:
+            likert_in, likert_out = await _collect_round_end_likert(
+                sqlite_path=sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                agents=agents,
+                agent_states=agent_states,
+                scenario=scenario,
+                scenario_id=scenario_id,
+                prompt_version=prompt_version,
+                indicators=likert_indicators or resolve_likert_indicators(scenario.likert_anchor_labels),
+                interaction_policy=interaction_policy,
+                effective_visibility=effective_visibility,
+                network_neighbors=network_neighbors,
+                spoke_ids=spoke_ids,
+                peer_context_max_chars=peer_context_max_chars,
+                llm_temperature=llm_temperature,
+                llm_max_tokens=llm_max_tokens,
+                lmstudio_base_url=lmstudio_base_url,
+                lmstudio_model=lmstudio_model,
+                anthropic_api_key=anthropic_api_key,
+                anthropic_model=anthropic_model,
+                openai_compatible_api_key=openai_compatible_api_key,
+                routing_policy=policy,
+                routing_profile_local_id=local_profile_id,
+                routing_profile_frontier_id=frontier_profile_id,
+            )
+            if likert_in or likert_out:
+                run_in_acc += likert_in
+                run_out_acc += likert_out
 
         state_values = list(agent_states.values())
         avg_support = sum(s.support_level for s in state_values) / len(state_values)
