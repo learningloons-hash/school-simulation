@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
 import os
+import sys
 import tempfile
-import uuid
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,6 +26,9 @@ from mirofish_backend.simulation.interaction_policy import (
     partition_turns_by_visibility,
 )
 from mirofish_backend.simulation.memory_context import build_memory_context_inclusion_records
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from simulation_helpers import fake_llm_state_block, memory_context_run_kwargs  # noqa: E402
 
 
 def _fake_observer():
@@ -174,18 +177,11 @@ def client_mem(monkeypatch, tmp_path):
 
 
 async def _fake_llm(**kwargs) -> LLMCompletion:
-    state = {
-        "support_level": 0.5,
-        "resistance_level": 0.5,
-        "workload_stress": 0.5,
-        "belief_posture": "neutral",
-        "perceived_conflict": False,
-    }
-    return LLMCompletion(
-        text="Stub.\n\n<state>\n" + json.dumps(state) + "\n</state>",
-        input_tokens=10,
-        output_tokens=10,
-    )
+    return await fake_llm_state_block(**kwargs)
+
+
+def _memory_context_run_kwargs() -> dict:
+    return memory_context_run_kwargs()
 
 
 @pytest.mark.asyncio
@@ -210,27 +206,8 @@ async def test_run_persists_memory_context_export(monkeypatch: pytest.MonkeyPatc
         await orchestrator.run_simulation_task(
             sqlite_path=db_path,
             simulation_id=sim_id,
-            scenario_id="psle_reform_mvp",
-            total_rounds=1,
-            agent_limit=2,
             random_seed=45,
-            prompt_version="v0",
-            model_used="lmstudio:local",
-            lmstudio_model="local-test",
-            lmstudio_base_url="http://127.0.0.1:9",
-            llm_temperature=0.0,
-            llm_max_tokens=256,
-            working_memory_last_k=2,
-            llm_provider="lmstudio",
-            anthropic_api_key="",
-            anthropic_model="unused",
-            peer_context_max_chars=800,
-            rag_effective=False,
-            embedding_model="unused",
-            rag_top_k=2,
-            rag_chunk_size=200,
-            rag_chunk_overlap=40,
-            rag_max_inject_chars=800,
+            **_memory_context_run_kwargs(),
         )
         bundle = await get_simulation_export_bundle(db_path, simulation_id=sim_id)
         assert bundle is not None
@@ -275,27 +252,8 @@ def test_memory_context_report_endpoint(client_mem: TestClient, monkeypatch: pyt
         await orchestrator.run_simulation_task(
             sqlite_path=settings_db,
             simulation_id=sim_id,
-            scenario_id="psle_reform_mvp",
-            total_rounds=1,
-            agent_limit=2,
             random_seed=46,
-            prompt_version="v0",
-            model_used="lmstudio",
-            lmstudio_model="local",
-            lmstudio_base_url="http://127.0.0.1:9",
-            llm_temperature=0.0,
-            llm_max_tokens=256,
-            working_memory_last_k=2,
-            llm_provider="lmstudio",
-            anthropic_api_key="",
-            anthropic_model="unused",
-            peer_context_max_chars=800,
-            rag_effective=False,
-            embedding_model="unused",
-            rag_top_k=2,
-            rag_chunk_size=200,
-            rag_chunk_overlap=40,
-            rag_max_inject_chars=800,
+            **_memory_context_run_kwargs(),
         )
         return sim_id
 

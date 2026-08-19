@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import sys
@@ -39,6 +38,9 @@ from mirofish_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
 from mirofish_backend.llm.router import LLMCompletion
 from mirofish_backend.simulation import orchestrator
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from simulation_helpers import fake_llm_state_block, memory_context_run_kwargs  # noqa: E402
+
 FIXTURES_DIR = _REPO / "backend/tests/fixtures/membench"
 
 
@@ -46,19 +48,25 @@ def _judge_block(score: int) -> str:
     return f'<judge_score>{{"score": {score}, "rationale": "test"}}</judge_score>'
 
 
-async def _fake_llm_sim(**kwargs) -> LLMCompletion:
-    state = {
-        "support_level": 0.5,
-        "resistance_level": 0.5,
-        "workload_stress": 0.5,
-        "belief_posture": "neutral",
-        "perceived_conflict": False,
-    }
-    return LLMCompletion(
-        text="Stub.\n\n<state>\n" + json.dumps(state) + "\n</state>",
-        input_tokens=8,
-        output_tokens=8,
+async def _seed_completed_sim_with_memory(db_path: str, monkeypatch: pytest.MonkeyPatch) -> str:
+    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm_state_block)
+    sim_id = await create_simulation_run(
+        db_path,
+        name="arc10 baseline",
+        scenario_id="psle_reform_mvp",
+        status="pending",
+        total_rounds=1,
+        random_seed=48,
+        prompt_version="v0",
+        model_used="lmstudio:local",
     )
+    await orchestrator.run_simulation_task(
+        sqlite_path=db_path,
+        simulation_id=sim_id,
+        random_seed=48,
+        **memory_context_run_kwargs(),
+    )
+    return sim_id
 
 
 async def _fake_llm_interview(**kwargs) -> LLMCompletion:
@@ -76,46 +84,6 @@ async def _fake_llm_interview(**kwargs) -> LLMCompletion:
 
 async def _get_bundle(sqlite_path: str, simulation_id: str):
     return await get_simulation_export_bundle(sqlite_path, simulation_id=simulation_id)
-
-
-async def _seed_completed_sim_with_memory(db_path: str, monkeypatch: pytest.MonkeyPatch) -> str:
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm_sim)
-    sim_id = await create_simulation_run(
-        db_path,
-        name="arc10 baseline",
-        scenario_id="psle_reform_mvp",
-        status="pending",
-        total_rounds=1,
-        random_seed=48,
-        prompt_version="v0",
-        model_used="lmstudio:local",
-    )
-    await orchestrator.run_simulation_task(
-        sqlite_path=db_path,
-        simulation_id=sim_id,
-        scenario_id="psle_reform_mvp",
-        total_rounds=1,
-        agent_limit=2,
-        random_seed=48,
-        prompt_version="v0",
-        model_used="lmstudio:local",
-        lmstudio_model="local-test",
-        lmstudio_base_url="http://127.0.0.1:9",
-        llm_temperature=0.0,
-        llm_max_tokens=256,
-        working_memory_last_k=2,
-        llm_provider="lmstudio",
-        anthropic_api_key="",
-        anthropic_model="unused",
-        peer_context_max_chars=800,
-        rag_effective=False,
-        embedding_model="unused",
-        rag_top_k=2,
-        rag_chunk_size=200,
-        rag_chunk_overlap=40,
-        rag_max_inject_chars=800,
-    )
-    return sim_id
 
 
 @pytest.fixture
