@@ -14,6 +14,8 @@ sys.path.insert(0, str(_REPO_ROOT / "backend" / "src"))
 
 from mirofish_backend.config import get_settings
 from mirofish_backend.db.repo import (
+    count_architectural_interview_responses,
+    delete_architectural_interview_for_simulation,
     get_simulation_export_bundle,
     insert_architectural_interview_response,
     insert_architectural_interview_score,
@@ -42,28 +44,38 @@ async def _run(args: argparse.Namespace) -> dict:
         from mirofish_backend.diagnostics.architectural_interview import agents_from_snapshots
 
         agents = agents_from_snapshots(bundle.get("agent_state_snapshots") or [])
+        existing = await count_architectural_interview_responses(
+            sqlite_path, simulation_id=args.simulation_id
+        )
         return {
             "dry_run": True,
             "simulation_id": args.simulation_id,
             "agent_count": len(agents),
+            "existing_response_count": existing,
             "categories": list(INTERVIEW_CATEGORIES),
             "planned_calls_per_agent": len(INTERVIEW_CATEGORIES) * 2,
             "interview_profile_id": args.interview_profile_id,
             "judge_profile_id": args.judge_profile_id,
         }
 
-    return await run_architectural_interview_for_simulation(
-        sqlite_path=sqlite_path,
-        simulation_id=args.simulation_id,
-        interview_profile_id=args.interview_profile_id,
-        judge_profile_id=args.judge_profile_id,
-        insert_response=insert_architectural_interview_response,
-        insert_score=insert_architectural_interview_score,
-        get_export_bundle=_get_bundle,
-        temperature=args.temperature,
-        max_tokens=args.max_tokens,
-        settings=settings,
-    )
+    try:
+        return await run_architectural_interview_for_simulation(
+            sqlite_path=sqlite_path,
+            simulation_id=args.simulation_id,
+            interview_profile_id=args.interview_profile_id,
+            judge_profile_id=args.judge_profile_id,
+            insert_response=insert_architectural_interview_response,
+            insert_score=insert_architectural_interview_score,
+            get_export_bundle=_get_bundle,
+            count_existing_responses=count_architectural_interview_responses,
+            delete_existing=delete_architectural_interview_for_simulation,
+            force=args.force,
+            temperature=args.temperature,
+            max_tokens=args.max_tokens,
+            settings=settings,
+        )
+    except ValueError as exc:
+        return {"error": str(exc), "simulation_id": args.simulation_id}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -93,15 +105,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run live LLM interview + judge (default is dry-run plan only)",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Replace existing interview rows when re-running with --execute",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    try:
-        report = asyncio.run(_run(args))
-    except ValueError as exc:
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
+    report = asyncio.run(_run(args))
+    if report.get("error"):
+        print(json.dumps(report, indent=2, sort_keys=True), file=sys.stderr)
         return 1
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0

@@ -11,11 +11,11 @@ Update it at the end of each iteration gate.
 - **Senna Arc 8 CLOSED — GM PASS** (2026-05-19) — gates **`senna-iter-35`–`39`** + economics follow-up. **Arc 7 GM PASS**. **Arc 6 CLOSED**.
 - Senna Arc 1: [`senna-iter-1-closeout.md`](iterations/senna-iter-1-closeout.md) … [`senna-iter-5-closeout.md`](iterations/senna-iter-5-closeout.md). Arc 2: [`senna-iter-6-closeout.md`](iterations/senna-iter-6-closeout.md) … [`senna-iter-10-closeout.md`](iterations/senna-iter-10-closeout.md). Arc 3: [`senna-iter-11-closeout.md`](iterations/senna-iter-11-closeout.md) … [`senna-iter-15-closeout.md`](iterations/senna-iter-15-closeout.md). Arc 4: [`senna-iter-16-closeout.md`](iterations/senna-iter-16-closeout.md) … [`senna-iter-20-closeout.md`](iterations/senna-iter-20-closeout.md). Arc 5: [`senna-iter-21-closeout.md`](iterations/senna-iter-21-closeout.md) … [`senna-iter-25-closeout.md`](iterations/senna-iter-25-closeout.md). Arc 6: [`senna-iter-26-closeout.md`](iterations/senna-iter-26-closeout.md) … [`senna-iter-29-closeout.md`](iterations/senna-iter-29-closeout.md). Arc 7: [`senna-iter-30-closeout.md`](iterations/senna-iter-30-closeout.md) … [`senna-iter-34-closeout.md`](iterations/senna-iter-34-closeout.md). Arc 8: [`senna-iter-35-closeout.md`](iterations/senna-iter-35-closeout.md) … [`senna-iter-39-closeout.md`](iterations/senna-iter-39-closeout.md). Specs: [`HANDOFF_SENNA_ARC1.md`](handoffs/HANDOFF_SENNA_ARC1.md) … [`HANDOFF_SENNA_ARC8.md`](handoffs/HANDOFF_SENNA_ARC8.md).
 - Backend / thesis platform: **Iteration 29** (run economics) **shipped** with **architect PASS** and **review follow-ups applied**. See [`iteration-29-closeout.md`](iterations/iteration-29-closeout.md) and [`review-iteration-29.md`](reviews/review-iteration-29.md) § *Follow-up resolution*.
-- **Senna Arc 10 IN PROGRESS** — Memory diagnostics; spec `HANDOFF_SENNA_ARC10_MEMORY_DIAGNOSTICS.md` (when present locally).
-- **Next (Senna):** **senna-iter-48** (Arc 10 — combined diagnostics baseline).
-- Last completed Senna work: **senna-iter-47** (2026-08-18) — architectural diagnostic interview + judge scoring; **senna-iter-46** (2026-08-18) — MemBench adapter.
-- Last update date: **2026-08-18** — iter-47 architectural interview on `main`.
-- Last verified: backend **`uv run pytest` 325 passed, 2 skipped** (includes `test_senna_iter47_architectural_interview.py`).
+- **Senna Arc 10 CLOSED** (2026-08-19) — memory diagnostics baseline; gates **`senna-iter-45`–`48`**. See [`senna-iter-48-closeout.md`](iterations/senna-iter-48-closeout.md) and [`docs/diagnostics/ARC10_BASELINE.md`](diagnostics/ARC10_BASELINE.md).
+- **Next (Senna):** Arc 11 memory architecture (spec TBD).
+- Last completed Senna work: **senna-iter-48** (2026-08-19) — Arc 10 combined baseline; **senna-iter-47** (2026-08-18) — architectural interview.
+- Last update date: **2026-08-19** — iter-48 closes Arc 10 on `main`.
+- Last verified: backend **`uv run pytest` 332 passed, 2 skipped** (includes `test_senna_iter48_arc10_baseline.py`).
 
 ## Environment and Access
 
@@ -298,6 +298,11 @@ Update it at the end of each iteration gate.
 - **Tests:** `tests/test_iteration25.py` (incl. **E2E** `network_csv` + **`network_centrality`** + **`network_bounded`**); **`test_iteration15_interaction_policy`** extended.
 - **Post–25 hardening (2026-04-07):** Architect follow-ups from **`review-iteration-25.md`** — see [`iteration-25-closeout.md`](iterations/iteration-25-closeout.md) § Post–Iteration 25 hardening.
 
+### Senna iter-48 (Arc 10 closeout, completed 2026-08-19)
+
+- Combined Arc 10 diagnostics runner; generated [`ARC10_BASELINE.md`](../diagnostics/ARC10_BASELINE.md); iter-47 hardening folded in; hypothesis verdict **mixed**.
+- **Closeout:** [`senna-iter-48-closeout.md`](iterations/senna-iter-48-closeout.md).
+
 ### Senna iter-47 (Arc 10, completed 2026-08-18)
 
 - Park et al. five-category **architectural diagnostic interview** (post-run script); rubric judge scoring with provenance; export v11; `GET /simulations/{id}/architectural-interview-report`.
@@ -445,7 +450,7 @@ Update it at the end of each iteration gate.
 
 ## Gate Evidence (Latest)
 
-- Backend tests: **`325 passed`**, **`2 skipped`** (`uv run pytest` from `backend/`; iter-47 architectural interview + iter-46 MemBench + iter-45 memory context)
+- Backend tests: **`332 passed`**, **`2 skipped`** (`uv run pytest` from `backend/`; iter-48 Arc 10 baseline + iter-47 interview + iter-46 MemBench + iter-45 memory context)
 - Frontend build: **`npm run build`** OK after **senna-iter-39** (no UI changes; build regression only)
 - Frontend build: **`npm run build`** OK after **senna-iter-38** (Run setup preflight panel)
 - Frontend build: **`npm run build`** OK after **senna-iter-34** (Arc 7 hardening regression)

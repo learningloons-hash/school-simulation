@@ -1,0 +1,193 @@
+"""Arc 10 combined diagnostics baseline (senna-iter-48)."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any, Literal
+
+HypothesisVerdict = Literal["supported", "not_supported", "mixed"]
+
+RECALL_CATEGORIES = frozenset({"memory_retrieval"})
+SYNTHESIS_CATEGORIES = frozenset({"planning", "reflection"})
+
+
+def _mean(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return round(sum(values) / len(values), 6)
+
+
+def membench_recall_reflective_averages(membench: dict[str, Any]) -> tuple[float | None, float | None]:
+    factual: list[float] = []
+    reflective: list[float] = []
+    for scenario in ("participation", "observation"):
+        block = membench.get(scenario) or {}
+        if "factual" in block:
+            factual.append(float(block["factual"]["accuracy"]))
+        if "reflective" in block:
+            reflective.append(float(block["reflective"]["accuracy"]))
+    return _mean(factual), _mean(reflective)
+
+
+def interview_category_averages(scores: list[dict[str, Any]]) -> dict[str, float]:
+    buckets: dict[str, list[int]] = {}
+    for row in scores:
+        cat = str(row.get("category") or "")
+        if not cat:
+            continue
+        buckets.setdefault(cat, []).append(int(row["score"]))
+    return {cat: round(sum(vals) / len(vals), 6) for cat, vals in buckets.items() if vals}
+
+
+def evaluate_arc11_hypothesis(summary: dict[str, Any]) -> tuple[HypothesisVerdict, str]:
+    """
+    Evaluate Arc 11 prioritization hypothesis from diagnostic outputs only.
+
+    Hypothesis: stronger directly-given / factual-recall style measures vs weaker
+    reflection/synthesis measures suggests reflection as highest-value Arc 11 mechanism.
+    """
+    membench = summary.get("membench") or {}
+    interview = summary.get("architectural_interview") or {}
+    scores = interview.get("scores") or []
+
+    mb_factual, mb_reflective = membench_recall_reflective_averages(membench)
+    cat_avgs = interview_category_averages(scores)
+    iv_recall = cat_avgs.get("memory_retrieval")
+    iv_synthesis_vals = [cat_avgs[c] for c in SYNTHESIS_CATEGORIES if c in cat_avgs]
+    iv_synthesis = _mean(iv_synthesis_vals) if iv_synthesis_vals else None
+
+    recall_signals: list[float] = []
+    synthesis_signals: list[float] = []
+    if mb_factual is not None:
+        recall_signals.append(mb_factual)
+    if mb_reflective is not None:
+        synthesis_signals.append(mb_reflective)
+    if iv_recall is not None:
+        recall_signals.append(iv_recall / 2.0)
+    if iv_synthesis is not None:
+        synthesis_signals.append(iv_synthesis / 2.0)
+
+    recall_avg = _mean(recall_signals)
+    synth_avg = _mean(synthesis_signals)
+
+    if recall_avg is None or synth_avg is None:
+        return "mixed", "Insufficient diagnostic signal to compare recall-style vs synthesis-style measures."
+
+    delta = round(recall_avg - synth_avg, 6)
+    if delta >= 0.15:
+        verdict: HypothesisVerdict = "supported"
+        rationale = (
+            f"Recall-style average ({recall_avg}) exceeds synthesis-style average ({synth_avg}) "
+            f"by {delta}; factual/recall diagnostics outperform reflection/synthesis on this baseline."
+        )
+    elif delta <= -0.15:
+        verdict = "not_supported"
+        rationale = (
+            f"Synthesis-style average ({synth_avg}) meets or exceeds recall-style average ({recall_avg}) "
+            f"(delta {delta}); the expected factual-strong / reflection-weak split is absent or reversed."
+        )
+    else:
+        verdict = "mixed"
+        rationale = (
+            f"Recall-style average ({recall_avg}) and synthesis-style average ({synth_avg}) are within "
+            f"0.15 (delta {delta}); no clear prioritization signal for Arc 11 reflection work."
+        )
+    return verdict, rationale
+
+
+def build_combined_arc10_summary(
+    *,
+    simulation_id: str,
+    memory_context_summary: dict[str, Any],
+    membench: dict[str, Any],
+    architectural_interview: dict[str, Any],
+    inputs: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        "arc": "10",
+        "simulation_id": simulation_id,
+        "generated_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
+        "inputs": inputs or {},
+        "memory_context": memory_context_summary,
+        "membench": membench,
+        "architectural_interview": architectural_interview,
+    }
+
+
+def generate_baseline_markdown(summary: dict[str, Any]) -> str:
+    verdict, rationale = evaluate_arc11_hypothesis(summary)
+    membench = summary.get("membench") or {}
+    memory = summary.get("memory_context") or {}
+    interview = summary.get("architectural_interview") or {}
+    mb_factual, mb_reflective = membench_recall_reflective_averages(membench)
+    cat_avgs = interview_category_averages(interview.get("scores") or [])
+
+    lines = [
+        "# Arc 10 diagnostics baseline (pre–Arc 11 architecture)",
+        "",
+        "Generated by `scripts/run_arc10_diagnostics.py`. Re-run with the same inputs to reproduce",
+        "section bodies; only `generated_at` timestamps may differ.",
+        "",
+        f"**Simulation ID:** `{summary.get('simulation_id', '')}`",
+        f"**Generated at:** {summary.get('generated_at', '')}",
+        "",
+        "## Combined diagnostics",
+        "",
+        "### Memory context (iter-45)",
+        "",
+    ]
+    if memory:
+        lines.append(f"- Group-addressed proportion: {memory.get('group_addressed_proportion')}")
+        breakdown = memory.get("exclusion_breakdown") or {}
+        if breakdown:
+            lines.append("- Exclusion breakdown:")
+            for reason, count in sorted(breakdown.items()):
+                lines.append(f"  - {reason}: {count}")
+    else:
+        lines.append("- (no memory context summary available)")
+
+    lines.extend(["", "### MemBench (iter-46)", ""])
+    for scenario in ("participation", "observation"):
+        block = membench.get(scenario) or {}
+        lines.append(f"**{scenario.title()}**")
+        for level in ("factual", "reflective"):
+            row = block.get(level) or {}
+            if row:
+                lines.append(
+                    f"- {level}: accuracy {row.get('accuracy')} ({row.get('correct')}/{row.get('total')})"
+                )
+        lines.append("")
+
+    lines.extend(["### Architectural interview (iter-47)", ""])
+    lines.append(f"- Response count: {interview.get('response_count', 0)}")
+    lines.append(f"- Score count: {interview.get('score_count', 0)}")
+    if cat_avgs:
+        lines.append("- Mean score by category (0–2):")
+        for cat in sorted(cat_avgs):
+            lines.append(f"  - {cat}: {cat_avgs[cat]}")
+
+    lines.extend(
+        [
+            "",
+            "## Arc 11 prioritization hypothesis",
+            "",
+            "**Hypothesis:** Strong scores on directly-given / factual-recall style measures vs weaker",
+            "reflection/synthesis measures suggests reflection as the highest-value Arc 11 mechanism.",
+            "",
+            f"**Verdict:** **{verdict.replace('_', ' ')}**",
+            "",
+            rationale,
+            "",
+            "### Evidence summary",
+            "",
+            f"- MemBench factual mean accuracy: {mb_factual}",
+            f"- MemBench reflective mean accuracy: {mb_reflective}",
+            f"- Interview memory_retrieval mean (0–2): {cat_avgs.get('memory_retrieval')}",
+            f"- Interview synthesis mean (planning + reflection, 0–2): "
+            f"{_mean([cat_avgs[c] for c in SYNTHESIS_CATEGORIES if c in cat_avgs])}",
+            "",
+            "*This baseline uses Arc 10 diagnostic outputs only — not Phase V trial figures or CIEPSS scores.*",
+            "",
+        ]
+    )
+    return "\n".join(lines)

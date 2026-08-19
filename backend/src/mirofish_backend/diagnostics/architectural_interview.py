@@ -6,6 +6,7 @@ Post-run script administration only — not wired into the live orchestrator.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable
@@ -205,7 +206,7 @@ def build_judge_prompts(
     response_text: str,
     rubric_excerpt: str | None = None,
 ) -> tuple[str, str]:
-    excerpt = rubric_excerpt or RUBRIC_EXCERPTS.get(category, "")
+    excerpt = rubric_excerpt if rubric_excerpt is not None else load_rubric_category_excerpt(category)
     label = CATEGORY_LABELS.get(category, category)
     system = (
         "You are a rubric judge for an architectural diagnostic interview. "
@@ -357,11 +358,12 @@ async def score_interview_response(
     settings: Settings | None = None,
     rubric_excerpt: str | None = None,
 ) -> tuple[int, str, str | None, str, str, str, str, str, int | None, int | None]:
+    excerpt = load_rubric_category_excerpt(category) if rubric_excerpt is None else rubric_excerpt
     system, user = build_judge_prompts(
         category=category,
         question_text=question_text,
         response_text=response_text,
-        rubric_excerpt=rubric_excerpt,
+        rubric_excerpt=excerpt,
     )
     completion, provider, model, profile_id = await complete_with_profile(
         profile_id=judge_profile_id,
@@ -405,7 +407,7 @@ def summarize_interview_results(
             "parse_source": sc.get("parse_source") if sc else None,
         }
     return {
-        "rubric_version": RUBRIC_VERSION,
+        "rubric_version": effective_rubric_version(),
         "response_count": len(responses),
         "score_count": len(scores),
         "agents": list(by_agent.values()),
@@ -424,6 +426,9 @@ async def run_architectural_interview_for_simulation(
     insert_response: InsertFn,
     insert_score: InsertFn,
     get_export_bundle: Callable[[str, str], Awaitable[dict[str, Any] | None]],
+    count_existing_responses: Callable[[str, str], Awaitable[int]] | None = None,
+    delete_existing: Callable[[str, str], Awaitable[tuple[int, int]]] | None = None,
+    force: bool = False,
     temperature: float = 0.2,
     max_tokens: int = 1024,
     settings: Settings | None = None,
@@ -440,6 +445,16 @@ async def run_architectural_interview_for_simulation(
     status = str(run.get("status") or "")
     if status in ("pending", "running"):
         raise ValueError("simulation must be completed or failed before architectural interview")
+
+    if count_existing_responses is not None:
+        existing = await count_existing_responses(sqlite_path, simulation_id=simulation_id)
+        if existing and not force:
+            raise ValueError(
+                "architectural interview already exists for this simulation "
+                f"({existing} responses); re-run with force=True or --force to replace"
+            )
+        if existing and force and delete_existing is not None:
+            await delete_existing(sqlite_path, simulation_id=simulation_id)
 
     agents = agents_from_snapshots(bundle.get("agent_state_snapshots") or [])
     if not agents:
@@ -518,7 +533,7 @@ async def run_architectural_interview_for_simulation(
                 judge_model=j_model,
                 judge_profile_id=j_profile,
                 parse_source=parse_source,
-                rubric_version=RUBRIC_VERSION,
+                rubric_version=effective_rubric_version(),
                 input_tokens=j_in,
                 output_tokens=j_out,
             )
@@ -559,3 +574,32 @@ def rubric_doc_exists() -> bool:
 
 def load_rubric_doc_text() -> str:
     return RUBRIC_DOC_PATH.read_text(encoding="utf-8")
+
+
+def parse_rubric_version_from_md(md_text: str) -> str:
+    m = re.search(r"\*\*Rubric version:\*\*\s*`(\d+)`", md_text)
+    return m.group(1) if m else RUBRIC_VERSION
+
+
+def parse_category_excerpt_from_md(md_text: str, category: str) -> str:
+    pattern = rf"## {re.escape(category)}\s*\n([\s\S]*?)(?=\n## |\n---|\Z)"
+    m = re.search(pattern, md_text)
+    if not m:
+        return ""
+    return m.group(1).strip()
+
+
+def load_rubric_category_excerpt(category: str) -> str:
+    """Load per-category criteria from rubric MD; fall back to inline excerpts."""
+    if rubric_doc_exists():
+        md_text = load_rubric_doc_text()
+        excerpt = parse_category_excerpt_from_md(md_text, category)
+        if excerpt:
+            return excerpt
+    return RUBRIC_EXCERPTS.get(category, "")
+
+
+def effective_rubric_version() -> str:
+    if rubric_doc_exists():
+        return parse_rubric_version_from_md(load_rubric_doc_text())
+    return RUBRIC_VERSION

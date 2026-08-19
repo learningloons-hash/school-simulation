@@ -189,81 +189,79 @@ async def _fake_llm(**kwargs) -> LLMCompletion:
 
 
 @pytest.mark.asyncio
-async def test_run_persists_memory_context_export() -> None:
+async def test_run_persists_memory_context_export(monkeypatch: pytest.MonkeyPatch) -> None:
     from mirofish_backend.simulation import orchestrator
+
+    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "mem.sqlite")
         await schema_init(db_path)
-        orig = orchestrator.llm_complete
-        orchestrator.llm_complete = _fake_llm
-        try:
-            sim_id = await create_simulation_run(
-                db_path,
-                name="mem ctx",
-                scenario_id="psle_reform_mvp",
-                status="pending",
-                total_rounds=1,
-                random_seed=45,
-                prompt_version="v0",
-                model_used="lmstudio:local",
-            )
-            await orchestrator.run_simulation_task(
-                sqlite_path=db_path,
-                simulation_id=sim_id,
-                scenario_id="psle_reform_mvp",
-                total_rounds=1,
-                agent_limit=2,
-                random_seed=45,
-                prompt_version="v0",
-                model_used="lmstudio:local",
-                lmstudio_model="local-test",
-                lmstudio_base_url="http://127.0.0.1:9",
-                llm_temperature=0.0,
-                llm_max_tokens=256,
-                working_memory_last_k=2,
-                llm_provider="lmstudio",
-                anthropic_api_key="",
-                anthropic_model="unused",
-                peer_context_max_chars=800,
-                rag_effective=False,
-                embedding_model="unused",
-                rag_top_k=2,
-                rag_chunk_size=200,
-                rag_chunk_overlap=40,
-                rag_max_inject_chars=800,
-            )
-            bundle = await get_simulation_export_bundle(db_path, simulation_id=sim_id)
-            assert bundle is not None
-            log = bundle.get("memory_context_log") or []
-            assert len(log) > 0
-            summary = bundle.get("memory_context_summary") or {}
-            assert "exclusion_breakdown" in summary
-            assert "group_addressed_proportion" in summary
-            zip_bytes = build_export_zip(bundle)
-            import io
-            import zipfile
+        sim_id = await create_simulation_run(
+            db_path,
+            name="mem ctx",
+            scenario_id="psle_reform_mvp",
+            status="pending",
+            total_rounds=1,
+            random_seed=45,
+            prompt_version="v0",
+            model_used="lmstudio:local",
+        )
+        await orchestrator.run_simulation_task(
+            sqlite_path=db_path,
+            simulation_id=sim_id,
+            scenario_id="psle_reform_mvp",
+            total_rounds=1,
+            agent_limit=2,
+            random_seed=45,
+            prompt_version="v0",
+            model_used="lmstudio:local",
+            lmstudio_model="local-test",
+            lmstudio_base_url="http://127.0.0.1:9",
+            llm_temperature=0.0,
+            llm_max_tokens=256,
+            working_memory_last_k=2,
+            llm_provider="lmstudio",
+            anthropic_api_key="",
+            anthropic_model="unused",
+            peer_context_max_chars=800,
+            rag_effective=False,
+            embedding_model="unused",
+            rag_top_k=2,
+            rag_chunk_size=200,
+            rag_chunk_overlap=40,
+            rag_max_inject_chars=800,
+        )
+        bundle = await get_simulation_export_bundle(db_path, simulation_id=sim_id)
+        assert bundle is not None
+        log = bundle.get("memory_context_log") or []
+        assert len(log) > 0
+        summary = bundle.get("memory_context_summary") or {}
+        assert "exclusion_breakdown" in summary
+        assert "group_addressed_proportion" in summary
+        zip_bytes = build_export_zip(bundle)
+        import io
+        import zipfile
 
-            with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-                assert "memory_context_log.csv" in zf.namelist()
-                assert "memory_context_summary.json" in zf.namelist()
-        finally:
-            orchestrator.llm_complete = orig
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+            assert "memory_context_log.csv" in zf.namelist()
+            assert "memory_context_summary.json" in zf.namelist()
 
 
 def test_export_version_bumped() -> None:
     assert EXPORT_VERSION == "11"
 
 
-def test_memory_context_report_endpoint(client_mem: TestClient) -> None:
+def test_memory_context_report_endpoint(client_mem: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     from mirofish_backend.simulation import orchestrator
+
+    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm)
 
     async def run_and_complete():
         import asyncio
 
         settings_db = os.environ["SQLITE_PATH"]
         await schema_init(settings_db)
-        orchestrator.llm_complete = _fake_llm
         sim_id = await create_simulation_run(
             settings_db,
             name="api",

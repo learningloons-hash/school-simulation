@@ -12,7 +12,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from mirofish_backend.db.repo import (
+    count_architectural_interview_responses,
     create_simulation_run,
+    delete_architectural_interview_for_simulation,
     get_simulation_export_bundle,
     insert_agent_state_snapshot,
     insert_agent_turn,
@@ -24,6 +26,8 @@ from mirofish_backend.db.schema import init_db
 from mirofish_backend.diagnostics import architectural_interview as ai_mod
 from mirofish_backend.diagnostics.architectural_interview import (
     INTERVIEW_CATEGORIES,
+    build_judge_prompts,
+    load_rubric_category_excerpt,
     run_architectural_interview_for_simulation,
     score_interview_response,
 )
@@ -102,6 +106,27 @@ async def _seed_completed_sim(db_path: str) -> str:
     return sim_id
 
 
+async def _seed_two_agent_sim(db_path: str) -> str:
+    sim_id = await _seed_completed_sim(db_path)
+    await insert_agent_state_snapshot(
+        db_path,
+        simulation_id=sim_id,
+        round_number=1,
+        agent_id="peer_b",
+        agent_role="parent",
+        agent_name="Blake",
+        age=40,
+        sex="M",
+        ethnicity="",
+        ses="",
+        support_level=0.4,
+        resistance_level=0.5,
+        workload_stress=0.5,
+        belief_posture="skeptical",
+    )
+    return sim_id
+
+
 def _judge_block(score: int, rationale: str = "test") -> str:
     return f'<judge_score>{{"score": {score}, "rationale": "{rationale}"}}</judge_score>'
 
@@ -148,6 +173,68 @@ def patched_llm(monkeypatch):
 
 async def _get_bundle(sqlite_path: str, simulation_id: str):
     return await get_simulation_export_bundle(sqlite_path, simulation_id=simulation_id)
+
+
+@pytest.mark.asyncio
+async def test_judge_prompts_load_rubric_md(patched_llm) -> None:
+    excerpt = load_rubric_category_excerpt("memory_retrieval")
+    assert "specific recall" in excerpt.lower() or "specific moment" in excerpt.lower()
+    system, user = build_judge_prompts(
+        category="memory_retrieval",
+        question_text="Recall a moment.",
+        response_text="Round 1 Blake disagreed.",
+    )
+    assert excerpt in user
+    assert "rubric judge" in system.lower()
+
+
+@pytest.mark.asyncio
+async def test_two_agents_ten_responses_and_scores(patched_llm) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = os.path.join(tmp, "iter47_multi.sqlite")
+        await init_db(db_path)
+        sim_id = await _seed_two_agent_sim(db_path)
+        report = await run_architectural_interview_for_simulation(
+            sqlite_path=db_path,
+            simulation_id=sim_id,
+            interview_profile_id=LOCAL_LMSTUDIO_DEFAULT_ID,
+            judge_profile_id=LOCAL_LMSTUDIO_DEFAULT_ID,
+            insert_response=insert_architectural_interview_response,
+            insert_score=insert_architectural_interview_score,
+            get_export_bundle=_get_bundle,
+            count_existing_responses=count_architectural_interview_responses,
+            delete_existing=delete_architectural_interview_for_simulation,
+        )
+        assert report["response_count"] == 10
+        assert report["score_count"] == 10
+        bundle = await get_simulation_export_bundle(db_path, simulation_id=sim_id)
+        assert bundle is not None
+        assert len(bundle["architectural_interview_responses"]) == 10
+        assert len(bundle["architectural_interview_scores"]) == 10
+
+
+@pytest.mark.asyncio
+async def test_rerun_without_force_returns_error_not_crash(patched_llm) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = os.path.join(tmp, "iter47_rerun.sqlite")
+        await init_db(db_path)
+        sim_id = await _seed_completed_sim(db_path)
+        kwargs = dict(
+            sqlite_path=db_path,
+            simulation_id=sim_id,
+            interview_profile_id=LOCAL_LMSTUDIO_DEFAULT_ID,
+            judge_profile_id=LOCAL_LMSTUDIO_DEFAULT_ID,
+            insert_response=insert_architectural_interview_response,
+            insert_score=insert_architectural_interview_score,
+            get_export_bundle=_get_bundle,
+            count_existing_responses=count_architectural_interview_responses,
+            delete_existing=delete_architectural_interview_for_simulation,
+        )
+        await run_architectural_interview_for_simulation(**kwargs)
+        with pytest.raises(ValueError, match="already exists"):
+            await run_architectural_interview_for_simulation(**kwargs)
+        await run_architectural_interview_for_simulation(**kwargs, force=True)
+        assert await count_architectural_interview_responses(db_path, simulation_id=sim_id) == 5
 
 
 @pytest.mark.asyncio

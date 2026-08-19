@@ -423,6 +423,51 @@ async def insert_architectural_interview_score(
     return row_id
 
 
+async def count_architectural_interview_responses(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+) -> int:
+    async with aiosqlite.connect(sqlite_path) as db:
+        cursor = await db.execute(
+            """
+            SELECT COUNT(*) FROM architectural_interview_responses
+            WHERE simulation_id = ?;
+            """,
+            (simulation_id,),
+        )
+        row = await cursor.fetchone()
+        return int(row[0] or 0)
+
+
+async def delete_architectural_interview_for_simulation(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+) -> tuple[int, int]:
+    async with aiosqlite.connect(sqlite_path) as db:
+        sc = await db.execute(
+            "SELECT COUNT(*) FROM architectural_interview_scores WHERE simulation_id = ?;",
+            (simulation_id,),
+        )
+        score_count = int((await sc.fetchone())[0] or 0)
+        rc = await db.execute(
+            "SELECT COUNT(*) FROM architectural_interview_responses WHERE simulation_id = ?;",
+            (simulation_id,),
+        )
+        response_count = int((await rc.fetchone())[0] or 0)
+        await db.execute(
+            "DELETE FROM architectural_interview_scores WHERE simulation_id = ?;",
+            (simulation_id,),
+        )
+        await db.execute(
+            "DELETE FROM architectural_interview_responses WHERE simulation_id = ?;",
+            (simulation_id,),
+        )
+        await db.commit()
+    return response_count, score_count
+
+
 async def get_group_addressed_turn_summary(
     sqlite_path: str,
     *,
