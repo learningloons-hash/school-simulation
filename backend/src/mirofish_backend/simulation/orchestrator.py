@@ -50,7 +50,6 @@ from mirofish_backend.simulation.transcript_writer import (
     open_transcript,
 )
 from mirofish_backend.simulation.memory_context import (
-    CONTEXT_FETCH_CAP,
     build_memory_context_inclusion_records,
 )
 from mirofish_backend.simulation.heuristic import (
@@ -61,6 +60,7 @@ from mirofish_backend.simulation.heuristic import (
 from mirofish_backend.db.repo import (
     get_recent_interactions,
     get_last_agent_responses,
+    get_last_agent_turn_rows,
     get_round_summaries,
     get_turns_for_round,
     insert_agent_state_snapshot,
@@ -809,24 +809,17 @@ async def run_simulation_task(
                 # Tier 2: shorter peer / memory context (Iteration 23).
                 peer_limit = max(1, peer_context_max_chars // 2) if tier == 2 else peer_context_max_chars
 
-                prior_agent_memory = clip_memory_lines(
-                    await get_last_agent_responses(
-                        sqlite_path,
-                        simulation_id=simulation_id,
-                        agent_id=agent.agent_id,
-                        last_k=working_memory_last_k,
-                    ),
-                    max_chars=peer_limit,
+                self_turn_rows = await get_last_agent_turn_rows(
+                    sqlite_path,
+                    simulation_id=simulation_id,
+                    agent_id=agent.agent_id,
+                    last_k=working_memory_last_k,
                 )
+                self_prompt_turn_ids = {str(r["id"]) for r in self_turn_rows if r.get("id")}
                 recent_raw = await get_recent_interactions(
                     sqlite_path,
                     simulation_id=simulation_id,
                     last_k=interaction_last_k,
-                )
-                extended_candidates = await get_recent_interactions(
-                    sqlite_path,
-                    simulation_id=simulation_id,
-                    last_k=CONTEXT_FETCH_CAP,
                 )
                 recent_clipped = clip_recent_interactions(
                     recent_raw,
@@ -849,23 +842,39 @@ async def run_simulation_task(
                     network_neighbors=network_neighbors,
                     round_speaker_ids=spoke_ids,
                 )
+                recent_interactions = [r for r in recent_visible if r.get("agent_id") != agent.agent_id]
+                peer_prompt_turn_ids = {str(r["id"]) for r in recent_interactions if r.get("id")}
                 inclusion_records = build_memory_context_inclusion_records(
                     observer_agent_id=agent.agent_id,
                     round_number=round_number,
-                    extended_candidates=extended_candidates,
+                    extended_candidates=recent_raw,
                     recency_window=recent_raw,
                     visible_turns=visible_for_log,
                     peer_limit=peer_limit,
+                    self_prompt_turn_ids=self_prompt_turn_ids,
+                    peer_prompt_turn_ids=peer_prompt_turn_ids,
                 )
                 if inclusion_records:
                     from dataclasses import asdict
 
-                    await insert_agent_context_inclusion_batch(
-                        sqlite_path,
-                        simulation_id=simulation_id,
-                        records=[asdict(r) for r in inclusion_records],
-                    )
-                recent_interactions = [r for r in recent_visible if r.get("agent_id") != agent.agent_id]
+                    try:
+                        await insert_agent_context_inclusion_batch(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            records=[asdict(r) for r in inclusion_records],
+                        )
+                    except Exception:
+                        logger.exception(
+                            "memory context inclusion logging failed for sim=%s round=%s agent=%s",
+                            simulation_id,
+                            round_number,
+                            agent.agent_id,
+                        )
+
+                prior_agent_memory = clip_memory_lines(
+                    [str(r.get("raw_response") or "") for r in self_turn_rows],
+                    max_chars=peer_limit,
+                )
 
                 prior_summaries: list[str] | None = None
                 if round_summary_enabled and round_number > 1:

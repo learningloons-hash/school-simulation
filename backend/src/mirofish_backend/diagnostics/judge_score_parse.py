@@ -3,6 +3,7 @@ Parse rubric judge scores from LLM responses.
 
 Models append ``<judge_score>{...json...}</judge_score>`` with integer score 0–2.
 Provenance mirrors ``likert_parse.py`` (model_parsed / repaired / keyword_fallback).
+Unparseable output returns ``score=None`` with source ``unparseable`` (not a silent zero).
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ import json
 import re
 from typing import Any, Literal
 
-JudgeScoreSource = Literal["model_parsed", "repaired", "keyword_fallback"]
+JudgeScoreSource = Literal["model_parsed", "repaired", "keyword_fallback", "unparseable"]
 
 VALID_SCORES = frozenset({0, 1, 2})
 SCORE_LABELS: dict[int, str] = {0: "inadequate", 1: "partial", 2: "adequate"}
@@ -79,7 +80,8 @@ def parse_judge_payload(payload: dict[str, Any]) -> tuple[int | None, str | None
     return score, rationale
 
 
-def keyword_fallback_judge(raw_response: str) -> tuple[int, str | None]:
+def keyword_fallback_judge(raw_response: str) -> tuple[int | None, str | None]:
+    """Infer score from loose patterns; return ``(None, None)`` when nothing matches."""
     text = raw_response or ""
     for pattern in (_SCORE_JSON, _SCORE_BARE):
         m = pattern.search(text)
@@ -92,14 +94,15 @@ def keyword_fallback_judge(raw_response: str) -> tuple[int, str | None]:
         return 2, None
     if "partial" in lower or "incomplete" in lower:
         return 1, None
-    return 0, None
+    return None, None
 
 
-def resolve_judge_score(raw_response: str) -> tuple[int, JudgeScoreSource, str | None]:
+def resolve_judge_score(raw_response: str) -> tuple[int | None, JudgeScoreSource, str | None]:
     """
     Resolve a single 0–2 score from judge model output.
 
-    Never raises; always returns provenance via ``JudgeScoreSource``.
+    Never raises. Returns ``score=None`` with ``unparseable`` when no score can be
+    inferred — callers must not treat that as a substantive zero.
     """
     blocks = extract_judge_score_blocks(raw_response)
     json_repaired = False
@@ -124,4 +127,14 @@ def resolve_judge_score(raw_response: str) -> tuple[int, JudgeScoreSource, str |
         return parsed_score, src, parsed_rationale
 
     fb_score, _ = keyword_fallback_judge(raw_response)
-    return fb_score, "keyword_fallback", None
+    if fb_score is not None:
+        return fb_score, "keyword_fallback", None
+    return None, "unparseable", None
+
+
+def count_parse_sources(scores: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in scores:
+        src = str(row.get("parse_source") or "unknown")
+        counts[src] = counts.get(src, 0) + 1
+    return counts

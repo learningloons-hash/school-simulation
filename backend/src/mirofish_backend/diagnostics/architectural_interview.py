@@ -12,7 +12,11 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 
 from mirofish_backend.config import Settings, get_settings
-from mirofish_backend.diagnostics.judge_score_parse import resolve_judge_score, score_label
+from mirofish_backend.diagnostics.judge_score_parse import (
+    count_parse_sources,
+    resolve_judge_score,
+    score_label,
+)
 from mirofish_backend.llm.model_profiles import (
     resolve_run_llm_provider,
     resolve_run_profiles,
@@ -374,6 +378,11 @@ async def score_interview_response(
     )
     raw = completion.text
     score, parse_source, rationale = resolve_judge_score(raw)
+    if score is None or parse_source == "unparseable":
+        raise ValueError(
+            f"judge output for category {category!r} could not be scored "
+            f"(parse_source={parse_source!r}); raw={raw[:200]!r}"
+        )
     return (
         score,
         score_label(score),
@@ -386,6 +395,45 @@ async def score_interview_response(
         completion.input_tokens,
         completion.output_tokens,
     )
+
+
+def validate_interview_completeness(
+    responses: list[dict[str, Any]],
+    scores: list[dict[str, Any]],
+    *,
+    agents_interviewed: int,
+) -> None:
+    """
+    Require a complete agents × categories grid with one score per response.
+
+    Raises ``ValueError`` when an interrupted or partial run would skew baselines.
+    """
+    expected = agents_interviewed * len(INTERVIEW_CATEGORIES)
+    if len(responses) != expected:
+        raise ValueError(
+            f"architectural interview incomplete: {len(responses)} responses, expected {expected}"
+        )
+    if len(scores) != expected:
+        raise ValueError(
+            f"architectural interview incomplete: {len(scores)} scores, expected {expected}"
+        )
+    response_ids = {str(r["id"]) for r in responses}
+    if len(response_ids) != len(responses):
+        raise ValueError("architectural interview has duplicate response ids")
+    score_by_response = {str(s["response_id"]): s for s in scores}
+    if len(score_by_response) != len(scores):
+        raise ValueError("architectural interview has duplicate score response_ids")
+    missing = response_ids - set(score_by_response)
+    if missing:
+        raise ValueError(
+            f"architectural interview missing judge scores for response ids: {sorted(missing)[:5]}"
+        )
+    unparseable = [s for s in scores if str(s.get("parse_source") or "") == "unparseable"]
+    if unparseable:
+        raise ValueError(
+            f"architectural interview has {len(unparseable)} unscorable judge rows; "
+            "retry or re-run with --force"
+        )
 
 
 def summarize_interview_results(
@@ -406,10 +454,16 @@ def summarize_interview_results(
             "score": sc.get("score") if sc else None,
             "parse_source": sc.get("parse_source") if sc else None,
         }
+    scorable_scores = [
+        s for s in scores if s.get("score") is not None and s.get("parse_source") != "unparseable"
+    ]
     return {
         "rubric_version": effective_rubric_version(),
         "response_count": len(responses),
         "score_count": len(scores),
+        "scorable_score_count": len(scorable_scores),
+        "parse_source_counts": count_parse_sources(scores),
+        "scores": scorable_scores,
         "agents": list(by_agent.values()),
     }
 
@@ -557,6 +611,11 @@ async def run_architectural_interview_for_simulation(
                 }
             )
 
+    validate_interview_completeness(
+        response_rows,
+        score_rows,
+        agents_interviewed=len(agents),
+    )
     summary = summarize_interview_results(response_rows, score_rows)
     return {
         "simulation_id": simulation_id,

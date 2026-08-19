@@ -21,7 +21,7 @@ One trimmed trajectory per MemBench scenario × memory-level cell (four JSON fil
 | `observation_factual.json` | Observation (third-person) | Factual | `MemData/ThirdAgent/simple.json` |
 | `observation_reflective.json` | Observation | Reflective | `MemData/ThirdAgent/highlevel.json` (movie) |
 
-Each trajectory retains MemBench `QA` fields (`question`, `choices`, `ground_truth`, `target_step_id`, …) and the first four normalized `message_list` turns for offline CI.
+Each trajectory retains MemBench `QA` fields (`question`, `choices`, `ground_truth`, `target_step_id`, …) and a **minimal evidence-preserving** `message_list` subset: every QA’s `answer` text (or correct choice label) appears in the vendored memory, and reflective fixtures include messages at upstream `target_step_id` indices where those indices fall within the trimmed list.
 
 ## MIT License Notice
 

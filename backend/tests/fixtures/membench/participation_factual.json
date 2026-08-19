@@ -21,6 +21,14 @@
         {
           "user": "We usually have a small gathering. Landon really enjoys that. (place: Boston, MA; time: '2024-10-01 08:03' Tuesday)",
           "agent": "Small gatherings can be so special, especially with family. It must be nice for him. (place: Boston, MA; time: '2024-10-01 08:03' Tuesday)"
+        },
+        {
+          "user": "My niece started a new job recently. (place: Boston, MA; time: '2024-10-03 12:00' Thursday)",
+          "agent": "That's exciting! Where is she working? (place: Boston, MA; time: '2024-10-03 12:00' Thursday)"
+        },
+        {
+          "user": "She joined TechInnovate Systems LLC as a product manager. (place: Boston, MA; time: '2024-10-03 12:01' Thursday)",
+          "agent": "TechInnovate Systems LLC sounds like an interesting company. How is she finding the role? (place: Boston, MA; time: '2024-10-03 12:01' Thursday)"
         }
       ],
       "QA": {

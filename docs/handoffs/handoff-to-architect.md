@@ -2,43 +2,53 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for Architect review — iter-48 gate fix.
+**Status:** Ready for Architect review — Arc 10 independent review blockers B1–B6.
 
 ---
 
-## Builder report — iter-48 gate fix
+## Builder report — Arc 10 review blockers B1–B6
 
 | Field | Value |
 |-------|--------|
-| **Task** | iter-48 gate fix (iter-45 test regression) |
+| **Task** | Independent review blockers B1–B6 (priority B3/B6 → B4/B5 → B1/B2) |
 | **Branch** | `main` |
-| **Commit** | `f572860` |
 | **Date** | 2026-08-19 |
 
-### Fix applied
+### Blockers addressed
 
-- **Root cause:** Tier-3 turns in `orchestrator.py` return before memory-context inclusion logging; without explicit tier-1 fidelity, `test_run_persists_memory_context_export` could see `memory_context_log == []`.
-- **Files changed:**
-  - `backend/tests/simulation_helpers.py` (new) — `memory_context_run_kwargs()` with `fidelity_tiers=[1, 1]`, shared fake LLM helper
-  - `backend/tests/test_senna_iter45_memory_context.py` — uses shared kwargs + monkeypatch (no manual `orchestrator.llm_complete` restore)
-  - `backend/tests/test_senna_iter48_arc10_baseline.py` — aligned seed helper with same kwargs
-  - `docs/iterations/senna-iter-48-closeout.md` — gate-fix note added
+| Blocker | Status | Summary |
+|---------|--------|---------|
+| **B3** | Fixed | MemBench fixtures extended with evidence-preserving messages; `validate_fixture_evidence()` runs in suite |
+| **B6** | Fixed | `canonical_baseline_inputs.json` committed; `--from-canonical` on runner; `test_regenerate_baseline_from_canonical_bundle` |
+| **B4** | Fixed | Unparseable judge → `score=None`, source `unparseable`; interview scoring raises; baseline excludes invalid rows; parse-source counts |
+| **B5** | Fixed | `validate_interview_completeness()` at end of interview run and before baseline assembly |
+| **B1** | Fixed | Memory-context integration test uses 2 rounds + `llm_concurrency_cap=1`; asserts round-2 prior-turn inclusion |
+| **B2** | Fixed | Prompt-aligned inclusion records; `visibility_policy` / `same_round_peer`; non-fatal batch insert; removed 10k candidate fetch |
+
+### Key files
+
+- MemBench fixtures: `backend/tests/fixtures/membench/*.json`
+- Canonical bundle: `backend/tests/fixtures/arc10/canonical_baseline_inputs.json`
+- Baseline (regenerated): `docs/diagnostics/ARC10_BASELINE.md` — hypothesis **supported** (MemBench factual now 1.0 with valid fixtures)
+- Judge parse: `backend/src/mirofish_backend/diagnostics/judge_score_parse.py`
+- Memory context: `backend/src/mirofish_backend/simulation/memory_context.py`, `orchestrator.py`
 
 ### Verification
 
 ```text
-cd backend && uv run pytest tests/test_senna_iter45_memory_context.py -q
-# → 7 passed
-
 cd backend && uv run pytest -q
-# → 332 passed, 2 skipped
+# → 334 passed, 2 skipped
+
+python scripts/run_arc10_diagnostics.py --from-canonical backend/tests/fixtures/arc10/canonical_baseline_inputs.json --write-baseline
+# → regenerates ARC10_BASELINE.md body (timestamp fixed in bundle)
 ```
 
 ### Closeout updated?
 
-- **YES** — `senna-iter-48-closeout.md` gate-fix section + iter-45 hardening note corrected
+- **NO** — no new iteration closeout; this is a review-fix pass on Arc 10
 
 ### Self-assessment
 
 - **Ready for review:** YES
-- **Blockers:** None
+- **Blockers:** None known
+- **Note:** Baseline verdict changed **mixed → supported** because evidence-preserving MemBench fixtures now score 1.0 on memory_match (arithmetically honest given B3 fix)

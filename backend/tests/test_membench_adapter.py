@@ -27,6 +27,7 @@ from membench_adapter import (  # noqa: E402
     run_membench_suite,
     score_membench_answer,
     summarize_reports,
+    validate_all_fixtures,
 )
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures/membench"
@@ -60,6 +61,10 @@ def test_membench_scoring_exact_choice_match() -> None:
     assert membench_accuracy(0, 1) == 0.0
 
 
+def test_fixture_qa_evidence_preserved() -> None:
+    validate_all_fixtures(FIXTURES_DIR)
+
+
 def test_ground_truth_agent_perfect_accuracy() -> None:
     reports = run_all_fixtures(FIXTURES_DIR, make_ground_truth_agent())
     for report in reports.values():
@@ -67,18 +72,12 @@ def test_ground_truth_agent_perfect_accuracy() -> None:
         assert report.correct == report.total
 
 
-def test_participation_and_observation_distinct_scores() -> None:
+def test_memory_match_finds_evidence_in_all_cells() -> None:
     reports = run_all_fixtures(FIXTURES_DIR, make_memory_match_agent(seed=46))
     summary = summarize_reports(reports)
-    factual_scores = {
-        summary["participation"]["factual"]["accuracy"],
-        summary["observation"]["factual"]["accuracy"],
-    }
-    reflective_scores = {
-        summary["participation"]["reflective"]["accuracy"],
-        summary["observation"]["reflective"]["accuracy"],
-    }
-    assert len(factual_scores | reflective_scores) > 1
+    for scenario in ("participation", "observation"):
+        for level in ("factual", "reflective"):
+            assert summary[scenario][level]["accuracy"] == 1.0
     assert summary["participation"]["factual"]["memory_level"] == MEMORY_FACTUAL
     assert summary["participation"]["reflective"]["memory_level"] == MEMORY_REFLECTIVE
     assert summary["observation"]["factual"]["scenario"] == SCENARIO_OBSERVATION

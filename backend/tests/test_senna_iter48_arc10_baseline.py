@@ -30,6 +30,10 @@ from mirofish_backend.diagnostics.arc10_baseline import (
     evaluate_arc11_hypothesis,
     generate_baseline_markdown,
 )
+from mirofish_backend.diagnostics.arc10_canonical import (
+    load_canonical_bundle,
+    summary_from_canonical_bundle,
+)
 from mirofish_backend.diagnostics.architectural_interview import (
     INTERVIEW_CATEGORIES,
     run_architectural_interview_for_simulation,
@@ -55,7 +59,7 @@ async def _seed_completed_sim_with_memory(db_path: str, monkeypatch: pytest.Monk
         name="arc10 baseline",
         scenario_id="psle_reform_mvp",
         status="pending",
-        total_rounds=1,
+        total_rounds=2,
         random_seed=48,
         prompt_version="v0",
         model_used="lmstudio:local",
@@ -195,3 +199,14 @@ def test_baseline_body_stable_except_timestamp() -> None:
     body_a = md_a.split("**Generated at:**", 1)[1].split("\n", 1)[1]
     body_b = md_b.split("**Generated at:**", 1)[1].split("\n", 1)[1]
     assert body_a == body_b
+
+
+def test_regenerate_baseline_from_canonical_bundle() -> None:
+    bundle = load_canonical_bundle()
+    summary = summary_from_canonical_bundle(bundle)
+    md = generate_baseline_markdown(summary)
+    committed_path = _REPO / "docs/diagnostics/ARC10_BASELINE.md"
+    committed = committed_path.read_text(encoding="utf-8")
+    body_md = md.split("**Generated at:**", 1)[1].split("\n", 1)[1]
+    body_committed = committed.split("**Generated at:**", 1)[1].split("\n", 1)[1]
+    assert body_md == body_committed

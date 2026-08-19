@@ -281,8 +281,8 @@ def test_malformed_judge_output_uses_fallback_not_crash() -> None:
     assert src == "keyword_fallback"
 
     score2, src2, _ = resolve_judge_score("totally unparseable output")
-    assert score2 == 0
-    assert src2 == "keyword_fallback"
+    assert score2 is None
+    assert src2 == "unparseable"
 
 
 @pytest.mark.asyncio

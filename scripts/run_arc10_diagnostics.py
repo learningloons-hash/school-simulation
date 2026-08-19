@@ -28,9 +28,14 @@ from mirofish_backend.diagnostics.arc10_baseline import (
     build_combined_arc10_summary,
     generate_baseline_markdown,
 )
+from mirofish_backend.diagnostics.arc10_canonical import (
+    load_canonical_bundle,
+    summary_from_canonical_bundle,
+)
 from mirofish_backend.diagnostics.architectural_interview import (
     run_architectural_interview_for_simulation,
     summarize_interview_results,
+    validate_interview_completeness,
 )
 from mirofish_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
 
@@ -111,6 +116,15 @@ async def run_arc10_diagnostics(
         )
 
     interview_section = _interview_section_from_bundle(bundle or {})
+    responses = bundle.get("architectural_interview_responses") or []
+    scores = bundle.get("architectural_interview_scores") or []
+    agent_ids = {str(r.get("agent_id") or "") for r in responses if r.get("agent_id")}
+    if responses:
+        validate_interview_completeness(
+            responses,
+            scores,
+            agents_interviewed=len(agent_ids),
+        )
 
     return build_combined_arc10_summary(
         simulation_id=simulation_id,
@@ -128,6 +142,16 @@ async def run_arc10_diagnostics(
 
 
 async def _run(args: argparse.Namespace) -> dict[str, Any]:
+    if args.from_canonical:
+        bundle = load_canonical_bundle(args.from_canonical.resolve())
+        summary = summary_from_canonical_bundle(bundle)
+        if args.write_baseline:
+            md = generate_baseline_markdown(summary)
+            args.write_baseline.parent.mkdir(parents=True, exist_ok=True)
+            args.write_baseline.write_text(md, encoding="utf-8")
+            summary = {**summary, "baseline_markdown_path": str(args.write_baseline)}
+        return summary
+
     settings = get_settings()
     sqlite_path = args.sqlite_path or settings.sqlite_path
     summary = await run_arc10_diagnostics(
@@ -155,8 +179,13 @@ async def _run(args: argparse.Namespace) -> dict[str, Any]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run Arc 10 combined diagnostics baseline")
-    parser.add_argument("simulation_id", help="Completed simulation UUID")
+    parser.add_argument("simulation_id", nargs="?", default="", help="Completed simulation UUID")
     parser.add_argument("--sqlite-path", default="", help="SQLite path (defaults to settings)")
+    parser.add_argument(
+        "--from-canonical",
+        type=Path,
+        help="Regenerate baseline from committed canonical bundle JSON (no SQLite required)",
+    )
     parser.add_argument("--fixtures-dir", type=Path, default=_DEFAULT_FIXTURES)
     parser.add_argument("--membench-seed", type=int, default=42)
     parser.add_argument(
@@ -196,6 +225,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if not args.from_canonical and not args.simulation_id:
+        print(json.dumps({"error": "simulation_id required unless --from-canonical is set"}), file=sys.stderr)
+        return 1
     try:
         summary = asyncio.run(_run(args))
     except ValueError as exc:

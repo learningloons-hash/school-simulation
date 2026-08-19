@@ -107,7 +107,7 @@ def test_build_inclusion_network_filtered() -> None:
         peer_limit=400,
     )
     by_id = {r.candidate_turn_id: r for r in records}
-    assert by_id["peer"].exclusion_reason == "network_filtered"
+    assert by_id["peer"].exclusion_reason == "visibility_policy"
     assert excluded
 
 
@@ -198,7 +198,7 @@ async def test_run_persists_memory_context_export(monkeypatch: pytest.MonkeyPatc
             name="mem ctx",
             scenario_id="psle_reform_mvp",
             status="pending",
-            total_rounds=1,
+            total_rounds=2,
             random_seed=45,
             prompt_version="v0",
             model_used="lmstudio:local",
@@ -213,6 +213,14 @@ async def test_run_persists_memory_context_export(monkeypatch: pytest.MonkeyPatc
         assert bundle is not None
         log = bundle.get("memory_context_log") or []
         assert len(log) > 0
+        round2_logs = [r for r in log if int(r.get("round_number") or 0) == 2]
+        assert round2_logs, "expected inclusion rows for round 2 (prior-round context)"
+        prior_included = [
+            r
+            for r in round2_logs
+            if r.get("included") and int(r.get("round_number") or 0) == 2
+        ]
+        assert prior_included, "round 2 should include at least one prior-round turn in prompt"
         summary = bundle.get("memory_context_summary") or {}
         assert "exclusion_breakdown" in summary
         assert "group_addressed_proportion" in summary

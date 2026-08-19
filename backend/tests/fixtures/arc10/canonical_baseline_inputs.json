@@ -1,0 +1,270 @@
+{
+  "bundle_version": 1,
+  "provenance": {
+    "agents_interviewed": 2,
+    "categories_per_agent": 5,
+    "interview_max_tokens": 1024,
+    "interview_profile_id": "local_lmstudio_default",
+    "interview_temperature": 0.2,
+    "judge_profile_id": "local_lmstudio_default",
+    "membench_answer_mode": "memory_match",
+    "membench_fixture_hashes": {
+      "observation_factual.json": "ee4d456e1a188adc",
+      "observation_reflective.json": "8bcd29827971c5d9",
+      "participation_factual.json": "f9b9bd1439bc8b21",
+      "participation_reflective.json": "a66247c5f34311bc"
+    },
+    "membench_seed": 42,
+    "source": "committed_canonical_bundle"
+  },
+  "summary": {
+    "arc": "10",
+    "architectural_interview": {
+      "agents": [
+        {
+          "agent_id": "agent_a",
+          "agent_name": "Agent A",
+          "categories": {
+            "memory_retrieval": {
+              "parse_source": "model_parsed",
+              "score": 2
+            },
+            "planning": {
+              "parse_source": "model_parsed",
+              "score": 1
+            },
+            "reaction": {
+              "parse_source": "model_parsed",
+              "score": 1
+            },
+            "reflection": {
+              "parse_source": "model_parsed",
+              "score": 0
+            },
+            "self_knowledge": {
+              "parse_source": "model_parsed",
+              "score": 1
+            }
+          }
+        },
+        {
+          "agent_id": "agent_b",
+          "agent_name": "Agent B",
+          "categories": {
+            "memory_retrieval": {
+              "parse_source": "model_parsed",
+              "score": 2
+            },
+            "planning": {
+              "parse_source": "model_parsed",
+              "score": 1
+            },
+            "reaction": {
+              "parse_source": "model_parsed",
+              "score": 1
+            },
+            "reflection": {
+              "parse_source": "model_parsed",
+              "score": 0
+            },
+            "self_knowledge": {
+              "parse_source": "model_parsed",
+              "score": 1
+            }
+          }
+        }
+      ],
+      "parse_source_counts": {
+        "model_parsed": 10
+      },
+      "response_count": 10,
+      "rubric_version": "1",
+      "scorable_score_count": 10,
+      "score_count": 10,
+      "scores": [
+        {
+          "agent_id": "agent_a",
+          "agent_name": "Agent A",
+          "category": "self_knowledge",
+          "id": "score_001",
+          "parse_source": "model_parsed",
+          "response_id": "resp_001",
+          "score": 1
+        },
+        {
+          "agent_id": "agent_a",
+          "agent_name": "Agent A",
+          "category": "memory_retrieval",
+          "id": "score_002",
+          "parse_source": "model_parsed",
+          "response_id": "resp_002",
+          "score": 2
+        },
+        {
+          "agent_id": "agent_a",
+          "agent_name": "Agent A",
+          "category": "planning",
+          "id": "score_003",
+          "parse_source": "model_parsed",
+          "response_id": "resp_003",
+          "score": 1
+        },
+        {
+          "agent_id": "agent_a",
+          "agent_name": "Agent A",
+          "category": "reaction",
+          "id": "score_004",
+          "parse_source": "model_parsed",
+          "response_id": "resp_004",
+          "score": 1
+        },
+        {
+          "agent_id": "agent_a",
+          "agent_name": "Agent A",
+          "category": "reflection",
+          "id": "score_005",
+          "parse_source": "model_parsed",
+          "response_id": "resp_005",
+          "score": 0
+        },
+        {
+          "agent_id": "agent_b",
+          "agent_name": "Agent B",
+          "category": "self_knowledge",
+          "id": "score_006",
+          "parse_source": "model_parsed",
+          "response_id": "resp_006",
+          "score": 1
+        },
+        {
+          "agent_id": "agent_b",
+          "agent_name": "Agent B",
+          "category": "memory_retrieval",
+          "id": "score_007",
+          "parse_source": "model_parsed",
+          "response_id": "resp_007",
+          "score": 2
+        },
+        {
+          "agent_id": "agent_b",
+          "agent_name": "Agent B",
+          "category": "planning",
+          "id": "score_008",
+          "parse_source": "model_parsed",
+          "response_id": "resp_008",
+          "score": 1
+        },
+        {
+          "agent_id": "agent_b",
+          "agent_name": "Agent B",
+          "category": "reaction",
+          "id": "score_009",
+          "parse_source": "model_parsed",
+          "response_id": "resp_009",
+          "score": 1
+        },
+        {
+          "agent_id": "agent_b",
+          "agent_name": "Agent B",
+          "category": "reflection",
+          "id": "score_010",
+          "parse_source": "model_parsed",
+          "response_id": "resp_010",
+          "score": 0
+        }
+      ]
+    },
+    "generated_at": "2026-08-19T12:00:00+00:00",
+    "inputs": {
+      "execute_interview": false,
+      "fixtures_dir": "backend/tests/fixtures/membench",
+      "membench_answer_mode": "memory_match",
+      "membench_seed": 42
+    },
+    "membench": {
+      "answer_mode": "memory_match",
+      "fixtures_dir": "/Users/home/cursor-projects/project-1/mirofish-mvp/backend/tests/fixtures/membench",
+      "observation": {
+        "factual": {
+          "accuracy": 1.0,
+          "correct": 1,
+          "memory_level": "factual",
+          "metric": "memory_accuracy",
+          "scenario": "observation",
+          "total": 1,
+          "trajectories": [
+            {
+              "correct": true,
+              "ground_truth": "B",
+              "predicted": "B",
+              "tid": 0
+            }
+          ]
+        },
+        "reflective": {
+          "accuracy": 1.0,
+          "correct": 1,
+          "memory_level": "reflective",
+          "metric": "memory_accuracy",
+          "scenario": "observation",
+          "total": 1,
+          "trajectories": [
+            {
+              "correct": true,
+              "ground_truth": "B",
+              "predicted": "B",
+              "tid": 0
+            }
+          ]
+        }
+      },
+      "participation": {
+        "factual": {
+          "accuracy": 1.0,
+          "correct": 1,
+          "memory_level": "factual",
+          "metric": "memory_accuracy",
+          "scenario": "participation",
+          "total": 1,
+          "trajectories": [
+            {
+              "correct": true,
+              "ground_truth": "D",
+              "predicted": "D",
+              "tid": 0
+            }
+          ]
+        },
+        "reflective": {
+          "accuracy": 1.0,
+          "correct": 1,
+          "memory_level": "reflective",
+          "metric": "memory_accuracy",
+          "scenario": "participation",
+          "total": 1,
+          "trajectories": [
+            {
+              "correct": true,
+              "ground_truth": "B",
+              "predicted": "B",
+              "tid": 0
+            }
+          ]
+        }
+      },
+      "seed": 42
+    },
+    "memory_context": {
+      "exclusion_breakdown": {
+        "char_budget_truncated": 0,
+        "included_clean": 2,
+        "recency_cut": 0,
+        "same_round_peer": 0,
+        "visibility_policy": 0
+      },
+      "group_addressed_proportion": 1.0,
+      "record_count": 4
+    },
+    "simulation_id": "arc10-canonical-baseline"
+  }
+}

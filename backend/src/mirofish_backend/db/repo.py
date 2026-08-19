@@ -836,10 +836,35 @@ async def get_last_agent_responses(
     agent_id: str,
     last_k: int,
 ) -> list[str]:
+    rows = await get_last_agent_turn_rows(
+        sqlite_path,
+        simulation_id=simulation_id,
+        agent_id=agent_id,
+        last_k=last_k,
+    )
+    return [str(r.get("raw_response") or "") for r in rows]
+
+
+async def get_last_agent_turn_rows(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    agent_id: str,
+    last_k: int,
+) -> list[dict[str, Any]]:
     async with aiosqlite.connect(sqlite_path) as db:
         cursor = await db.execute(
             """
-            SELECT raw_response
+            SELECT
+              id,
+              round_number,
+              turn_index,
+              agent_id,
+              agent_name,
+              interaction_type,
+              target_scope,
+              target_agent_name,
+              raw_response
             FROM agent_turns
             WHERE simulation_id = ? AND agent_id = ?
             ORDER BY round_number DESC, turn_index DESC
@@ -848,8 +873,22 @@ async def get_last_agent_responses(
             (simulation_id, agent_id, last_k),
         )
         rows = await cursor.fetchall()
-        # rows are newest->oldest; reverse to oldest->newest for readability.
-        return [r[0] for r in rows][::-1]
+
+    ordered = rows[::-1]
+    return [
+        {
+            "id": str(row[0]),
+            "round_number": int(row[1]),
+            "turn_index": int(row[2]),
+            "agent_id": str(row[3]),
+            "agent_name": row[4],
+            "interaction_type": row[5],
+            "target_scope": row[6],
+            "target_agent_name": row[7] or "all",
+            "raw_response": row[8],
+        }
+        for row in ordered
+    ]
 
 
 async def get_recent_interactions(

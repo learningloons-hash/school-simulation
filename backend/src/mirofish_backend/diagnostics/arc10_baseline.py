@@ -32,6 +32,8 @@ def membench_recall_reflective_averages(membench: dict[str, Any]) -> tuple[float
 def interview_category_averages(scores: list[dict[str, Any]]) -> dict[str, float]:
     buckets: dict[str, list[int]] = {}
     for row in scores:
+        if row.get("parse_source") == "unparseable" or row.get("score") is None:
+            continue
         cat = str(row.get("category") or "")
         if not cat:
             continue
@@ -161,6 +163,11 @@ def generate_baseline_markdown(summary: dict[str, Any]) -> str:
     lines.extend(["### Architectural interview (iter-47)", ""])
     lines.append(f"- Response count: {interview.get('response_count', 0)}")
     lines.append(f"- Score count: {interview.get('score_count', 0)}")
+    parse_counts = interview.get("parse_source_counts") or {}
+    if parse_counts:
+        lines.append("- Judge parse sources:")
+        for src in sorted(parse_counts):
+            lines.append(f"  - {src}: {parse_counts[src]}")
     if cat_avgs:
         lines.append("- Mean score by category (0–2):")
         for cat in sorted(cat_avgs):

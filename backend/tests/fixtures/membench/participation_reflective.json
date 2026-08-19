@@ -7,7 +7,7 @@
       "tid": 0,
       "message_list": [
         {
-          "user": "I really love The Godfather; it's such a classic with its powerful storytelling and unforgettable characters. (place: Boston, MA; time: '2024-10-01 08:00' Tuesday)",
+          "user": "I really love The Godfather; it's such a classic Drama with powerful storytelling and unforgettable characters. (place: Boston, MA; time: '2024-10-01 08:00' Tuesday)",
           "agent": "I'm glad to hear that you love The Godfather! It's a timeless masterpiece that truly captures the complexity of family and power. Do you have a favorite character or scene from the film? (place: Boston, MA; time: '2024-10-01 08:00' Tuesday)"
         },
         {
@@ -19,8 +19,28 @@
           "agent": "Absolutely, the transformation of characters and their alliances adds layers of intrigue to the plot. (place: Boston, MA; time: '2024-10-01 08:02' Tuesday)"
         },
         {
-          "user": "I really enjoy The Godfather (1972), but I also love Three Colors: Red (1994) for its beautiful storytelling and stunning visuals. (place: Boston, MA; time: '2024-10-01 08:03' Tuesday)",
+          "user": "I really enjoy The Godfather (1972), but I also love Three Colors: Red (1994) for its beautiful Drama storytelling and stunning visuals. (place: Boston, MA; time: '2024-10-01 08:03' Tuesday)",
           "agent": "It's great to hear that you appreciate both **The Godfather** and **Three Colors: Red**! They each offer such rich storytelling and visual artistry in their own unique ways. What aspects of their storytelling resonate with you the most? (place: Boston, MA; time: '2024-10-01 08:03' Tuesday)"
+        },
+        {
+          "user": "I tend to skip action blockbusters and prefer slower character-driven films. (place: Boston, MA; time: '2024-10-01 08:04' Tuesday)",
+          "agent": "Character-driven stories often leave a deeper impression. (place: Boston, MA; time: '2024-10-01 08:04' Tuesday)"
+        },
+        {
+          "user": "Schindler's List is another Drama that moved me deeply. (place: Boston, MA; time: '2024-10-01 08:05' Tuesday)",
+          "agent": "Schindler's List is indeed a powerful Drama. (place: Boston, MA; time: '2024-10-01 08:05' Tuesday)"
+        },
+        {
+          "user": "I rarely watch comedies or horror — Drama is my go-to genre. (place: Boston, MA; time: '2024-10-01 08:06' Tuesday)",
+          "agent": "Drama films often explore the most meaningful human experiences. (place: Boston, MA; time: '2024-10-01 08:06' Tuesday)"
+        },
+        {
+          "user": "Even when I rewatch old favorites, I pick Drama over anything else. (place: Boston, MA; time: '2024-10-01 08:07' Tuesday)",
+          "agent": "That consistency says a lot about what resonates with you. (place: Boston, MA; time: '2024-10-01 08:07' Tuesday)"
+        },
+        {
+          "user": "So overall I'd say Drama is what I reach for — thoughtful, emotional films like the ones I've mentioned. (place: Boston, MA; time: '2024-10-01 08:08' Tuesday)",
+          "agent": "Drama clearly seems to be your preferred genre based on everything you've shared. (place: Boston, MA; time: '2024-10-01 08:08' Tuesday)"
         }
       ],
       "QA": {

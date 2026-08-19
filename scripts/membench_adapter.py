@@ -45,9 +45,11 @@ class MemBenchQA:
     ground_truth: str
     answer: str | None = None
     qid: int | None = None
+    target_step_id: tuple[Any, ...] = ()
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> MemBenchQA:
+        target_raw = raw.get("target_step_id") or []
         return cls(
             qid=raw.get("qid"),
             question=str(raw["question"]),
@@ -55,6 +57,7 @@ class MemBenchQA:
             choices={str(k): str(v) for k, v in raw["choices"].items()},
             ground_truth=str(raw["ground_truth"]).strip().upper(),
             answer=raw.get("answer"),
+            target_step_id=tuple(target_raw),
         )
 
 
@@ -301,6 +304,58 @@ def _required_fixture_keys(reports: dict[tuple[str, str], MemBenchScoreReport]) 
         raise ValueError(f"missing fixture combinations: {sorted(missing)}")
 
 
+def target_step_indices(target_step_id: tuple[Any, ...]) -> set[int]:
+    """Normalize MemBench ``target_step_id`` entries to zero-based step indices."""
+    indices: set[int] = set()
+    for item in target_step_id:
+        if isinstance(item, (list, tuple)) and item:
+            indices.add(int(item[0]))
+        elif isinstance(item, int):
+            indices.add(item)
+    return indices
+
+
+def validate_fixture_evidence(fixture: MemBenchFixture) -> None:
+    """
+    Ensure each QA's supporting answer text is present in the vendored memory.
+
+    Raises ``ValueError`` when evidence was trimmed away (Arc 10 blocker B3).
+    """
+    for traj in fixture.trajectories:
+        qa = traj.qa
+        agent = SennaMemBenchAgent(
+            scenario=fixture.scenario,
+            memory_level=fixture.memory_level,
+            answer_fn=make_ground_truth_agent(),
+        )
+        for step, message in enumerate(traj.message_list):
+            agent.observe(message, step)
+        memory_lower = agent.memory_text.lower()
+
+        answer_text = (qa.answer or qa.choices.get(qa.ground_truth, "")).strip()
+        if not answer_text:
+            raise ValueError(f"fixture {fixture.scenario}/{fixture.memory_level}: empty QA answer")
+        if answer_text.lower() not in memory_lower:
+            raise ValueError(
+                f"fixture {fixture.scenario}/{fixture.memory_level}: "
+                f"QA answer {answer_text!r} not found in vendored memory"
+            )
+
+        targets = target_step_indices(qa.target_step_id)
+        n_steps = len(traj.message_list)
+        missing_targets = sorted(i for i in targets if i >= n_steps)
+        if missing_targets and fixture.memory_level == "reflective":
+            raise ValueError(
+                f"fixture {fixture.scenario}/{fixture.memory_level}: "
+                f"target_step_id indices {missing_targets} exceed message_list length {n_steps}"
+            )
+
+
+def validate_all_fixtures(fixtures_dir: Path) -> None:
+    for fixture in discover_fixtures(fixtures_dir).values():
+        validate_fixture_evidence(fixture)
+
+
 def run_membench_suite(
     *,
     fixtures_dir: Path,
@@ -314,12 +369,13 @@ def run_membench_suite(
     else:
         raise ValueError(f"unknown answer_mode {answer_mode!r}")
 
+    validate_all_fixtures(fixtures_dir)
     reports = run_all_fixtures(fixtures_dir, answer_fn)
     _required_fixture_keys(reports)
     payload = summarize_reports(reports)
     payload["seed"] = seed
     payload["answer_mode"] = answer_mode
-    payload["fixtures_dir"] = str(fixtures_dir)
+    payload["fixtures_dir"] = str(fixtures_dir.resolve())
     return payload
 
 

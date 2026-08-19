@@ -23,11 +23,11 @@ async def fake_llm_state_block(**kwargs: Any) -> LLMCompletion:
     )
 
 
-def memory_context_run_kwargs(*, agent_limit: int = 2) -> dict[str, Any]:
+def memory_context_run_kwargs(*, agent_limit: int = 2, total_rounds: int = 2) -> dict[str, Any]:
     """Tier-1 simulation kwargs so inclusion logging runs (tier 3 skips it)."""
     return {
         "scenario_id": "psle_reform_mvp",
-        "total_rounds": 1,
+        "total_rounds": total_rounds,
         "agent_limit": agent_limit,
         "prompt_version": "v0",
         "model_used": "lmstudio:local",
@@ -47,4 +47,5 @@ def memory_context_run_kwargs(*, agent_limit: int = 2) -> dict[str, Any]:
         "rag_chunk_overlap": 40,
         "rag_max_inject_chars": 800,
         "fidelity_tiers": [1] * agent_limit,
+        "llm_concurrency_cap": 1,
     }
