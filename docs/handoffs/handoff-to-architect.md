@@ -12,6 +12,7 @@
 |-------|--------|
 | **Task** | Independent review blockers B1–B6 (priority B3/B6 → B4/B5 → B1/B2) |
 | **Branch** | `main` |
+| **Commit** | `708399c` |
 | **Date** | 2026-08-19 |
 
 ### Blockers addressed
