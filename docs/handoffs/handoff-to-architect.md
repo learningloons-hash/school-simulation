@@ -12,7 +12,7 @@
 |-------|--------|
 | **Task** | iter-48 gate fix (iter-45 test regression) |
 | **Branch** | `main` |
-| **Commit** | _(see git log after commit)_ |
+| **Commit** | `f572860` |
 | **Date** | 2026-08-19 |
 
 ### Fix applied
