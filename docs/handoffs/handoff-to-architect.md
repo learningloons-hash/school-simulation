@@ -12,7 +12,7 @@
 |-------|--------|
 | **Iteration** | senna-iter-48 |
 | **Branch** | `main` |
-| **Commit** | _(pending commit — see git log after push)_ |
+| **Commit** | `5a23fbc` |
 | **Date** | 2026-08-19 |
 
 ### Delivered
