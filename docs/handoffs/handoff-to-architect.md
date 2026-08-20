@@ -12,7 +12,7 @@
 |-------|--------|
 | **Task** | Independent re-review blockers B2, B3, B5, B6 (pass 2) |
 | **Branch** | `main` |
-| **Commit** | _(pending commit)_ |
+| **Commit** | `906fb38` |
 | **Date** | 2026-08-20 |
 
 ### Blockers
