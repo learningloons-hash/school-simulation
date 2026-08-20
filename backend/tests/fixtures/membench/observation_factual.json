@@ -17,7 +17,7 @@
         "question": "What is the education level of the subordinate?",
         "answer": "Associate Degree",
         "target_step_id": [
-          10
+          4
         ],
         "choices": {
           "A": "Bachelor's Degree",

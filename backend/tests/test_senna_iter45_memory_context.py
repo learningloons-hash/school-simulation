@@ -67,6 +67,93 @@ def test_build_inclusion_recency_cut() -> None:
     assert by_id["new"].included
 
 
+def test_build_inclusion_recency_cut_prompt_aligned_extended_scan() -> None:
+    extended = [
+        {
+            "id": "old",
+            "agent_id": "peer_002",
+            "round_number": 1,
+            "target_scope": "all",
+            "raw_response": "older peer turn",
+        },
+        {
+            "id": "mid",
+            "agent_id": "peer_002",
+            "round_number": 1,
+            "target_scope": "all",
+            "raw_response": "middle peer turn",
+        },
+        {
+            "id": "new",
+            "agent_id": "peer_002",
+            "round_number": 1,
+            "target_scope": "all",
+            "raw_response": "newer peer turn",
+        },
+    ]
+    recency = [extended[1], extended[2]]
+    records = build_memory_context_inclusion_records(
+        observer_agent_id="observer_001",
+        round_number=2,
+        extended_candidates=extended,
+        recency_window=recency,
+        visible_turns=extended,
+        peer_limit=500,
+        self_prompt_turn_ids=set(),
+        peer_prompt_turn_ids={"mid", "new"},
+    )
+    by_id = {r.candidate_turn_id: r for r in records}
+    assert by_id["old"].exclusion_reason == "recency_cut"
+    assert by_id["new"].included
+
+
+def test_build_inclusion_same_round_peer() -> None:
+    extended = [
+        {
+            "id": "peer_same",
+            "agent_id": "peer_002",
+            "round_number": 2,
+            "target_scope": "all",
+            "raw_response": "same round peer",
+        },
+        {
+            "id": "peer_prior",
+            "agent_id": "peer_003",
+            "round_number": 1,
+            "target_scope": "all",
+            "raw_response": "prior round peer",
+        },
+    ]
+    records = build_memory_context_inclusion_records(
+        observer_agent_id="observer_001",
+        round_number=2,
+        extended_candidates=extended,
+        recency_window=extended,
+        visible_turns=extended,
+        peer_limit=500,
+        self_prompt_turn_ids=set(),
+        peer_prompt_turn_ids={"peer_prior"},
+    )
+    by_id = {r.candidate_turn_id: r for r in records}
+    assert by_id["peer_same"].exclusion_reason == "same_round_peer"
+    assert by_id["peer_prior"].included
+
+
+def test_peer_turns_for_prompt_excludes_same_round() -> None:
+    from mirofish_backend.simulation.orchestrator import _peer_turns_for_prompt
+
+    turns = [
+        {"id": "same", "agent_id": "peer_a", "round_number": 2},
+        {"id": "prior", "agent_id": "peer_b", "round_number": 1},
+    ]
+    out = _peer_turns_for_prompt(
+        turns,
+        observer_agent_id="observer_001",
+        round_number=2,
+    )
+    assert [t["id"] for t in out] == ["prior"]
+
+
 def test_build_inclusion_network_filtered() -> None:
     observer = _fake_observer()
     policy = build_interaction_policy(

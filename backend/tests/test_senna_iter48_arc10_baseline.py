@@ -32,6 +32,7 @@ from mirofish_backend.diagnostics.arc10_baseline import (
 )
 from mirofish_backend.diagnostics.arc10_canonical import (
     load_canonical_bundle,
+    recompute_summary_from_canonical_bundle,
     summary_from_canonical_bundle,
 )
 from mirofish_backend.diagnostics.architectural_interview import (
@@ -201,9 +202,22 @@ def test_baseline_body_stable_except_timestamp() -> None:
     assert body_a == body_b
 
 
-def test_regenerate_baseline_from_canonical_bundle() -> None:
+def test_regenerate_baseline_from_canonical_bundle(monkeypatch: pytest.MonkeyPatch) -> None:
+    membench_calls: list[dict] = []
+
+    def _track_membench(**kwargs):
+        membench_calls.append(kwargs)
+        return run_membench_suite(**kwargs)
+
+    monkeypatch.setattr(
+        "mirofish_backend.diagnostics.arc10_canonical._import_membench",
+        lambda: _track_membench,
+    )
     bundle = load_canonical_bundle()
     summary = summary_from_canonical_bundle(bundle)
+    assert membench_calls, "canonical recompute must invoke MemBench adapter"
+    assert membench_calls[0]["seed"] == 42
+    assert summary["membench"]["seed"] == 42
     md = generate_baseline_markdown(summary)
     committed_path = _REPO / "docs/diagnostics/ARC10_BASELINE.md"
     committed = committed_path.read_text(encoding="utf-8")

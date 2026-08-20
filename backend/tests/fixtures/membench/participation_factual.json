@@ -36,10 +36,7 @@
         "question": "What is the name of my niece's company?",
         "answer": "TechInnovate Systems LLC",
         "target_step_id": [
-          [
-            119,
-            5
-          ]
+          5
         ],
         "choices": {
           "A": "TechInnovate Solutions LLC",

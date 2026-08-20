@@ -402,3 +402,56 @@ async def test_architectural_interview_report_endpoint(client_arch: TestClient, 
     assert body["instrument"] == "architectural_interview"
     assert body["response_count"] == 5
     assert "validity" in body["purpose"]
+
+
+def test_validate_interview_partial_grid_raises() -> None:
+    from mirofish_backend.diagnostics.architectural_interview import (
+        INTERVIEW_CATEGORIES,
+        validate_interview_completeness,
+    )
+
+    responses = [
+        {"id": f"resp_a_{i}", "agent_id": "agent_a", "category": cat}
+        for i, cat in enumerate(INTERVIEW_CATEGORIES)
+    ]
+    responses.extend(
+        [
+            {"id": "resp_b_0", "agent_id": "agent_b", "category": "self_knowledge"},
+            {"id": "resp_b_1", "agent_id": "agent_b", "category": "memory_retrieval"},
+            {"id": "resp_b_2", "agent_id": "agent_b", "category": "planning"},
+            {"id": "resp_b_3", "agent_id": "agent_b", "category": "planning"},
+            {"id": "resp_b_4", "agent_id": "agent_b", "category": "reaction"},
+        ]
+    )
+    scores = [
+        {"response_id": r["id"], "parse_source": "model_parsed", "score": 1}
+        for r in responses
+    ]
+    with pytest.raises(ValueError, match="agent_b"):
+        validate_interview_completeness(
+            responses,
+            scores,
+            expected_agent_ids=["agent_a", "agent_b"],
+        )
+
+
+def test_validate_interview_wrong_agent_count_from_snapshots_raises() -> None:
+    from mirofish_backend.diagnostics.architectural_interview import (
+        INTERVIEW_CATEGORIES,
+        validate_interview_completeness,
+    )
+
+    responses = [
+        {"id": f"resp_{i}", "agent_id": "agent_a", "category": cat}
+        for i, cat in enumerate(INTERVIEW_CATEGORIES)
+    ]
+    scores = [
+        {"response_id": r["id"], "parse_source": "model_parsed", "score": 1}
+        for r in responses
+    ]
+    with pytest.raises(ValueError, match="expected 10"):
+        validate_interview_completeness(
+            responses,
+            scores,
+            expected_agent_ids=["agent_a", "agent_b"],
+        )

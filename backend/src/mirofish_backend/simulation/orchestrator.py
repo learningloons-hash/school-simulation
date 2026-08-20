@@ -77,6 +77,24 @@ from mirofish_backend.db.repo import (
 
 logger = logging.getLogger("mirofish_backend.simulation.orchestrator")
 
+# Wider candidate scan for inclusion logging vs peer prompt window (Arc 10 B2).
+MEMORY_LOG_EXTENDED_K_CAP = 24
+
+
+def _peer_turns_for_prompt(
+    turns: list[dict[str, Any]],
+    *,
+    observer_agent_id: str,
+    round_number: int,
+) -> list[dict[str, Any]]:
+    """Exclude same-round peer turns from peer prompt (parallel rounds may persist early speakers)."""
+    return [
+        t
+        for t in turns
+        if t.get("agent_id") != observer_agent_id
+        and int(t.get("round_number") or 0) < round_number
+    ]
+
 
 class _TurnOutcome(NamedTuple):
     conflict: bool
@@ -816,11 +834,27 @@ async def run_simulation_task(
                     last_k=working_memory_last_k,
                 )
                 self_prompt_turn_ids = {str(r["id"]) for r in self_turn_rows if r.get("id")}
-                recent_raw = await get_recent_interactions(
-                    sqlite_path,
-                    simulation_id=simulation_id,
-                    last_k=interaction_last_k,
+                extended_last_k = min(
+                    MEMORY_LOG_EXTENDED_K_CAP,
+                    max(interaction_last_k * 2, interaction_last_k + len(round_agents)),
                 )
+                if extended_last_k > interaction_last_k:
+                    extended_raw = await get_recent_interactions(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        last_k=extended_last_k,
+                    )
+                    recent_raw = await get_recent_interactions(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        last_k=interaction_last_k,
+                    )
+                else:
+                    extended_raw = recent_raw = await get_recent_interactions(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        last_k=interaction_last_k,
+                    )
                 recent_clipped = clip_recent_interactions(
                     recent_raw,
                     max_chars=peer_limit,
@@ -835,41 +869,29 @@ async def run_simulation_task(
                     round_speaker_ids=spoke_ids,
                 )
                 visible_for_log, _ = partition_turns_by_visibility(
-                    recent_raw,
+                    extended_raw,
                     agent,
                     interaction_policy,
                     effective_visibility=effective_visibility,
                     network_neighbors=network_neighbors,
                     round_speaker_ids=spoke_ids,
                 )
-                recent_interactions = [r for r in recent_visible if r.get("agent_id") != agent.agent_id]
+                recent_interactions = _peer_turns_for_prompt(
+                    recent_visible,
+                    observer_agent_id=agent.agent_id,
+                    round_number=round_number,
+                )
                 peer_prompt_turn_ids = {str(r["id"]) for r in recent_interactions if r.get("id")}
                 inclusion_records = build_memory_context_inclusion_records(
                     observer_agent_id=agent.agent_id,
                     round_number=round_number,
-                    extended_candidates=recent_raw,
+                    extended_candidates=extended_raw,
                     recency_window=recent_raw,
                     visible_turns=visible_for_log,
                     peer_limit=peer_limit,
                     self_prompt_turn_ids=self_prompt_turn_ids,
                     peer_prompt_turn_ids=peer_prompt_turn_ids,
                 )
-                if inclusion_records:
-                    from dataclasses import asdict
-
-                    try:
-                        await insert_agent_context_inclusion_batch(
-                            sqlite_path,
-                            simulation_id=simulation_id,
-                            records=[asdict(r) for r in inclusion_records],
-                        )
-                    except Exception:
-                        logger.exception(
-                            "memory context inclusion logging failed for sim=%s round=%s agent=%s",
-                            simulation_id,
-                            round_number,
-                            agent.agent_id,
-                        )
 
                 prior_agent_memory = clip_memory_lines(
                     [str(r.get("raw_response") or "") for r in self_turn_rows],
@@ -1030,6 +1052,22 @@ async def run_simulation_task(
                     output_tokens=out_tok,
                     state_update_source=state_update_source,
                 )
+                if inclusion_records:
+                    from dataclasses import asdict
+
+                    try:
+                        await insert_agent_context_inclusion_batch(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            records=[asdict(r) for r in inclusion_records],
+                        )
+                    except Exception:
+                        logger.exception(
+                            "memory context inclusion logging failed for sim=%s round=%s agent=%s",
+                            simulation_id,
+                            round_number,
+                            agent.agent_id,
+                        )
                 return _TurnOutcome(conflict_flag, in_tok, out_tok)
 
         # Dispatch all turns for this round concurrently; collect results for round metrics.

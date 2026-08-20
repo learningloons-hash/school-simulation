@@ -344,7 +344,7 @@ def validate_fixture_evidence(fixture: MemBenchFixture) -> None:
         targets = target_step_indices(qa.target_step_id)
         n_steps = len(traj.message_list)
         missing_targets = sorted(i for i in targets if i >= n_steps)
-        if missing_targets and fixture.memory_level == "reflective":
+        if missing_targets:
             raise ValueError(
                 f"fixture {fixture.scenario}/{fixture.memory_level}: "
                 f"target_step_id indices {missing_targets} exceed message_list length {n_steps}"

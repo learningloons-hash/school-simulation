@@ -27,7 +27,9 @@ from membench_adapter import (  # noqa: E402
     run_membench_suite,
     score_membench_answer,
     summarize_reports,
+    target_step_indices,
     validate_all_fixtures,
+    validate_fixture_evidence,
 )
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures/membench"
@@ -63,6 +65,19 @@ def test_membench_scoring_exact_choice_match() -> None:
 
 def test_fixture_qa_evidence_preserved() -> None:
     validate_all_fixtures(FIXTURES_DIR)
+
+
+def test_each_fixture_target_indices_in_range() -> None:
+    for path in sorted(FIXTURES_DIR.glob("*.json")):
+        fixture = load_fixture(path)
+        validate_fixture_evidence(fixture)
+        for traj in fixture.trajectories:
+            n_steps = len(traj.message_list)
+            targets = target_step_indices(traj.qa.target_step_id)
+            assert targets, f"{path.name}: empty target_step_id"
+            assert all(i < n_steps for i in targets), (
+                f"{path.name}: target indices {sorted(targets)} exceed message length {n_steps}"
+            )
 
 
 def test_ground_truth_agent_perfect_accuracy() -> None:

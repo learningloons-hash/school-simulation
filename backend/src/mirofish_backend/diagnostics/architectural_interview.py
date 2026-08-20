@@ -401,22 +401,64 @@ def validate_interview_completeness(
     responses: list[dict[str, Any]],
     scores: list[dict[str, Any]],
     *,
-    agents_interviewed: int,
+    expected_agent_ids: list[str] | set[str] | None = None,
+    agents_interviewed: int | None = None,
+    categories: tuple[str, ...] | None = None,
 ) -> None:
     """
     Require a complete agents × categories grid with one score per response.
 
+    ``expected_agent_ids`` must come from simulation snapshots (or the canonical
+    bundle), not from response rows alone — partial grids must not satisfy count checks.
+
     Raises ``ValueError`` when an interrupted or partial run would skew baselines.
     """
-    expected = agents_interviewed * len(INTERVIEW_CATEGORIES)
-    if len(responses) != expected:
+    cats = categories or INTERVIEW_CATEGORIES
+    if expected_agent_ids is not None:
+        expected_agents = sorted({str(aid) for aid in expected_agent_ids if aid})
+    elif agents_interviewed is not None:
+        agent_ids_from_responses = sorted({str(r.get("agent_id") or "") for r in responses if r.get("agent_id")})
+        if len(agent_ids_from_responses) != agents_interviewed:
+            raise ValueError(
+                f"architectural interview agent mismatch: {len(agent_ids_from_responses)} distinct "
+                f"agents in responses, expected {agents_interviewed}"
+            )
+        expected_agents = agent_ids_from_responses
+    else:
+        raise ValueError("validate_interview_completeness requires expected_agent_ids or agents_interviewed")
+
+    expected_count = len(expected_agents) * len(cats)
+    if len(responses) != expected_count:
         raise ValueError(
-            f"architectural interview incomplete: {len(responses)} responses, expected {expected}"
+            f"architectural interview incomplete: {len(responses)} responses, expected {expected_count}"
         )
-    if len(scores) != expected:
+    if len(scores) != expected_count:
         raise ValueError(
-            f"architectural interview incomplete: {len(scores)} scores, expected {expected}"
+            f"architectural interview incomplete: {len(scores)} scores, expected {expected_count}"
         )
+
+    grid: dict[str, dict[str, int]] = {}
+    for resp in responses:
+        aid = str(resp.get("agent_id") or "")
+        cat = str(resp.get("category") or "")
+        if aid not in expected_agents:
+            raise ValueError(f"architectural interview unexpected agent_id {aid!r}")
+        if cat not in cats:
+            raise ValueError(f"architectural interview unexpected category {cat!r} for agent {aid!r}")
+        grid.setdefault(aid, {})
+        grid[aid][cat] = grid[aid].get(cat, 0) + 1
+
+    for aid in expected_agents:
+        if aid not in grid:
+            raise ValueError(f"architectural interview missing agent {aid!r}")
+        for cat in cats:
+            count = grid[aid].get(cat, 0)
+            if count != 1:
+                raise ValueError(
+                    f"architectural interview agent {aid!r} category {cat!r}: "
+                    f"expected 1 response, got {count}"
+                )
+
     response_ids = {str(r["id"]) for r in responses}
     if len(response_ids) != len(responses):
         raise ValueError("architectural interview has duplicate response ids")
@@ -614,7 +656,7 @@ async def run_architectural_interview_for_simulation(
     validate_interview_completeness(
         response_rows,
         score_rows,
-        agents_interviewed=len(agents),
+        expected_agent_ids=[a.agent_id for a in agents],
     )
     summary = summarize_interview_results(response_rows, score_rows)
     return {

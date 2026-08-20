@@ -2,54 +2,52 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for Architect review — Arc 10 independent review blockers B1–B6.
+**Status:** Ready for Architect review — Arc 10 remediation pass 2.
 
 ---
 
-## Builder report — Arc 10 review blockers B1–B6
+## Builder report — Arc 10 remediation pass 2
 
 | Field | Value |
 |-------|--------|
-| **Task** | Independent review blockers B1–B6 (priority B3/B6 → B4/B5 → B1/B2) |
+| **Task** | Independent re-review blockers B2, B3, B5, B6 (pass 2) |
 | **Branch** | `main` |
-| **Commit** | `708399c` |
-| **Date** | 2026-08-19 |
+| **Commit** | _(pending commit)_ |
+| **Date** | 2026-08-20 |
 
-### Blockers addressed
+### Blockers
 
-| Blocker | Status | Summary |
+| Blocker | Fixed? | Summary |
 |---------|--------|---------|
-| **B3** | Fixed | MemBench fixtures extended with evidence-preserving messages; `validate_fixture_evidence()` runs in suite |
-| **B6** | Fixed | `canonical_baseline_inputs.json` committed; `--from-canonical` on runner; `test_regenerate_baseline_from_canonical_bundle` |
-| **B4** | Fixed | Unparseable judge → `score=None`, source `unparseable`; interview scoring raises; baseline excludes invalid rows; parse-source counts |
-| **B5** | Fixed | `validate_interview_completeness()` at end of interview run and before baseline assembly |
-| **B1** | Fixed | Memory-context integration test uses 2 rounds + `llm_concurrency_cap=1`; asserts round-2 prior-turn inclusion |
-| **B2** | Fixed | Prompt-aligned inclusion records; `visibility_policy` / `same_round_peer`; non-fatal batch insert; removed 10k candidate fetch |
+| **B2** | YES | Same-round peers excluded via `_peer_turns_for_prompt`; extended K scan → `recency_cut`; `insert_agent_context_inclusion_batch` moved after LLM + turn insert |
+| **B3** | YES | Factual fixtures: `observation_factual` target 4, `participation_factual` target 5; `validate_fixture_evidence` enforces index range for all cells |
+| **B5** | YES | `validate_interview_completeness(expected_agent_ids=…)` grid check; diagnostics runner uses snapshot agent ids |
+| **B6** | YES | Canonical bundle v2 = inputs; `recompute_summary_from_canonical_bundle` runs MemBench live; test asserts adapter invoked and MD body matches |
 
-### Key files
+### B1 / B4 (unchanged)
 
-- MemBench fixtures: `backend/tests/fixtures/membench/*.json`
-- Canonical bundle: `backend/tests/fixtures/arc10/canonical_baseline_inputs.json`
-- Baseline (regenerated): `docs/diagnostics/ARC10_BASELINE.md` — hypothesis **supported** (MemBench factual now 1.0 with valid fixtures)
-- Judge parse: `backend/src/mirofish_backend/diagnostics/judge_score_parse.py`
-- Memory context: `backend/src/mirofish_backend/simulation/memory_context.py`, `orchestrator.py`
+- Confirmed still passing? YES — no edits to B1/B4 code paths; full suite green
 
 ### Verification
 
 ```text
-cd backend && uv run pytest -q
-# → 334 passed, 2 skipped
+cd backend && uv run pytest tests/test_membench_adapter.py tests/test_senna_iter45_memory_context.py tests/test_senna_iter47_architectural_interview.py tests/test_senna_iter48_arc10_baseline.py -q
+→ 38 passed
 
-python scripts/run_arc10_diagnostics.py --from-canonical backend/tests/fixtures/arc10/canonical_baseline_inputs.json --write-baseline
-# → regenerates ARC10_BASELINE.md body (timestamp fixed in bundle)
+cd backend && uv run pytest -q
+→ 340 passed, 2 skipped
 ```
 
-### Closeout updated?
+### Baseline
 
-- **NO** — no new iteration closeout; this is a review-fix pass on Arc 10
+- `ARC10_BASELINE.md` regenerated? NO — hypothesis/evidence unchanged; `test_regenerate_baseline_from_canonical_bundle` confirms body match from recomputed inputs
+- Hypothesis verdict: **supported**
+
+### Closeout
+
+- `senna-iter-48-closeout.md` pass-2 note added? YES
 
 ### Self-assessment
 
 - **Ready for review:** YES
-- **Blockers:** None known
-- **Note:** Baseline verdict changed **mixed → supported** because evidence-preserving MemBench fixtures now score 1.0 on memory_match (arithmetically honest given B3 fix)
+- **Open questions:** Integration test for parallel same-round peer under `llm_concurrency_cap=2` is covered at unit level (`same_round_peer`, `_peer_turns_for_prompt`); end-to-end timing-dependent integration left to Architect if required

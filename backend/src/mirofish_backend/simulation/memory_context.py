@@ -163,7 +163,7 @@ def build_memory_context_inclusion_records(
         return build_prompt_aligned_inclusion_records(
             observer_agent_id=observer_agent_id,
             round_number=round_number,
-            recency_candidates=recency_window,
+            recency_candidates=extended_candidates,
             visible_turn_ids=visible_ids,
             self_prompt_turn_ids=self_prompt_turn_ids,
             peer_prompt_turn_ids=peer_prompt_turn_ids,

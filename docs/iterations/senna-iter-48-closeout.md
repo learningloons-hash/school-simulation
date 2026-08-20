@@ -55,3 +55,13 @@ cd backend && uv run pytest -q
 - **Not a validity instrument** — baseline uses Arc 10 diagnostics only; no Phase V / CIEPSS numbers.
 
 **Next:** Arc 11 memory architecture (not started).
+
+## Pass 2 remediation (2026-08-20)
+
+Independent re-review blockers B2, B3, B5, B6 — B1/B4 left untouched.
+
+- **B3:** MemBench factual fixtures step-aligned (`target_step_id` in range); validation applies to all cells.
+- **B6:** `canonical_baseline_inputs.json` v2 = inputs only; `--from-canonical` recomputes via MemBench + interview rows.
+- **B5:** `validate_interview_completeness` requires full agent×category grid from snapshot/bundle agent ids.
+- **B2:** Same-round peers excluded from peer prompt; extended scan for `recency_cut`; inclusion logging after LLM.
+- **Verification:** 340 passed, 2 skipped.

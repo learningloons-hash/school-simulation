@@ -30,9 +30,10 @@ from mirofish_backend.diagnostics.arc10_baseline import (
 )
 from mirofish_backend.diagnostics.arc10_canonical import (
     load_canonical_bundle,
-    summary_from_canonical_bundle,
+    recompute_summary_from_canonical_bundle,
 )
 from mirofish_backend.diagnostics.architectural_interview import (
+    agents_from_snapshots,
     run_architectural_interview_for_simulation,
     summarize_interview_results,
     validate_interview_completeness,
@@ -118,12 +119,12 @@ async def run_arc10_diagnostics(
     interview_section = _interview_section_from_bundle(bundle or {})
     responses = bundle.get("architectural_interview_responses") or []
     scores = bundle.get("architectural_interview_scores") or []
-    agent_ids = {str(r.get("agent_id") or "") for r in responses if r.get("agent_id")}
+    snapshot_agents = agents_from_snapshots(bundle.get("agent_state_snapshots") or [])
     if responses:
         validate_interview_completeness(
             responses,
             scores,
-            agents_interviewed=len(agent_ids),
+            expected_agent_ids=[a.agent_id for a in snapshot_agents],
         )
 
     return build_combined_arc10_summary(
@@ -144,7 +145,7 @@ async def run_arc10_diagnostics(
 async def _run(args: argparse.Namespace) -> dict[str, Any]:
     if args.from_canonical:
         bundle = load_canonical_bundle(args.from_canonical.resolve())
-        summary = summary_from_canonical_bundle(bundle)
+        summary = recompute_summary_from_canonical_bundle(bundle)
         if args.write_baseline:
             md = generate_baseline_markdown(summary)
             args.write_baseline.parent.mkdir(parents=True, exist_ok=True)
