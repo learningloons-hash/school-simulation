@@ -12,7 +12,7 @@
 |-------|--------|
 | **Task** | `senna-iter-49` — importance scoring |
 | **Branch** | `main` |
-| **Commit** | _(pending)_ |
+| **Commit** | `88136c0` |
 | **Date** | 2026-08-20 |
 
 ### Definition of Done
