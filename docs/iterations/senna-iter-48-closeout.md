@@ -65,3 +65,29 @@ Independent re-review blockers B2, B3, B5, B6 — B1/B4 left untouched.
 - **B5:** `validate_interview_completeness` requires full agent×category grid from snapshot/bundle agent ids.
 - **B2:** Same-round peers excluded from peer prompt; extended scan for `recency_cut`; inclusion logging after LLM.
 - **Verification:** 340 passed, 2 skipped.
+
+## Hypothesis verdict reconciliation (2026-08-20, Arc 11 blocking item 2)
+
+This closeout originally reported **mixed** (recall 0.5 vs synthesis 0.375, delta 0.125) from the
+canonical fixture *before* the B3 MemBench step-alignment fix. The committed
+`docs/diagnostics/ARC10_BASELINE.md` was later regenerated *after* B3 landed and now shows
+**supported** (recall 1.0 vs synthesis 0.625, delta 0.375) — same 2-item synthetic fixture, but
+B3 corrected a factual-accuracy bug that had been silently dragging the pre-fix recall figure down.
+Neither number was ever a real measurement; both are artifacts of the same degenerate 2-agent,
+1-item-per-cell canonical bundle. Recording this rather than letting the closeout's stale figure
+stand uncorrected, per GM's Arc 11 ruling.
+
+A real baseline now exists: 3 agents, 5 rounds, live Anthropic calls, `network_bounded` visibility
+with a genuine (non-fully-connected) influence network — see
+`docs/diagnostics/ARC10_MEASURED_BASELINE_REAL_RUN.md` (simulation `21a6d94e0af141de95da73fc3c41f759`).
+**Verdict: mixed**, delta **0.0** (recall-style avg 1.0, synthesis-style avg 1.0) — no separation at
+all in this run. This is n=1 and shouldn't be over-read, but it supersedes both fixture-derived
+numbers above for any claim about real Senna behavior. It also does not, on its own, support
+reflection as Arc 11's highest-priority mechanism — consistent with treating iter-51's real
+Phase V-hypothesis test (not this fixture-based one) as the actual decision point per
+`HANDOFF_SENNA_ARC11.md`.
+
+Also from the real run: **group-addressed proportion 0.666667** (10/15 turns), not the fixture's
+1.0. `visibility_policy` accounted for 10 of 89 inclusion-log exclusions — the network genuinely
+filtered some direct/targeted turns, so the influence-network mechanism is not inert in this run.
+Flagged to Mark directly per his standing instruction, not folded quietly into this note.

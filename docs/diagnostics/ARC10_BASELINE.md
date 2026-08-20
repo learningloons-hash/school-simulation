@@ -6,6 +6,20 @@ section bodies; only `generated_at` timestamps may differ.
 **Simulation ID:** `arc10-canonical-baseline`
 **Generated at:** 2026-08-19T12:00:00+00:00
 
+> **Scope note (2026-08-20, Arc 11 blocking item 1):** this document is the **reproducibility
+> fixture artifact** — a 2-agent, 1-item-per-cell synthetic canonical bundle (`--from-canonical`),
+> committed so `test_regenerate_baseline_from_canonical_bundle` can assert byte-identical
+> regeneration. It is **not a measurement of real Senna behavior** and should not be read as one.
+> The `1.0` group-addressed proportion and `0` values across every other exclusion reason are
+> artifacts of the fixture's size (2 turns total), not a claim about how Senna types turns in
+> practice.
+>
+> A real 3-agent, 5-round, live-LLM baseline now exists separately at
+> [`ARC10_MEASURED_BASELINE_REAL_RUN.md`](ARC10_MEASURED_BASELINE_REAL_RUN.md). Use that document,
+> not this one, for any claim about actual simulation behavior (group-addressed proportion,
+> exclusion-reason distribution, or the Arc 11 prioritization hypothesis). See also the
+> reconciliation note in `docs/iterations/senna-iter-48-closeout.md`.
+
 ## Combined diagnostics
 
 ### Memory context (iter-45)
