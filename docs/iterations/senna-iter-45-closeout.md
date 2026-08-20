@@ -1,6 +1,6 @@
 # Senna iter-45 closeout — memory context instrumentation
 
-**Spec:** [`docs/handoffs/HANDOFF_SENNA_ARC10_MEMORY_DIAGNOSTICS.md`](../handoffs/HANDOFF_SENNA_ARC10_MEMORY_DIAGNOSTICS.md) **`senna-iter-45`**
+**Spec:** [`docs/handoffs/handoff-to-architect.md`](../handoffs/handoff-to-architect.md) / [`handoff-to-builder.md`](../handoffs/handoff-to-builder.md) **`senna-iter-45`** (link repointed 2026-08-20 — original `HANDOFF_SENNA_ARC10_MEMORY_DIAGNOSTICS.md` no longer exists on `main`, per Arc 10 review Warning #5 / Arc 11 carry-forward item 4)
 **Date:** 2026-08-18
 **Status:** **CLOSED**
 

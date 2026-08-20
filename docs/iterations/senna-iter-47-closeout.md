@@ -1,6 +1,6 @@
 # Senna iter-47 closeout — Architectural diagnostic interview
 
-**Spec:** [`docs/handoffs/HANDOFF_SENNA_ARC10_MEMORY_DIAGNOSTICS.md`](../handoffs/HANDOFF_SENNA_ARC10_MEMORY_DIAGNOSTICS.md) **`senna-iter-47`** (Arc 10)
+**Spec:** [`docs/handoffs/handoff-to-architect.md`](../handoffs/handoff-to-architect.md) / [`handoff-to-builder.md`](../handoffs/handoff-to-builder.md) **`senna-iter-47`** (Arc 10; link repointed 2026-08-20, see Arc 11 carry-forward item 4)
 **Base:** `1bdb199` (iter-46)
 **Date:** 2026-08-18
 **Status:** **CLOSED**
