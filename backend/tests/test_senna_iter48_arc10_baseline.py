@@ -202,6 +202,13 @@ def test_baseline_body_stable_except_timestamp() -> None:
     assert body_a == body_b
 
 
+def _baseline_combined_body(md: str) -> str:
+    marker = "## Combined diagnostics"
+    idx = md.find(marker)
+    assert idx >= 0, f"missing {marker!r} in baseline markdown"
+    return md[idx:]
+
+
 def test_regenerate_baseline_from_canonical_bundle(monkeypatch: pytest.MonkeyPatch) -> None:
     membench_calls: list[dict] = []
 
@@ -221,6 +228,6 @@ def test_regenerate_baseline_from_canonical_bundle(monkeypatch: pytest.MonkeyPat
     md = generate_baseline_markdown(summary)
     committed_path = _REPO / "docs/diagnostics/ARC10_BASELINE.md"
     committed = committed_path.read_text(encoding="utf-8")
-    body_md = md.split("**Generated at:**", 1)[1].split("\n", 1)[1]
-    body_committed = committed.split("**Generated at:**", 1)[1].split("\n", 1)[1]
+    body_md = _baseline_combined_body(md)
+    body_committed = _baseline_combined_body(committed)
     assert body_md == body_committed

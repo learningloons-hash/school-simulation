@@ -233,6 +233,25 @@ async def insert_agent_turn(
     return turn_id
 
 
+async def update_agent_turn_importance(
+    sqlite_path: str,
+    *,
+    turn_id: str,
+    importance_score: int,
+    importance_source: str,
+) -> None:
+    async with aiosqlite.connect(sqlite_path) as db:
+        await db.execute(
+            """
+            UPDATE agent_turns
+            SET importance_score = ?, importance_source = ?
+            WHERE id = ?;
+            """,
+            (importance_score, importance_source, turn_id),
+        )
+        await db.commit()
+
+
 async def insert_agent_round_likert(
     sqlite_path: str,
     *,
@@ -688,7 +707,8 @@ async def get_simulation_status_with_transcript(
               interaction_type, target_scope, target_agent_id, target_agent_name, intent_tag,
               raw_response, latency_ms, group_ids,
               effective_provider, effective_model, effective_profile_id, fidelity_tier,
-              input_tokens, output_tokens, state_update_source
+              input_tokens, output_tokens, state_update_source,
+              importance_score, importance_source
             FROM agent_turns
             WHERE simulation_id = ?
             ORDER BY round_number ASC, turn_index ASC;
@@ -719,6 +739,8 @@ async def get_simulation_status_with_transcript(
                 in_tok,
                 out_tok,
                 state_src,
+                imp_score,
+                imp_source,
             ) = t
             turns.append(
                 {
@@ -743,6 +765,8 @@ async def get_simulation_status_with_transcript(
                     "input_tokens": int(in_tok) if in_tok is not None else None,
                     "output_tokens": int(out_tok) if out_tok is not None else None,
                     "state_update_source": state_src,
+                    "importance_score": int(imp_score) if imp_score is not None else None,
+                    "importance_source": imp_source,
                 }
             )
 
@@ -1357,7 +1381,8 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
               interaction_type, target_scope, target_agent_id, target_agent_name, intent_tag,
               raw_prompt, raw_response, latency_ms, group_ids,
               effective_provider, effective_model, effective_profile_id, fidelity_tier, created_at,
-              input_tokens, output_tokens, state_update_source
+              input_tokens, output_tokens, state_update_source,
+              importance_score, importance_source
             FROM agent_turns
             WHERE simulation_id = ?
             ORDER BY round_number ASC, turn_index ASC;
@@ -1392,6 +1417,8 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
                     "input_tokens": int(t[21]) if t[21] is not None else None,
                     "output_tokens": int(t[22]) if t[22] is not None else None,
                     "state_update_source": t[23],
+                    "importance_score": int(t[24]) if t[24] is not None else None,
+                    "importance_source": t[25],
                 }
             )
 

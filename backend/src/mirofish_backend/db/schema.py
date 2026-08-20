@@ -296,6 +296,8 @@ async def init_db(sqlite_path: str) -> None:
         await _ensure_column(db, "agent_turns", "output_tokens", "INTEGER")
         await _ensure_column(db, "agent_turns", "effective_profile_id", "TEXT")
         await _ensure_column(db, "agent_turns", "state_update_source", "TEXT")
+        await _ensure_column(db, "agent_turns", "importance_score", "INTEGER")
+        await _ensure_column(db, "agent_turns", "importance_source", "TEXT")
         await _ensure_column(db, "agent_round_likert", "input_tokens", "INTEGER")
         await _ensure_column(db, "agent_round_likert", "output_tokens", "INTEGER")
         await _ensure_column(db, "agent_round_likert", "effective_provider", "TEXT")

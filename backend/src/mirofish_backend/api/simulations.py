@@ -65,6 +65,12 @@ from mirofish_backend.simulation.likert import (
     resolve_likert_enabled,
     resolve_likert_indicators,
 )
+from mirofish_backend.simulation.importance_scoring import (
+    importance_config_snapshot_fields,
+    resolve_importance_prompt_version,
+    resolve_importance_scoring_enabled,
+    resolve_importance_scoring_mode,
+)
 from mirofish_backend.simulation.remainder import build_synthetic_remainder_personas
 from mirofish_backend.simulation.sampling_report import build_sampling_report_json
 from mirofish_backend.simulation.architectural_interview_report import build_architectural_interview_report_json
@@ -207,6 +213,9 @@ async def run_simulation_task_guarded(
     openai_compatible_api_key: str = "",
     likert_self_report_enabled: bool = False,
     likert_indicators: tuple[str, ...] | None = None,
+    importance_scoring_enabled: bool = False,
+    importance_prompt_version: str = "v1",
+    importance_scoring_mode: str = "per_turn",
 ) -> None:
     """Run simulation and mark run failed with reason on uncaught errors (used by API and tests)."""
     try:
@@ -258,6 +267,9 @@ async def run_simulation_task_guarded(
             openai_compatible_api_key=openai_compatible_api_key,
             likert_self_report_enabled=likert_self_report_enabled,
             likert_indicators=likert_indicators,
+            importance_scoring_enabled=importance_scoring_enabled,
+            importance_prompt_version=importance_prompt_version,
+            importance_scoring_mode=importance_scoring_mode,
         )
     except Exception as e:
         logger.exception("Simulation task failed for %s", simulation_id)
@@ -377,6 +389,28 @@ class SimulationRunRequest(BaseModel):
         default=None,
         description="Round-end Likert self-report (senna-iter-40). Omit to use scenario default; explicit false disables.",
     )
+    importance_scoring_enabled: bool | None = Field(
+        default=None,
+        description="Score each turn 1–10 at write time (senna-iter-49). Omit for server default (off).",
+    )
+    importance_prompt_version: str | None = Field(
+        default=None,
+        description="Version tag for importance scorer prompt (default v1).",
+    )
+    importance_scoring_mode: str | None = Field(
+        default=None,
+        description="per_turn | per_round_batch — batching for importance scorer LLM calls.",
+    )
+
+    @field_validator("importance_scoring_mode")
+    @classmethod
+    def _validate_importance_mode(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        mode = str(v).strip().lower()
+        if mode not in ("per_turn", "per_round_batch"):
+            raise ValueError("importance_scoring_mode must be per_turn or per_round_batch")
+        return mode
 
     @model_validator(mode="after")
     def _remainder_fits_agent_limit(self) -> "SimulationRunRequest":
@@ -474,6 +508,8 @@ def _compute_preflight_estimate(
     agent_count: int,
     fidelity_tiers: list[int],
     likert_self_report_enabled: bool = False,
+    importance_scoring_enabled: bool = False,
+    importance_scoring_mode: str = "per_turn",
 ) -> PreflightEstimate:
     llm_max_tokens = req.max_tokens if req.max_tokens is not None else settings.llm_max_tokens
     return estimate_run_preflight(
@@ -489,6 +525,8 @@ def _compute_preflight_estimate(
         peer_context_max_chars=settings.peer_context_max_chars,
         working_memory_last_k=settings.working_memory_last_k,
         likert_self_report_enabled=likert_self_report_enabled,
+        importance_scoring_enabled=importance_scoring_enabled,
+        importance_scoring_mode=importance_scoring_mode,
     )
 
 
@@ -554,6 +592,14 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         request_flag=req.likert_self_report_enabled,
         scenario=scenario_cfg,
     )
+    importance_preflight = resolve_importance_scoring_enabled(
+        request_flag=req.importance_scoring_enabled,
+        settings=settings,
+    )
+    importance_mode_preflight = resolve_importance_scoring_mode(
+        request_mode=req.importance_scoring_mode,
+        settings=settings,
+    )
     est = _compute_preflight_estimate(
         settings,
         req,
@@ -562,6 +608,8 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         agent_count=len(personas),
         fidelity_tiers=tier_list,
         likert_self_report_enabled=likert_preflight,
+        importance_scoring_enabled=importance_preflight,
+        importance_scoring_mode=importance_mode_preflight,
     )
     return PreflightResponse(warnings=list(est.warnings), preflight=est.to_snapshot())
 
@@ -854,6 +902,19 @@ async def queue_simulation_run(
             detail="likert_self_report_enabled requires scenario likert_anchor_labels with six labels per indicator",
         )
 
+    importance_effective = resolve_importance_scoring_enabled(
+        request_flag=_req.importance_scoring_enabled,
+        settings=settings,
+    )
+    importance_mode = resolve_importance_scoring_mode(
+        request_mode=_req.importance_scoring_mode,
+        settings=settings,
+    )
+    importance_prompt_ver = resolve_importance_prompt_version(
+        request_version=_req.importance_prompt_version,
+        settings=settings,
+    )
+
     preflight_est = _compute_preflight_estimate(
         settings,
         _req,
@@ -862,6 +923,8 @@ async def queue_simulation_run(
         agent_count=len(personas_final),
         fidelity_tiers=tier_list,
         likert_self_report_enabled=likert_effective,
+        importance_scoring_enabled=importance_effective,
+        importance_scoring_mode=importance_mode,
     )
     run_warnings.extend(preflight_est.warnings)
 
@@ -983,6 +1046,11 @@ async def queue_simulation_run(
             anchor_labels=scenario_cfg.likert_anchor_labels,
             indicators=likert_indicators,
         ),
+        **importance_config_snapshot_fields(
+            enabled=importance_effective,
+            prompt_version=importance_prompt_ver,
+            scoring_mode=importance_mode,
+        ),
     }
     if _req.convergence_threshold is not None:
         config_snapshot["convergence_threshold"] = _req.convergence_threshold
@@ -1058,6 +1126,9 @@ async def queue_simulation_run(
             openai_compatible_api_key=openai_api_key_run,
             likert_self_report_enabled=likert_effective,
             likert_indicators=likert_indicators,
+            importance_scoring_enabled=importance_effective,
+            importance_prompt_version=importance_prompt_ver,
+            importance_scoring_mode=importance_mode,
         )
     )
 

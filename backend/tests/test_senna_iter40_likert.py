@@ -196,4 +196,4 @@ async def test_legacy_run_without_likert_has_no_rows() -> None:
 
 
 def test_export_version_bumped_for_likert() -> None:
-    assert EXPORT_VERSION == "11"
+    assert EXPORT_VERSION == "12"

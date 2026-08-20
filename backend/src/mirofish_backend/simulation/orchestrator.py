@@ -57,6 +57,11 @@ from mirofish_backend.simulation.heuristic import (
     mean_deltas_tier12_for_round,
     tier3_heuristic_rng,
 )
+from mirofish_backend.simulation.importance_scoring import (
+    merge_importance_audit,
+    score_round_importance_batch,
+    score_turn_importance,
+)
 from mirofish_backend.db.repo import (
     get_recent_interactions,
     get_last_agent_responses,
@@ -71,9 +76,11 @@ from mirofish_backend.db.repo import (
     insert_round_outcome,
     merge_simulation_config_snapshot,
     set_simulation_status,
+    update_agent_turn_importance,
     update_simulation_token_totals,
     upsert_round_summary,
 )
+from mirofish_backend.llm.importance_parse import FALLBACK_SCORE
 
 logger = logging.getLogger("mirofish_backend.simulation.orchestrator")
 
@@ -653,6 +660,9 @@ async def run_simulation_task(
     openai_compatible_api_key: str = "",
     likert_self_report_enabled: bool = False,
     likert_indicators: tuple[str, ...] | None = None,
+    importance_scoring_enabled: bool = False,
+    importance_prompt_version: str = "v1",
+    importance_scoring_mode: str = "per_turn",
 ) -> None:
     mode = (llm_provider or "lmstudio").strip().lower()
     if mode not in ("lmstudio", "anthropic", "hybrid"):
@@ -709,6 +719,12 @@ async def run_simulation_task(
     patience = max(1, int(convergence_patience)) if convergence_threshold is not None else 0
     run_in_acc = 0
     run_out_acc = 0
+    importance_audit: dict[str, int] = {}
+    importance_in_acc = 0
+    importance_out_acc = 0
+    scoring_mode = (importance_scoring_mode or "per_turn").strip().lower()
+    if scoring_mode not in ("per_turn", "per_round_batch"):
+        scoring_mode = "per_turn"
 
     if round_summary_enabled:
         agent_roster = [(a.name, a.role) for a in agents]
@@ -738,6 +754,7 @@ async def run_simulation_task(
         # Pre-assign turn indices BEFORE parallel dispatch so interaction plans are deterministic.
         turn_assignments: list[tuple[int, AgentInstance]] = list(enumerate(round_agents, start=1))
         round_start = time.perf_counter()
+        round_importance_pending: list[dict[str, Any]] = []
 
         states_before_t12: dict[str, tuple[float, float, float]] = {}
         for ag in round_agents:
@@ -748,6 +765,61 @@ async def run_simulation_task(
                     st0.resistance_level,
                     st0.workload_stress,
                 )
+
+        async def _apply_importance_for_turn(
+            *,
+            turn_id: str,
+            raw_response: str,
+            round_number: int,
+            turn_index: int,
+            agent: AgentInstance,
+            tier: int,
+        ) -> None:
+            nonlocal importance_in_acc, importance_out_acc
+            if not importance_scoring_enabled:
+                return
+            if scoring_mode == "per_round_batch":
+                round_importance_pending.append(
+                    {
+                        "turn_id": turn_id,
+                        "raw_response": raw_response,
+                        "round_number": round_number,
+                        "turn_index": turn_index,
+                        "agent_name": agent.name,
+                        "agent_role": agent.role,
+                    }
+                )
+                return
+            if tier == 3:
+                score, src, imp_in, imp_out = FALLBACK_SCORE, "fallback", 0, 0
+            else:
+                score, src, imp_in, imp_out = await score_turn_importance(
+                    raw_response=raw_response,
+                    round_number=round_number,
+                    turn_index=turn_index,
+                    agent_name=agent.name,
+                    agent_role=agent.role,
+                    prompt_version=importance_prompt_version,
+                    llm_temperature=llm_temperature,
+                    llm_max_tokens=llm_max_tokens,
+                    lmstudio_base_url=lmstudio_base_url,
+                    lmstudio_model=lmstudio_model,
+                    anthropic_api_key=anthropic_api_key,
+                    anthropic_model=anthropic_model,
+                    openai_compatible_api_key=openai_compatible_api_key,
+                    routing_policy=policy,
+                    routing_profile_local_id=local_profile_id,
+                    routing_profile_frontier_id=frontier_profile_id,
+                )
+            importance_in_acc += imp_in
+            importance_out_acc += imp_out
+            await update_agent_turn_importance(
+                sqlite_path,
+                turn_id=turn_id,
+                importance_score=score,
+                importance_source=src,
+            )
+            merge_importance_audit(importance_audit, score=score, source=src)
 
         async def _run_one_turn(turn_index: int, agent: AgentInstance) -> _TurnOutcome:
             """Execute one agent turn under the semaphore.
@@ -779,7 +851,7 @@ async def run_simulation_task(
                         "[TIER 3] No LLM. State updated after the round via Tier-1/2 mean-delta heuristic.\n"
                         f"round={round_number} turn={turn_index} agent={agent.agent_id}"
                     )
-                    await insert_agent_turn(
+                    turn_id = await insert_agent_turn(
                         sqlite_path,
                         simulation_id=simulation_id,
                         round_number=round_number,
@@ -802,6 +874,14 @@ async def run_simulation_task(
                         fidelity_tier=3,
                         input_tokens=0,
                         output_tokens=0,
+                    )
+                    await _apply_importance_for_turn(
+                        turn_id=turn_id,
+                        raw_response=raw_response,
+                        round_number=round_number,
+                        turn_index=turn_index,
+                        agent=agent,
+                        tier=3,
                     )
                     return _TurnOutcome(False, 0, 0)
 
@@ -1027,7 +1107,7 @@ async def run_simulation_task(
                     lmstudio_model=lmstudio_model,
                     anthropic_model=anthropic_model,
                 )
-                await insert_agent_turn(
+                turn_id = await insert_agent_turn(
                     sqlite_path,
                     simulation_id=simulation_id,
                     round_number=round_number,
@@ -1068,6 +1148,14 @@ async def run_simulation_task(
                             round_number,
                             agent.agent_id,
                         )
+                await _apply_importance_for_turn(
+                    turn_id=turn_id,
+                    raw_response=raw_response,
+                    round_number=round_number,
+                    turn_index=turn_index,
+                    agent=agent,
+                    tier=tier,
+                )
                 return _TurnOutcome(conflict_flag, in_tok, out_tok)
 
         # Dispatch all turns for this round concurrently; collect results for round metrics.
@@ -1106,6 +1194,40 @@ async def run_simulation_task(
             total_input_tokens=run_in_acc,
             total_output_tokens=run_out_acc,
         )
+
+        if (
+            importance_scoring_enabled
+            and scoring_mode == "per_round_batch"
+            and round_importance_pending
+        ):
+            parsed, imp_in, imp_out = await score_round_importance_batch(
+                round_number=round_number,
+                turns=round_importance_pending,
+                prompt_version=importance_prompt_version,
+                llm_temperature=llm_temperature,
+                llm_max_tokens=llm_max_tokens,
+                lmstudio_base_url=lmstudio_base_url,
+                lmstudio_model=lmstudio_model,
+                anthropic_api_key=anthropic_api_key,
+                anthropic_model=anthropic_model,
+                openai_compatible_api_key=openai_compatible_api_key,
+                routing_policy=policy,
+                routing_profile_local_id=local_profile_id,
+                routing_profile_frontier_id=frontier_profile_id,
+            )
+            importance_in_acc += imp_in
+            importance_out_acc += imp_out
+            for row in round_importance_pending:
+                tid = str(row["turn_id"])
+                score, src = parsed.get(tid, (FALLBACK_SCORE, "fallback"))
+                await update_agent_turn_importance(
+                    sqlite_path,
+                    turn_id=tid,
+                    importance_score=score,
+                    importance_source=src,
+                )
+                merge_importance_audit(importance_audit, score=score, source=src)
+
         logger.info(
             "round_complete simulation_id=%s round=%s turns=%d failed=%d wall_ms=%d",
             simulation_id[:12],
@@ -1282,6 +1404,18 @@ async def run_simulation_task(
                         completed_rounds=round_number,
                         status="converged",
                     )
+                if importance_scoring_enabled and importance_audit:
+                    await merge_simulation_config_snapshot(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        updates={
+                            "importance_scoring_audit": dict(importance_audit),
+                            "importance_scoring_token_totals": {
+                                "input_tokens": importance_in_acc,
+                                "output_tokens": importance_out_acc,
+                            },
+                        },
+                    )
                 return
 
         await set_simulation_status(
@@ -1297,6 +1431,18 @@ async def run_simulation_task(
             simulation_id=simulation_id,
             completed_rounds=total_rounds,
             status="completed",
+        )
+    if importance_scoring_enabled and importance_audit:
+        await merge_simulation_config_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            updates={
+                "importance_scoring_audit": dict(importance_audit),
+                "importance_scoring_token_totals": {
+                    "input_tokens": importance_in_acc,
+                    "output_tokens": importance_out_acc,
+                },
+            },
         )
     await set_simulation_status(
         sqlite_path,

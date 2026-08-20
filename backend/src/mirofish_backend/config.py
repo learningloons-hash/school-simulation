@@ -63,6 +63,11 @@ class Settings(BaseSettings):
     # Iteration 19: max concurrent LLM calls within a single round (1 = sequential, default 4).
     llm_concurrency_cap: int = 4
 
+    # Senna iter-49: memory importance scoring (default off; no retrieval use until iter-50).
+    importance_scoring_enabled: bool = False
+    importance_prompt_version: str = "v1"
+    importance_scoring_mode: str = "per_turn"
+
     # Senna Arc 6: per-round LLM context bounding + optional transcript (iter-28+)
     round_summary_enabled: bool = True
     transcript_dir: str = "./data/transcripts"
