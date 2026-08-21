@@ -71,6 +71,11 @@ from mirofish_backend.simulation.importance_scoring import (
     resolve_importance_scoring_enabled,
     resolve_importance_scoring_mode,
 )
+from mirofish_backend.simulation.weighted_retrieval import (
+    resolve_retrieval_weights,
+    resolve_weighted_retrieval_enabled,
+    weighted_retrieval_config_snapshot_fields,
+)
 from mirofish_backend.simulation.remainder import build_synthetic_remainder_personas
 from mirofish_backend.simulation.sampling_report import build_sampling_report_json
 from mirofish_backend.simulation.architectural_interview_report import build_architectural_interview_report_json
@@ -216,6 +221,10 @@ async def run_simulation_task_guarded(
     importance_scoring_enabled: bool = False,
     importance_prompt_version: str = "v1",
     importance_scoring_mode: str = "per_turn",
+    weighted_retrieval_enabled: bool = False,
+    retrieval_weight_recency: float = 0.5,
+    retrieval_weight_importance: float = 0.25,
+    retrieval_weight_relevance: float = 0.25,
 ) -> None:
     """Run simulation and mark run failed with reason on uncaught errors (used by API and tests)."""
     try:
@@ -270,6 +279,10 @@ async def run_simulation_task_guarded(
             importance_scoring_enabled=importance_scoring_enabled,
             importance_prompt_version=importance_prompt_version,
             importance_scoring_mode=importance_scoring_mode,
+            weighted_retrieval_enabled=weighted_retrieval_enabled,
+            retrieval_weight_recency=retrieval_weight_recency,
+            retrieval_weight_importance=retrieval_weight_importance,
+            retrieval_weight_relevance=retrieval_weight_relevance,
         )
     except Exception as e:
         logger.exception("Simulation task failed for %s", simulation_id)
@@ -401,6 +414,25 @@ class SimulationRunRequest(BaseModel):
         default=None,
         description="per_turn | per_round_batch — batching for importance scorer LLM calls.",
     )
+    weighted_retrieval_enabled: bool | None = Field(
+        default=None,
+        description="Weighted recency+importance+relevance retrieval (senna-iter-50). Omit for server default (off).",
+    )
+    retrieval_weight_recency: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Weight for recency component when weighted retrieval is on.",
+    )
+    retrieval_weight_importance: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Weight for importance component when weighted retrieval is on.",
+    )
+    retrieval_weight_relevance: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Weight for relevance component when weighted retrieval is on.",
+    )
 
     @field_validator("importance_scoring_mode")
     @classmethod
@@ -510,6 +542,7 @@ def _compute_preflight_estimate(
     likert_self_report_enabled: bool = False,
     importance_scoring_enabled: bool = False,
     importance_scoring_mode: str = "per_turn",
+    weighted_retrieval_enabled: bool = False,
 ) -> PreflightEstimate:
     llm_max_tokens = req.max_tokens if req.max_tokens is not None else settings.llm_max_tokens
     return estimate_run_preflight(
@@ -527,6 +560,7 @@ def _compute_preflight_estimate(
         likert_self_report_enabled=likert_self_report_enabled,
         importance_scoring_enabled=importance_scoring_enabled,
         importance_scoring_mode=importance_scoring_mode,
+        weighted_retrieval_enabled=weighted_retrieval_enabled,
     )
 
 
@@ -600,6 +634,10 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         request_mode=req.importance_scoring_mode,
         settings=settings,
     )
+    weighted_preflight = resolve_weighted_retrieval_enabled(
+        request_flag=req.weighted_retrieval_enabled,
+        settings=settings,
+    )
     est = _compute_preflight_estimate(
         settings,
         req,
@@ -610,6 +648,7 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         likert_self_report_enabled=likert_preflight,
         importance_scoring_enabled=importance_preflight,
         importance_scoring_mode=importance_mode_preflight,
+        weighted_retrieval_enabled=weighted_preflight,
     )
     return PreflightResponse(warnings=list(est.warnings), preflight=est.to_snapshot())
 
@@ -914,6 +953,16 @@ async def queue_simulation_run(
         request_version=_req.importance_prompt_version,
         settings=settings,
     )
+    weighted_effective = resolve_weighted_retrieval_enabled(
+        request_flag=_req.weighted_retrieval_enabled,
+        settings=settings,
+    )
+    retrieval_weights = resolve_retrieval_weights(
+        settings=settings,
+        request_recency=_req.retrieval_weight_recency,
+        request_importance=_req.retrieval_weight_importance,
+        request_relevance=_req.retrieval_weight_relevance,
+    )
 
     preflight_est = _compute_preflight_estimate(
         settings,
@@ -925,6 +974,7 @@ async def queue_simulation_run(
         likert_self_report_enabled=likert_effective,
         importance_scoring_enabled=importance_effective,
         importance_scoring_mode=importance_mode,
+        weighted_retrieval_enabled=weighted_effective,
     )
     run_warnings.extend(preflight_est.warnings)
 
@@ -1051,6 +1101,10 @@ async def queue_simulation_run(
             prompt_version=importance_prompt_ver,
             scoring_mode=importance_mode,
         ),
+        **weighted_retrieval_config_snapshot_fields(
+            enabled=weighted_effective,
+            weights=retrieval_weights,
+        ),
     }
     if _req.convergence_threshold is not None:
         config_snapshot["convergence_threshold"] = _req.convergence_threshold
@@ -1129,6 +1183,10 @@ async def queue_simulation_run(
             importance_scoring_enabled=importance_effective,
             importance_prompt_version=importance_prompt_ver,
             importance_scoring_mode=importance_mode,
+            weighted_retrieval_enabled=weighted_effective,
+            retrieval_weight_recency=retrieval_weights.recency,
+            retrieval_weight_importance=retrieval_weights.importance,
+            retrieval_weight_relevance=retrieval_weights.relevance,
         )
     )
 

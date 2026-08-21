@@ -24,6 +24,7 @@ class InclusionRecord:
     exclusion_reason: ExclusionReason
     target_scope: str
     char_truncated: bool
+    retrieval_signals: dict[str, float] | None = None
 
 
 def build_prompt_aligned_inclusion_records(
@@ -35,6 +36,7 @@ def build_prompt_aligned_inclusion_records(
     self_prompt_turn_ids: set[str],
     peer_prompt_turn_ids: set[str],
     peer_limit: int,
+    retrieval_signals_by_turn_id: dict[str, dict[str, float]] | None = None,
 ) -> list[InclusionRecord]:
     """
     Derive inclusion rows from turns actually placed in the assembled prompt.
@@ -44,6 +46,7 @@ def build_prompt_aligned_inclusion_records(
     use ``visibility_policy`` rather than a generic network label.
     """
     records: list[InclusionRecord] = []
+    signals_map = retrieval_signals_by_turn_id or {}
     for turn in recency_candidates:
         turn_id = str(turn.get("id") or "")
         if not turn_id:
@@ -79,6 +82,7 @@ def build_prompt_aligned_inclusion_records(
                     exclusion_reason="char_budget_truncated" if clip.truncated else None,
                     target_scope=target_scope,
                     char_truncated=clip.truncated,
+                    retrieval_signals=signals_map.get(turn_id),
                 )
             )
             continue
@@ -138,6 +142,7 @@ def build_prompt_aligned_inclusion_records(
                 exclusion_reason="char_budget_truncated" if clip.truncated else None,
                 target_scope=target_scope,
                 char_truncated=clip.truncated,
+                retrieval_signals=signals_map.get(turn_id),
             )
         )
     return records
@@ -153,6 +158,7 @@ def build_memory_context_inclusion_records(
     peer_limit: int,
     self_prompt_turn_ids: set[str] | None = None,
     peer_prompt_turn_ids: set[str] | None = None,
+    retrieval_signals_by_turn_id: dict[str, dict[str, float]] | None = None,
 ) -> list[InclusionRecord]:
     """
     Build inclusion rows. When prompt-aligned id sets are supplied, records reflect
@@ -168,6 +174,7 @@ def build_memory_context_inclusion_records(
             self_prompt_turn_ids=self_prompt_turn_ids,
             peer_prompt_turn_ids=peer_prompt_turn_ids,
             peer_limit=peer_limit,
+            retrieval_signals_by_turn_id=retrieval_signals_by_turn_id,
         )
 
     recency_ids = {str(t.get("id") or "") for t in recency_window if t.get("id")}

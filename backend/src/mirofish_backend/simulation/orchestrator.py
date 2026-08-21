@@ -43,7 +43,14 @@ from mirofish_backend.simulation.likert import (
     resolve_likert_anchor_labels,
     resolve_likert_indicators,
 )
+from mirofish_backend.rag.memory_index import embed_situation, embed_turn
 from mirofish_backend.rag.retrieve import retrieve_top_k, snippets_for_prompt
+from mirofish_backend.simulation.memory_retrieval import (
+    RetrievalWeights,
+    build_situation_query,
+    rank_turns,
+    self_candidate_cap,
+)
 from mirofish_backend.simulation.transcript_writer import (
     append_round_to_transcript,
     close_transcript,
@@ -663,6 +670,10 @@ async def run_simulation_task(
     importance_scoring_enabled: bool = False,
     importance_prompt_version: str = "v1",
     importance_scoring_mode: str = "per_turn",
+    weighted_retrieval_enabled: bool = False,
+    retrieval_weight_recency: float = 0.5,
+    retrieval_weight_importance: float = 0.25,
+    retrieval_weight_relevance: float = 0.25,
 ) -> None:
     mode = (llm_provider or "lmstudio").strip().lower()
     if mode not in ("lmstudio", "anthropic", "hybrid"):
@@ -726,6 +737,13 @@ async def run_simulation_task(
     if scoring_mode not in ("per_turn", "per_round_batch"):
         scoring_mode = "per_turn"
 
+    mem_embed_model = (embedding_model or lmstudio_model or "").strip()
+    retrieval_weights = RetrievalWeights(
+        recency=retrieval_weight_recency,
+        importance=retrieval_weight_importance,
+        relevance=retrieval_weight_relevance,
+    )
+
     if round_summary_enabled:
         agent_roster = [(a.name, a.role) for a in agents]
         await open_transcript(
@@ -787,6 +805,7 @@ async def run_simulation_task(
                         "turn_index": turn_index,
                         "agent_name": agent.name,
                         "agent_role": agent.role,
+                        "tier": tier,
                     }
                 )
                 return
@@ -883,6 +902,14 @@ async def run_simulation_task(
                         agent=agent,
                         tier=3,
                     )
+                    if weighted_retrieval_enabled and mem_embed_model:
+                        await embed_turn(
+                            simulation_id=simulation_id,
+                            turn_id=turn_id,
+                            raw_response=raw_response,
+                            lmstudio_base_url=lmstudio_base_url,
+                            embedding_model=mem_embed_model,
+                        )
                     return _TurnOutcome(False, 0, 0)
 
                 if turn_index == 1 and round_number > 1:
@@ -907,61 +934,149 @@ async def run_simulation_task(
                 # Tier 2: shorter peer / memory context (Iteration 23).
                 peer_limit = max(1, peer_context_max_chars // 2) if tier == 2 else peer_context_max_chars
 
-                self_turn_rows = await get_last_agent_turn_rows(
-                    sqlite_path,
-                    simulation_id=simulation_id,
-                    agent_id=agent.agent_id,
-                    last_k=working_memory_last_k,
-                )
-                self_prompt_turn_ids = {str(r["id"]) for r in self_turn_rows if r.get("id")}
-                extended_last_k = min(
-                    MEMORY_LOG_EXTENDED_K_CAP,
-                    max(interaction_last_k * 2, interaction_last_k + len(round_agents)),
-                )
-                if extended_last_k > interaction_last_k:
+                retrieval_signals_by_turn_id: dict[str, dict[str, float]] = {}
+
+                if weighted_retrieval_enabled:
+                    situation_text = build_situation_query(
+                        policy_event=policy_event,
+                        intent_tag=interaction_plan.intent_tag,
+                        interaction_type=interaction_plan.interaction_type,
+                        target_scope=interaction_plan.target_scope,
+                    )
+                    situation_vec = None
+                    if mem_embed_model:
+                        situation_vec = await embed_situation(
+                            simulation_id=simulation_id,
+                            situation_text=situation_text,
+                            lmstudio_base_url=lmstudio_base_url,
+                            embedding_model=mem_embed_model,
+                        )
+
+                    self_cap = self_candidate_cap(working_memory_last_k=working_memory_last_k)
+                    self_candidates = await get_last_agent_turn_rows(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        agent_id=agent.agent_id,
+                        last_k=self_cap,
+                    )
+                    self_ranked = rank_turns(
+                        self_candidates,
+                        weights=retrieval_weights,
+                        simulation_id=simulation_id,
+                        situation_vector=situation_vec,
+                        top_k=working_memory_last_k,
+                    )
+                    self_turn_rows = [r.turn for r in self_ranked]
+                    self_prompt_turn_ids = {
+                        str(r.turn["id"]) for r in self_ranked if r.turn.get("id")
+                    }
+                    for ranked in self_ranked:
+                        tid = str(ranked.turn.get("id") or "")
+                        if tid:
+                            retrieval_signals_by_turn_id[tid] = ranked.signals_dict()
+
+                    peer_candidate_cap = min(
+                        MEMORY_LOG_EXTENDED_K_CAP,
+                        max(
+                            interaction_last_k * 3,
+                            interaction_last_k + len(round_agents),
+                        ),
+                    )
                     extended_raw = await get_recent_interactions(
                         sqlite_path,
                         simulation_id=simulation_id,
-                        last_k=extended_last_k,
+                        last_k=peer_candidate_cap,
                     )
                     recent_raw = await get_recent_interactions(
                         sqlite_path,
                         simulation_id=simulation_id,
                         last_k=interaction_last_k,
                     )
+                    visible_for_log, _ = partition_turns_by_visibility(
+                        extended_raw,
+                        agent,
+                        interaction_policy,
+                        effective_visibility=effective_visibility,
+                        network_neighbors=network_neighbors,
+                        round_speaker_ids=spoke_ids,
+                    )
+                    peer_pool = _peer_turns_for_prompt(
+                        visible_for_log,
+                        observer_agent_id=agent.agent_id,
+                        round_number=round_number,
+                    )
+                    peer_ranked = rank_turns(
+                        peer_pool,
+                        weights=retrieval_weights,
+                        simulation_id=simulation_id,
+                        situation_vector=situation_vec,
+                        top_k=interaction_last_k,
+                    )
+                    recent_interactions = clip_recent_interactions(
+                        [r.turn for r in peer_ranked],
+                        max_chars=peer_limit,
+                    )
+                    peer_prompt_turn_ids = {str(r["id"]) for r in recent_interactions if r.get("id")}
+                    for ranked in peer_ranked:
+                        tid = str(ranked.turn.get("id") or "")
+                        if tid and tid in peer_prompt_turn_ids:
+                            retrieval_signals_by_turn_id[tid] = ranked.signals_dict()
                 else:
-                    extended_raw = recent_raw = await get_recent_interactions(
+                    self_turn_rows = await get_last_agent_turn_rows(
                         sqlite_path,
                         simulation_id=simulation_id,
-                        last_k=interaction_last_k,
+                        agent_id=agent.agent_id,
+                        last_k=working_memory_last_k,
                     )
-                recent_clipped = clip_recent_interactions(
-                    recent_raw,
-                    max_chars=peer_limit,
-                )
-                # ADR-002: visibility may fall back to broadcast when network_csv absent
-                recent_visible = visible_turns_for_agent(
-                    recent_clipped,
-                    agent,
-                    interaction_policy,
-                    effective_visibility=effective_visibility,
-                    network_neighbors=network_neighbors,
-                    round_speaker_ids=spoke_ids,
-                )
-                visible_for_log, _ = partition_turns_by_visibility(
-                    extended_raw,
-                    agent,
-                    interaction_policy,
-                    effective_visibility=effective_visibility,
-                    network_neighbors=network_neighbors,
-                    round_speaker_ids=spoke_ids,
-                )
-                recent_interactions = _peer_turns_for_prompt(
-                    recent_visible,
-                    observer_agent_id=agent.agent_id,
-                    round_number=round_number,
-                )
-                peer_prompt_turn_ids = {str(r["id"]) for r in recent_interactions if r.get("id")}
+                    self_prompt_turn_ids = {str(r["id"]) for r in self_turn_rows if r.get("id")}
+                    extended_last_k = min(
+                        MEMORY_LOG_EXTENDED_K_CAP,
+                        max(interaction_last_k * 2, interaction_last_k + len(round_agents)),
+                    )
+                    if extended_last_k > interaction_last_k:
+                        extended_raw = await get_recent_interactions(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            last_k=extended_last_k,
+                        )
+                        recent_raw = await get_recent_interactions(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            last_k=interaction_last_k,
+                        )
+                    else:
+                        extended_raw = recent_raw = await get_recent_interactions(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            last_k=interaction_last_k,
+                        )
+                    recent_clipped = clip_recent_interactions(
+                        recent_raw,
+                        max_chars=peer_limit,
+                    )
+                    recent_visible = visible_turns_for_agent(
+                        recent_clipped,
+                        agent,
+                        interaction_policy,
+                        effective_visibility=effective_visibility,
+                        network_neighbors=network_neighbors,
+                        round_speaker_ids=spoke_ids,
+                    )
+                    visible_for_log, _ = partition_turns_by_visibility(
+                        extended_raw,
+                        agent,
+                        interaction_policy,
+                        effective_visibility=effective_visibility,
+                        network_neighbors=network_neighbors,
+                        round_speaker_ids=spoke_ids,
+                    )
+                    recent_interactions = _peer_turns_for_prompt(
+                        recent_visible,
+                        observer_agent_id=agent.agent_id,
+                        round_number=round_number,
+                    )
+                    peer_prompt_turn_ids = {str(r["id"]) for r in recent_interactions if r.get("id")}
+
                 inclusion_records = build_memory_context_inclusion_records(
                     observer_agent_id=agent.agent_id,
                     round_number=round_number,
@@ -971,6 +1086,7 @@ async def run_simulation_task(
                     peer_limit=peer_limit,
                     self_prompt_turn_ids=self_prompt_turn_ids,
                     peer_prompt_turn_ids=peer_prompt_turn_ids,
+                    retrieval_signals_by_turn_id=retrieval_signals_by_turn_id or None,
                 )
 
                 prior_agent_memory = clip_memory_lines(
@@ -1156,6 +1272,14 @@ async def run_simulation_task(
                     agent=agent,
                     tier=tier,
                 )
+                if weighted_retrieval_enabled and mem_embed_model:
+                    await embed_turn(
+                        simulation_id=simulation_id,
+                        turn_id=turn_id,
+                        raw_response=raw_response,
+                        lmstudio_base_url=lmstudio_base_url,
+                        embedding_model=mem_embed_model,
+                    )
                 return _TurnOutcome(conflict_flag, in_tok, out_tok)
 
         # Dispatch all turns for this round concurrently; collect results for round metrics.
@@ -1200,24 +1324,39 @@ async def run_simulation_task(
             and scoring_mode == "per_round_batch"
             and round_importance_pending
         ):
-            parsed, imp_in, imp_out = await score_round_importance_batch(
-                round_number=round_number,
-                turns=round_importance_pending,
-                prompt_version=importance_prompt_version,
-                llm_temperature=llm_temperature,
-                llm_max_tokens=llm_max_tokens,
-                lmstudio_base_url=lmstudio_base_url,
-                lmstudio_model=lmstudio_model,
-                anthropic_api_key=anthropic_api_key,
-                anthropic_model=anthropic_model,
-                openai_compatible_api_key=openai_compatible_api_key,
-                routing_policy=policy,
-                routing_profile_local_id=local_profile_id,
-                routing_profile_frontier_id=frontier_profile_id,
-            )
+            tier3_pending = [r for r in round_importance_pending if int(r.get("tier") or 1) == 3]
+            llm_pending = [r for r in round_importance_pending if int(r.get("tier") or 1) != 3]
+            for row in tier3_pending:
+                tid = str(row["turn_id"])
+                await update_agent_turn_importance(
+                    sqlite_path,
+                    turn_id=tid,
+                    importance_score=FALLBACK_SCORE,
+                    importance_source="fallback",
+                )
+                merge_importance_audit(importance_audit, score=FALLBACK_SCORE, source="fallback")
+            parsed: dict[str, tuple[int, str]] = {}
+            imp_in = 0
+            imp_out = 0
+            if llm_pending:
+                parsed, imp_in, imp_out = await score_round_importance_batch(
+                    round_number=round_number,
+                    turns=llm_pending,
+                    prompt_version=importance_prompt_version,
+                    llm_temperature=llm_temperature,
+                    llm_max_tokens=llm_max_tokens,
+                    lmstudio_base_url=lmstudio_base_url,
+                    lmstudio_model=lmstudio_model,
+                    anthropic_api_key=anthropic_api_key,
+                    anthropic_model=anthropic_model,
+                    openai_compatible_api_key=openai_compatible_api_key,
+                    routing_policy=policy,
+                    routing_profile_local_id=local_profile_id,
+                    routing_profile_frontier_id=frontier_profile_id,
+                )
             importance_in_acc += imp_in
             importance_out_acc += imp_out
-            for row in round_importance_pending:
+            for row in llm_pending:
                 tid = str(row["turn_id"])
                 score, src = parsed.get(tid, (FALLBACK_SCORE, "fallback"))
                 await update_agent_turn_importance(
@@ -1416,6 +1555,12 @@ async def run_simulation_task(
                             },
                         },
                     )
+                await update_simulation_token_totals(
+                    sqlite_path,
+                    simulation_id=simulation_id,
+                    total_input_tokens=run_in_acc + importance_in_acc,
+                    total_output_tokens=run_out_acc + importance_out_acc,
+                )
                 return
 
         await set_simulation_status(
@@ -1444,6 +1589,12 @@ async def run_simulation_task(
                 },
             },
         )
+    await update_simulation_token_totals(
+        sqlite_path,
+        simulation_id=simulation_id,
+        total_input_tokens=run_in_acc + importance_in_acc,
+        total_output_tokens=run_out_acc + importance_out_acc,
+    )
     await set_simulation_status(
         sqlite_path,
         simulation_id=simulation_id,

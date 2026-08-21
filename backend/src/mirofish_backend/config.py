@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     importance_prompt_version: str = "v1"
     importance_scoring_mode: str = "per_turn"
 
+    # Senna iter-50: weighted memory retrieval (default off).
+    weighted_retrieval_enabled: bool = False
+    retrieval_weight_recency: float = 0.5
+    retrieval_weight_importance: float = 0.25
+    retrieval_weight_relevance: float = 0.25
+
     # Senna Arc 6: per-round LLM context bounding + optional transcript (iter-28+)
     round_summary_enabled: bool = True
     transcript_dir: str = "./data/transcripts"

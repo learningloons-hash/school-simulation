@@ -74,6 +74,7 @@ def estimate_run_preflight(
     likert_self_report_enabled: bool = False,
     importance_scoring_enabled: bool = False,
     importance_scoring_mode: str = "per_turn",
+    weighted_retrieval_enabled: bool = False,
 ) -> PreflightEstimate:
     """
     Pure preflight estimator: turn counts, rough token/cost envelope, context pressure warnings.
@@ -112,6 +113,16 @@ def estimate_run_preflight(
             llm_turns += rounds
         else:
             llm_turns += llm_speaking
+
+    if weighted_retrieval_enabled and total_speaking > 0:
+        llm_speaking = max(0, llm_turns - likert_llm_turns - (rounds if importance_scoring_enabled else 0))
+        embed_calls = total_speaking + llm_speaking
+        warnings_extra_embed = (
+            f"preflight: weighted retrieval adds ~{embed_calls} embedding API calls "
+            "(turn writes + situation queries; local LM Studio /v1/embeddings)."
+        )
+    else:
+        warnings_extra_embed = None
 
     policy = routing_policy_from_mode(llm_provider_to_routing_policy(llm_provider))
     anthropic_llm = 0
@@ -169,6 +180,8 @@ def estimate_run_preflight(
             llm_provider=llm_provider,
         )
     )
+    if warnings_extra_embed:
+        warnings.append(warnings_extra_embed)
 
     return PreflightEstimate(
         total_speaking_turns=total_speaking,

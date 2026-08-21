@@ -321,7 +321,7 @@ async def test_run_persists_memory_context_export(monkeypatch: pytest.MonkeyPatc
 
 
 def test_export_version_bumped() -> None:
-    assert EXPORT_VERSION == "12"
+    assert EXPORT_VERSION == "13"
 
 
 def test_memory_context_report_endpoint(client_mem: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -14,6 +14,7 @@
 - **10** — ``memory_context_log`` + ``memory_context_summary`` (senna-iter-45).
 - **11** — ``architectural_interview_responses`` + ``architectural_interview_scores`` (senna-iter-47).
 - **12** — Transcript rows include ``importance_score`` + ``importance_source`` (senna-iter-49).
+- **13** — ``memory_context_log.retrieval_signals`` + weighted retrieval config fields (senna-iter-50).
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ import zipfile
 from typing import Any
 
 # Single source of truth for GET /simulations/{id}/export.json and GET /capabilities.
-EXPORT_VERSION = "12"
+EXPORT_VERSION = "13"
 
 
 def compute_cohort_summary(snapshots: list[dict]) -> list[dict]:
@@ -252,6 +253,7 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
             "exclusion_reason",
             "target_scope",
             "char_truncated",
+            "retrieval_signals",
             "created_at",
         ]
         mc_rows = []

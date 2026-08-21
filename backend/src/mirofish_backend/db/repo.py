@@ -319,9 +319,9 @@ async def insert_agent_context_inclusion_batch(
             """
             INSERT INTO agent_context_inclusion (
               id, simulation_id, round_number, observer_agent_id, candidate_turn_id,
-              included, exclusion_reason, target_scope, char_truncated
+              included, exclusion_reason, target_scope, char_truncated, retrieval_signals
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             [
                 (
@@ -334,6 +334,7 @@ async def insert_agent_context_inclusion_batch(
                     r.get("exclusion_reason"),
                     str(r.get("target_scope") or "agent"),
                     1 if r.get("char_truncated") else 0,
+                    json.dumps(r["retrieval_signals"]) if r.get("retrieval_signals") else None,
                 )
                 for r in records
             ],
@@ -522,7 +523,7 @@ async def _load_memory_context_log(
     cursor = await db.execute(
         """
         SELECT round_number, observer_agent_id, candidate_turn_id, included,
-               exclusion_reason, target_scope, char_truncated, created_at
+               exclusion_reason, target_scope, char_truncated, retrieval_signals, created_at
         FROM agent_context_inclusion
         WHERE simulation_id = ?
         ORDER BY round_number ASC, observer_agent_id ASC, candidate_turn_id ASC;
@@ -531,6 +532,15 @@ async def _load_memory_context_log(
     )
     out: list[dict[str, Any]] = []
     async for row in cursor:
+        signals_raw = row[7]
+        signals: dict[str, float] | None = None
+        if signals_raw:
+            try:
+                parsed = json.loads(signals_raw)
+                if isinstance(parsed, dict):
+                    signals = parsed
+            except json.JSONDecodeError:
+                signals = None
         out.append(
             {
                 "round_number": int(row[0]),
@@ -540,7 +550,8 @@ async def _load_memory_context_log(
                 "exclusion_reason": row[4],
                 "target_scope": row[5],
                 "char_truncated": bool(int(row[6])),
-                "created_at": row[7],
+                "retrieval_signals": signals,
+                "created_at": row[8],
             }
         )
     return out
@@ -888,7 +899,8 @@ async def get_last_agent_turn_rows(
               interaction_type,
               target_scope,
               target_agent_name,
-              raw_response
+              raw_response,
+              importance_score
             FROM agent_turns
             WHERE simulation_id = ? AND agent_id = ?
             ORDER BY round_number DESC, turn_index DESC
@@ -910,6 +922,7 @@ async def get_last_agent_turn_rows(
             "target_scope": row[6],
             "target_agent_name": row[7] or "all",
             "raw_response": row[8],
+            "importance_score": int(row[9]) if row[9] is not None else None,
         }
         for row in ordered
     ]
@@ -933,7 +946,8 @@ async def get_recent_interactions(
               interaction_type,
               target_scope,
               target_agent_name,
-              raw_response
+              raw_response,
+              importance_score
             FROM agent_turns
             WHERE simulation_id = ?
             ORDER BY round_number DESC, turn_index DESC
@@ -956,6 +970,7 @@ async def get_recent_interactions(
             "target_scope": row[6],
             "target_agent_name": row[7] or "all",
             "raw_response": row[8],
+            "importance_score": int(row[9]) if row[9] is not None else None,
         }
         for row in ordered
     ]
