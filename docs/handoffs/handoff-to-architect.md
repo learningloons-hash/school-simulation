@@ -12,7 +12,7 @@
 |-------|--------|
 | **Task** | `senna-iter-50` — weighted retrieval |
 | **Branch** | `main` |
-| **Commit** | _(pending commit)_ |
+| **Commit** | `27b6354` |
 | **Date** | 2026-08-21 |
 
 ### Definition of Done
