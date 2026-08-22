@@ -76,6 +76,7 @@ def estimate_run_preflight(
     importance_scoring_mode: str = "per_turn",
     weighted_retrieval_enabled: bool = False,
     memory_embedding_model: str = "",
+    reflection_enabled: bool = False,
 ) -> PreflightEstimate:
     """
     Pure preflight estimator: turn counts, rough token/cost envelope, context pressure warnings.
@@ -135,6 +136,17 @@ def estimate_run_preflight(
     else:
         warnings_extra_embed = None
 
+    warnings_extra_reflection: str | None = None
+    if reflection_enabled and total_speaking > 0:
+        llm_speaking = max(0, llm_turns - likert_llm_turns)
+        est_reflections = max(0, llm_speaking // 5)
+        if est_reflections:
+            llm_turns += est_reflections
+            warnings_extra_reflection = (
+                f"preflight: reflection adds up to ~{est_reflections} synthesis LLM calls "
+                "(depends on accumulated importance vs threshold)."
+            )
+
     policy = routing_policy_from_mode(llm_provider_to_routing_policy(llm_provider))
     anthropic_llm = 0
     openai_compat_llm = 0
@@ -193,6 +205,8 @@ def estimate_run_preflight(
     )
     if warnings_extra_embed:
         warnings.append(warnings_extra_embed)
+    if warnings_extra_reflection:
+        warnings.append(warnings_extra_reflection)
 
     return PreflightEstimate(
         total_speaking_turns=total_speaking,

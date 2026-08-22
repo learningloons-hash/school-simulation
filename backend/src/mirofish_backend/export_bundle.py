@@ -15,6 +15,7 @@
 - **11** — ``architectural_interview_responses`` + ``architectural_interview_scores`` (senna-iter-47).
 - **12** — Transcript rows include ``importance_score`` + ``importance_source`` (senna-iter-49).
 - **13** — ``memory_context_log.retrieval_signals`` + weighted retrieval config fields (senna-iter-50).
+- **14** — ``agent_reflections`` table + provenance export (senna-iter-51).
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ import zipfile
 from typing import Any
 
 # Single source of truth for GET /simulations/{id}/export.json and GET /capabilities.
-EXPORT_VERSION = "13"
+EXPORT_VERSION = "14"
 
 
 def compute_cohort_summary(snapshots: list[dict]) -> list[dict]:
@@ -304,6 +305,26 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
         ]
         as_rows = []
 
+    reflections = bundle.get("agent_reflections") or []
+    if reflections:
+        rf_headers = list(reflections[0].keys())
+        rf_rows = [[x.get(h) for h in rf_headers] for x in reflections]
+    else:
+        rf_headers = [
+            "id",
+            "agent_id",
+            "round_number",
+            "reflection_text",
+            "source_turn_ids",
+            "accumulated_importance",
+            "parse_source",
+            "reflection_prompt_version",
+            "input_tokens",
+            "output_tokens",
+            "created_at",
+        ]
+        rf_rows = []
+
     bio = io.BytesIO()
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("simulation_run.csv", _csv_bytes(run_headers, run_rows))
@@ -333,6 +354,8 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
                 "architectural_interview_scores.csv",
                 _csv_bytes(as_headers, as_rows),
             )
+        if reflections:
+            zf.writestr("agent_reflections.csv", _csv_bytes(rf_headers, rf_rows))
     return bio.getvalue()
 
 

@@ -198,6 +198,25 @@ async def init_db(sqlite_path: str) -> None:
 
         await db.execute(
             """
+            CREATE TABLE IF NOT EXISTS agent_reflections (
+              id TEXT PRIMARY KEY,
+              simulation_id TEXT NOT NULL REFERENCES simulation_runs(id),
+              agent_id TEXT NOT NULL,
+              round_number INTEGER NOT NULL,
+              reflection_text TEXT NOT NULL,
+              source_turn_ids TEXT NOT NULL,
+              accumulated_importance INTEGER NOT NULL,
+              parse_source TEXT NOT NULL,
+              reflection_prompt_version TEXT NOT NULL,
+              input_tokens INTEGER,
+              output_tokens INTEGER,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+
+        await db.execute(
+            """
             CREATE TABLE IF NOT EXISTS round_summaries (
               simulation_id TEXT NOT NULL,
               round_number  INTEGER NOT NULL,

@@ -272,4 +272,4 @@ async def test_cost_delta_both_modes(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_export_version_bumped_to_12() -> None:
-    assert EXPORT_VERSION == "13"
+    assert EXPORT_VERSION == "14"

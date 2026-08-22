@@ -252,6 +252,139 @@ async def update_agent_turn_importance(
         await db.commit()
 
 
+async def insert_agent_reflection(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    agent_id: str,
+    round_number: int,
+    reflection_text: str,
+    source_turn_ids: list[str],
+    accumulated_importance: int,
+    parse_source: str,
+    reflection_prompt_version: str,
+    input_tokens: int | None = None,
+    output_tokens: int | None = None,
+) -> str:
+    row_id = uuid.uuid4().hex
+    async with aiosqlite.connect(sqlite_path) as db:
+        await db.execute(
+            """
+            INSERT INTO agent_reflections (
+              id, simulation_id, agent_id, round_number, reflection_text,
+              source_turn_ids, accumulated_importance, parse_source,
+              reflection_prompt_version, input_tokens, output_tokens
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                row_id,
+                simulation_id,
+                agent_id,
+                int(round_number),
+                reflection_text,
+                json.dumps(list(source_turn_ids)),
+                int(accumulated_importance),
+                parse_source,
+                reflection_prompt_version,
+                input_tokens,
+                output_tokens,
+            ),
+        )
+        await db.commit()
+    return row_id
+
+
+async def get_agent_reflections_for_agent(
+    sqlite_path: str,
+    *,
+    simulation_id: str,
+    agent_id: str,
+) -> list[dict[str, Any]]:
+    async with aiosqlite.connect(sqlite_path) as db:
+        cursor = await db.execute(
+            """
+            SELECT
+              id, agent_id, round_number, reflection_text, source_turn_ids,
+              accumulated_importance, parse_source, reflection_prompt_version,
+              input_tokens, output_tokens, created_at
+            FROM agent_reflections
+            WHERE simulation_id = ? AND agent_id = ?
+            ORDER BY round_number ASC, created_at ASC;
+            """,
+            (simulation_id, agent_id),
+        )
+        rows = await cursor.fetchall()
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        sources_raw = row[4]
+        try:
+            sources = json.loads(sources_raw) if sources_raw else []
+            if not isinstance(sources, list):
+                sources = []
+        except json.JSONDecodeError:
+            sources = []
+        out.append(
+            {
+                "id": str(row[0]),
+                "agent_id": str(row[1]),
+                "round_number": int(row[2]),
+                "reflection_text": row[3],
+                "source_turn_ids": [str(x) for x in sources],
+                "accumulated_importance": int(row[5]),
+                "parse_source": row[6],
+                "reflection_prompt_version": row[7],
+                "input_tokens": int(row[8]) if row[8] is not None else None,
+                "output_tokens": int(row[9]) if row[9] is not None else None,
+                "created_at": row[10],
+            }
+        )
+    return out
+
+
+async def _load_agent_reflections(
+    db: aiosqlite.Connection,
+    *,
+    simulation_id: str,
+) -> list[dict[str, Any]]:
+    cursor = await db.execute(
+        """
+        SELECT
+          id, agent_id, round_number, reflection_text, source_turn_ids,
+          accumulated_importance, parse_source, reflection_prompt_version,
+          input_tokens, output_tokens, created_at
+        FROM agent_reflections
+        WHERE simulation_id = ?
+        ORDER BY round_number ASC, agent_id ASC, created_at ASC;
+        """,
+        (simulation_id,),
+    )
+    out: list[dict[str, Any]] = []
+    async for row in cursor:
+        try:
+            sources = json.loads(row[4]) if row[4] else []
+            if not isinstance(sources, list):
+                sources = []
+        except json.JSONDecodeError:
+            sources = []
+        out.append(
+            {
+                "id": str(row[0]),
+                "agent_id": str(row[1]),
+                "round_number": int(row[2]),
+                "reflection_text": row[3],
+                "source_turn_ids": [str(x) for x in sources],
+                "accumulated_importance": int(row[5]),
+                "parse_source": row[6],
+                "reflection_prompt_version": row[7],
+                "input_tokens": int(row[8]) if row[8] is not None else None,
+                "output_tokens": int(row[9]) if row[9] is not None else None,
+                "created_at": row[10],
+            }
+        )
+    return out
+
+
 async def insert_agent_round_likert(
     sqlite_path: str,
     *,
@@ -1556,6 +1689,7 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
         architectural_interview_scores = await _load_architectural_interview_scores(
             db, simulation_id=simulation_id
         )
+        agent_reflections = await _load_agent_reflections(db, simulation_id=simulation_id)
         ga_cursor = await db.execute(
             """
             SELECT COUNT(*), SUM(CASE WHEN target_scope = 'all' THEN 1 ELSE 0 END)
@@ -1594,6 +1728,7 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
         "memory_context_summary": memory_context_summary,
         "architectural_interview_responses": architectural_interview_responses,
         "architectural_interview_scores": architectural_interview_scores,
+        "agent_reflections": agent_reflections,
     }
 
 

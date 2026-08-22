@@ -70,7 +70,18 @@ from mirofish_backend.simulation.importance_scoring import (
     score_round_importance_batch,
     score_turn_importance,
 )
+from mirofish_backend.simulation.reflection import (
+    PendingObservation,
+    ReflectionAccumulator,
+    format_self_memory_line,
+    merge_reflection_audit,
+    merge_self_memory_candidates,
+    observation_importance_for_reflection,
+    synthesize_reflection,
+    take_last_k_memory_rows,
+)
 from mirofish_backend.db.repo import (
+    get_agent_reflections_for_agent,
     get_recent_interactions,
     get_last_agent_responses,
     get_last_agent_turn_rows,
@@ -79,6 +90,7 @@ from mirofish_backend.db.repo import (
     insert_agent_state_snapshot,
     insert_agent_turn,
     insert_agent_context_inclusion_batch,
+    insert_agent_reflection,
     insert_agent_round_likert,
     insert_global_state_snapshot,
     insert_round_outcome,
@@ -675,6 +687,9 @@ async def run_simulation_task(
     retrieval_weight_recency: float = 0.5,
     retrieval_weight_importance: float = 0.25,
     retrieval_weight_relevance: float = 0.25,
+    reflection_enabled: bool = False,
+    reflection_trigger_threshold: int = 150,
+    reflection_prompt_version: str = "v1",
 ) -> None:
     mode = (llm_provider or "lmstudio").strip().lower()
     if mode not in ("lmstudio", "anthropic", "hybrid"):
@@ -734,6 +749,10 @@ async def run_simulation_task(
     importance_audit: dict[str, int] = {}
     importance_in_acc = 0
     importance_out_acc = 0
+    reflection_audit: dict[str, int] = {}
+    reflection_in_acc = 0
+    reflection_out_acc = 0
+    reflection_accumulators: dict[str, ReflectionAccumulator] = {}
     scoring_mode = (importance_scoring_mode or "per_turn").strip().lower()
     if scoring_mode not in ("per_turn", "per_round_batch"):
         scoring_mode = "per_turn"
@@ -794,6 +813,76 @@ async def run_simulation_task(
                     st0.workload_stress,
                 )
 
+        async def _register_observation_for_reflection(
+            *,
+            agent: AgentInstance,
+            turn_id: str,
+            importance_score: int | None,
+            raw_response: str,
+            round_number: int,
+            turn_index: int,
+            tier: int,
+        ) -> None:
+            nonlocal reflection_in_acc, reflection_out_acc
+            if not reflection_enabled or tier == 3:
+                return
+            acc = reflection_accumulators.setdefault(agent.agent_id, ReflectionAccumulator())
+            acc.pending.append(
+                PendingObservation(
+                    turn_id=turn_id,
+                    importance_score=observation_importance_for_reflection(importance_score),
+                    raw_response=raw_response,
+                    round_number=round_number,
+                    turn_index=turn_index,
+                )
+            )
+            if acc.accumulated_importance() < reflection_trigger_threshold:
+                return
+            pending = list(acc.pending)
+            acc.clear()
+            text, sources, src, rin, rout = await synthesize_reflection(
+                agent_name=agent.name,
+                agent_role=agent.role,
+                round_number=round_number,
+                observations=pending,
+                prompt_version=reflection_prompt_version,
+                llm_temperature=llm_temperature,
+                llm_max_tokens=llm_max_tokens,
+                lmstudio_base_url=lmstudio_base_url,
+                lmstudio_model=lmstudio_model,
+                anthropic_api_key=anthropic_api_key,
+                anthropic_model=anthropic_model,
+                openai_compatible_api_key=openai_compatible_api_key,
+                routing_policy=policy,
+            )
+            reflection_in_acc += rin
+            reflection_out_acc += rout
+            accumulated = sum(o.importance_score for o in pending)
+            reflection_id = await insert_agent_reflection(
+                sqlite_path,
+                simulation_id=simulation_id,
+                agent_id=agent.agent_id,
+                round_number=round_number,
+                reflection_text=text,
+                source_turn_ids=sources,
+                accumulated_importance=accumulated,
+                parse_source=src,
+                reflection_prompt_version=reflection_prompt_version,
+                input_tokens=rin or None,
+                output_tokens=rout or None,
+            )
+            merge_reflection_audit(reflection_audit, source=src)
+            if weighted_retrieval_enabled and mem_embed_model:
+                await embed_turn(
+                    simulation_id=simulation_id,
+                    turn_id=reflection_id,
+                    raw_response=format_self_memory_line(
+                        {"memory_kind": "reflection", "raw_response": text}
+                    ),
+                    lmstudio_base_url=lmstudio_base_url,
+                    embedding_model=mem_embed_model,
+                )
+
         async def _apply_importance_for_turn(
             *,
             turn_id: str,
@@ -810,6 +899,7 @@ async def run_simulation_task(
                 round_importance_pending.append(
                     {
                         "turn_id": turn_id,
+                        "agent_id": agent.agent_id,
                         "raw_response": raw_response,
                         "round_number": round_number,
                         "turn_index": turn_index,
@@ -849,6 +939,15 @@ async def run_simulation_task(
                 importance_source=src,
             )
             merge_importance_audit(importance_audit, score=score, source=src)
+            await _register_observation_for_reflection(
+                agent=agent,
+                turn_id=turn_id,
+                importance_score=score,
+                raw_response=raw_response,
+                round_number=round_number,
+                turn_index=turn_index,
+                tier=tier,
+            )
 
         async def _run_one_turn(turn_index: int, agent: AgentInstance) -> _TurnOutcome:
             """Execute one agent turn under the semaphore.
@@ -963,12 +1062,21 @@ async def run_simulation_task(
                         )
 
                     self_cap = self_candidate_cap(working_memory_last_k=working_memory_last_k)
-                    self_candidates = await get_last_agent_turn_rows(
+                    turn_rows = await get_last_agent_turn_rows(
                         sqlite_path,
                         simulation_id=simulation_id,
                         agent_id=agent.agent_id,
                         last_k=self_cap,
                     )
+                    if reflection_enabled:
+                        reflection_rows = await get_agent_reflections_for_agent(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            agent_id=agent.agent_id,
+                        )
+                        self_candidates = merge_self_memory_candidates(turn_rows, reflection_rows)
+                    else:
+                        self_candidates = turn_rows
                     self_ranked = rank_turns(
                         self_candidates,
                         weights=retrieval_weights,
@@ -1032,12 +1140,28 @@ async def run_simulation_task(
                         if tid and tid in peer_prompt_turn_ids:
                             retrieval_signals_by_turn_id[tid] = ranked.signals_dict()
                 else:
-                    self_turn_rows = await get_last_agent_turn_rows(
-                        sqlite_path,
-                        simulation_id=simulation_id,
-                        agent_id=agent.agent_id,
-                        last_k=working_memory_last_k,
-                    )
+                    if reflection_enabled:
+                        self_cap = self_candidate_cap(working_memory_last_k=working_memory_last_k)
+                        turn_rows = await get_last_agent_turn_rows(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            agent_id=agent.agent_id,
+                            last_k=self_cap,
+                        )
+                        reflection_rows = await get_agent_reflections_for_agent(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            agent_id=agent.agent_id,
+                        )
+                        self_pool = merge_self_memory_candidates(turn_rows, reflection_rows)
+                        self_turn_rows = take_last_k_memory_rows(self_pool, working_memory_last_k)
+                    else:
+                        self_turn_rows = await get_last_agent_turn_rows(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            agent_id=agent.agent_id,
+                            last_k=working_memory_last_k,
+                        )
                     self_prompt_turn_ids = {str(r["id"]) for r in self_turn_rows if r.get("id")}
                     extended_last_k = min(
                         MEMORY_LOG_EXTENDED_K_CAP,
@@ -1100,7 +1224,7 @@ async def run_simulation_task(
                 )
 
                 prior_agent_memory = clip_memory_lines(
-                    [str(r.get("raw_response") or "") for r in self_turn_rows],
+                    [format_self_memory_line(r) for r in self_turn_rows],
                     max_chars=peer_limit,
                 )
 
@@ -1282,6 +1406,16 @@ async def run_simulation_task(
                     agent=agent,
                     tier=tier,
                 )
+                if reflection_enabled and not importance_scoring_enabled and tier != 3:
+                    await _register_observation_for_reflection(
+                        agent=agent,
+                        turn_id=turn_id,
+                        importance_score=None,
+                        raw_response=raw_response,
+                        round_number=round_number,
+                        turn_index=turn_index,
+                        tier=tier,
+                    )
                 if weighted_retrieval_enabled and mem_embed_model:
                     await embed_turn(
                         simulation_id=simulation_id,
@@ -1376,6 +1510,26 @@ async def run_simulation_task(
                     importance_source=src,
                 )
                 merge_importance_audit(importance_audit, score=score, source=src)
+            if reflection_enabled:
+                agent_by_id = {a.agent_id: a for a in agents}
+                for row in round_importance_pending:
+                    tier = int(row.get("tier") or 1)
+                    if tier == 3:
+                        continue
+                    tid = str(row["turn_id"])
+                    score, _ = parsed.get(tid, (FALLBACK_SCORE, "fallback"))
+                    agent_obj = agent_by_id.get(str(row.get("agent_id") or ""))
+                    if agent_obj is None:
+                        continue
+                    await _register_observation_for_reflection(
+                        agent=agent_obj,
+                        turn_id=tid,
+                        importance_score=score,
+                        raw_response=str(row.get("raw_response") or ""),
+                        round_number=int(row.get("round_number") or round_number),
+                        turn_index=int(row.get("turn_index") or 0),
+                        tier=tier,
+                    )
 
         logger.info(
             "round_complete simulation_id=%s round=%s turns=%d failed=%d wall_ms=%d",
@@ -1571,11 +1725,23 @@ async def run_simulation_task(
                         simulation_id=simulation_id,
                         updates={"weighted_retrieval_embed_api_calls": memory_embed_api_call_count()},
                     )
+                if reflection_enabled and reflection_audit:
+                    await merge_simulation_config_snapshot(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        updates={
+                            "reflection_audit": dict(reflection_audit),
+                            "reflection_token_totals": {
+                                "input_tokens": reflection_in_acc,
+                                "output_tokens": reflection_out_acc,
+                            },
+                        },
+                    )
                 await update_simulation_token_totals(
                     sqlite_path,
                     simulation_id=simulation_id,
-                    total_input_tokens=run_in_acc + importance_in_acc,
-                    total_output_tokens=run_out_acc + importance_out_acc,
+                    total_input_tokens=run_in_acc + importance_in_acc + reflection_in_acc,
+                    total_output_tokens=run_out_acc + importance_out_acc + reflection_out_acc,
                 )
                 return
 
@@ -1611,11 +1777,23 @@ async def run_simulation_task(
             simulation_id=simulation_id,
             updates={"weighted_retrieval_embed_api_calls": memory_embed_api_call_count()},
         )
+    if reflection_enabled and reflection_audit:
+        await merge_simulation_config_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            updates={
+                "reflection_audit": dict(reflection_audit),
+                "reflection_token_totals": {
+                    "input_tokens": reflection_in_acc,
+                    "output_tokens": reflection_out_acc,
+                },
+            },
+        )
     await update_simulation_token_totals(
         sqlite_path,
         simulation_id=simulation_id,
-        total_input_tokens=run_in_acc + importance_in_acc,
-        total_output_tokens=run_out_acc + importance_out_acc,
+        total_input_tokens=run_in_acc + importance_in_acc + reflection_in_acc,
+        total_output_tokens=run_out_acc + importance_out_acc + reflection_out_acc,
     )
     await set_simulation_status(
         sqlite_path,

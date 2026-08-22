@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     retrieval_weight_importance: float = 0.25
     retrieval_weight_relevance: float = 0.25
 
+    # Senna iter-51: reflection synthesis from accumulated importance (default off).
+    reflection_enabled: bool = False
+    reflection_trigger_threshold: int = 150
+    reflection_prompt_version: str = "v1"
+
     # Senna Arc 6: per-round LLM context bounding + optional transcript (iter-28+)
     round_summary_enabled: bool = True
     transcript_dir: str = "./data/transcripts"

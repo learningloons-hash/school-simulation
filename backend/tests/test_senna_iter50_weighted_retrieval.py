@@ -463,4 +463,4 @@ async def test_weighted_retrieval_bounded_db_work(monkeypatch: pytest.MonkeyPatc
 
 
 def test_export_version_bumped() -> None:
-    assert EXPORT_VERSION == "13"
+    assert EXPORT_VERSION == "14"

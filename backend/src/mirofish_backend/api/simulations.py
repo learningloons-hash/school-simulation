@@ -71,6 +71,12 @@ from mirofish_backend.simulation.importance_scoring import (
     resolve_importance_scoring_enabled,
     resolve_importance_scoring_mode,
 )
+from mirofish_backend.simulation.reflection import (
+    reflection_config_snapshot_fields,
+    resolve_reflection_enabled,
+    resolve_reflection_prompt_version,
+    resolve_reflection_trigger_threshold,
+)
 from mirofish_backend.simulation.weighted_retrieval import (
     resolve_memory_embedding_model,
     resolve_retrieval_weights,
@@ -226,6 +232,9 @@ async def run_simulation_task_guarded(
     retrieval_weight_recency: float = 0.5,
     retrieval_weight_importance: float = 0.25,
     retrieval_weight_relevance: float = 0.25,
+    reflection_enabled: bool = False,
+    reflection_trigger_threshold: int = 150,
+    reflection_prompt_version: str = "v1",
 ) -> None:
     """Run simulation and mark run failed with reason on uncaught errors (used by API and tests)."""
     try:
@@ -284,6 +293,9 @@ async def run_simulation_task_guarded(
             retrieval_weight_recency=retrieval_weight_recency,
             retrieval_weight_importance=retrieval_weight_importance,
             retrieval_weight_relevance=retrieval_weight_relevance,
+            reflection_enabled=reflection_enabled,
+            reflection_trigger_threshold=reflection_trigger_threshold,
+            reflection_prompt_version=reflection_prompt_version,
         )
     except Exception as e:
         logger.exception("Simulation task failed for %s", simulation_id)
@@ -434,6 +446,19 @@ class SimulationRunRequest(BaseModel):
         ge=0.0,
         description="Weight for relevance component when weighted retrieval is on.",
     )
+    reflection_enabled: bool | None = Field(
+        default=None,
+        description="Synthesise reflections from accumulated importance (senna-iter-51). Omit for server default (off).",
+    )
+    reflection_trigger_threshold: int | None = Field(
+        default=None,
+        ge=1,
+        description="Accumulated importance sum that triggers one reflection (tunable; default 150).",
+    )
+    reflection_prompt_version: str | None = Field(
+        default=None,
+        description="Version tag for reflection synthesis prompt (default v1).",
+    )
 
     @field_validator("importance_scoring_mode")
     @classmethod
@@ -545,6 +570,7 @@ def _compute_preflight_estimate(
     importance_scoring_mode: str = "per_turn",
     weighted_retrieval_enabled: bool = False,
     memory_embedding_model: str = "",
+    reflection_enabled: bool = False,
 ) -> PreflightEstimate:
     llm_max_tokens = req.max_tokens if req.max_tokens is not None else settings.llm_max_tokens
     return estimate_run_preflight(
@@ -564,6 +590,7 @@ def _compute_preflight_estimate(
         importance_scoring_mode=importance_scoring_mode,
         weighted_retrieval_enabled=weighted_retrieval_enabled,
         memory_embedding_model=memory_embedding_model,
+        reflection_enabled=reflection_enabled,
     )
 
 
@@ -641,6 +668,10 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         request_flag=req.weighted_retrieval_enabled,
         settings=settings,
     )
+    reflection_preflight = resolve_reflection_enabled(
+        request_flag=req.reflection_enabled,
+        settings=settings,
+    )
     lmstudio_model_preflight, _, _ = run_llm_credentials(profile_resolution, settings)
     mem_embed_preflight = resolve_memory_embedding_model(
         embedding_model=settings.embedding_model,
@@ -658,6 +689,7 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         importance_scoring_mode=importance_mode_preflight,
         weighted_retrieval_enabled=weighted_preflight,
         memory_embedding_model=mem_embed_preflight,
+        reflection_enabled=reflection_preflight,
     )
     return PreflightResponse(warnings=list(est.warnings), preflight=est.to_snapshot())
 
@@ -984,6 +1016,18 @@ async def queue_simulation_run(
                 "for memory embeddings (/v1/embeddings)"
             ),
         )
+    reflection_effective = resolve_reflection_enabled(
+        request_flag=_req.reflection_enabled,
+        settings=settings,
+    )
+    reflection_threshold = resolve_reflection_trigger_threshold(
+        request_threshold=_req.reflection_trigger_threshold,
+        settings=settings,
+    )
+    reflection_prompt_ver = resolve_reflection_prompt_version(
+        request_version=_req.reflection_prompt_version,
+        settings=settings,
+    )
 
     preflight_est = _compute_preflight_estimate(
         settings,
@@ -997,6 +1041,7 @@ async def queue_simulation_run(
         importance_scoring_mode=importance_mode,
         weighted_retrieval_enabled=weighted_effective,
         memory_embedding_model=memory_embedding_model,
+        reflection_enabled=reflection_effective,
     )
     run_warnings.extend(preflight_est.warnings)
 
@@ -1127,6 +1172,11 @@ async def queue_simulation_run(
             enabled=weighted_effective,
             weights=retrieval_weights,
         ),
+        **reflection_config_snapshot_fields(
+            enabled=reflection_effective,
+            trigger_threshold=reflection_threshold,
+            prompt_version=reflection_prompt_ver,
+        ),
     }
     if _req.convergence_threshold is not None:
         config_snapshot["convergence_threshold"] = _req.convergence_threshold
@@ -1209,6 +1259,9 @@ async def queue_simulation_run(
             retrieval_weight_recency=retrieval_weights.recency,
             retrieval_weight_importance=retrieval_weights.importance,
             retrieval_weight_relevance=retrieval_weights.relevance,
+            reflection_enabled=reflection_effective,
+            reflection_trigger_threshold=reflection_threshold,
+            reflection_prompt_version=reflection_prompt_ver,
         )
     )
 

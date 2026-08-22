@@ -318,7 +318,7 @@ async def test_judge_scoring_two_profiles(patched_llm) -> None:
 
 @pytest.mark.asyncio
 async def test_export_bundle_includes_architectural_sections_and_version_12(patched_llm) -> None:
-    assert EXPORT_VERSION == "13"
+    assert EXPORT_VERSION == "14"
     with tempfile.TemporaryDirectory() as tmp:
         db_path = os.path.join(tmp, "export47.sqlite")
         await init_db(db_path)
