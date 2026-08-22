@@ -25,3 +25,4 @@
 
 - No ChromaDB; spec ChromaDB text is aspirational — existing RAG embedding stack only.
 - Ablation harness integration deferred to iter-52.
+- **Architect follow-up (post-review):** prompt turn-key regression tests, integration weight-order test, preflight/run rejection without embed model, `weighted_retrieval_embed_api_calls` in `config_snapshot`.

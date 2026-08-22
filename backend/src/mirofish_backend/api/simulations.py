@@ -72,6 +72,7 @@ from mirofish_backend.simulation.importance_scoring import (
     resolve_importance_scoring_mode,
 )
 from mirofish_backend.simulation.weighted_retrieval import (
+    resolve_memory_embedding_model,
     resolve_retrieval_weights,
     resolve_weighted_retrieval_enabled,
     weighted_retrieval_config_snapshot_fields,
@@ -543,6 +544,7 @@ def _compute_preflight_estimate(
     importance_scoring_enabled: bool = False,
     importance_scoring_mode: str = "per_turn",
     weighted_retrieval_enabled: bool = False,
+    memory_embedding_model: str = "",
 ) -> PreflightEstimate:
     llm_max_tokens = req.max_tokens if req.max_tokens is not None else settings.llm_max_tokens
     return estimate_run_preflight(
@@ -561,6 +563,7 @@ def _compute_preflight_estimate(
         importance_scoring_enabled=importance_scoring_enabled,
         importance_scoring_mode=importance_scoring_mode,
         weighted_retrieval_enabled=weighted_retrieval_enabled,
+        memory_embedding_model=memory_embedding_model,
     )
 
 
@@ -638,6 +641,11 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         request_flag=req.weighted_retrieval_enabled,
         settings=settings,
     )
+    lmstudio_model_preflight, _, _ = run_llm_credentials(profile_resolution, settings)
+    mem_embed_preflight = resolve_memory_embedding_model(
+        embedding_model=settings.embedding_model,
+        lmstudio_model=lmstudio_model_preflight,
+    )
     est = _compute_preflight_estimate(
         settings,
         req,
@@ -649,6 +657,7 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         importance_scoring_enabled=importance_preflight,
         importance_scoring_mode=importance_mode_preflight,
         weighted_retrieval_enabled=weighted_preflight,
+        memory_embedding_model=mem_embed_preflight,
     )
     return PreflightResponse(warnings=list(est.warnings), preflight=est.to_snapshot())
 
@@ -963,6 +972,18 @@ async def queue_simulation_run(
         request_importance=_req.retrieval_weight_importance,
         request_relevance=_req.retrieval_weight_relevance,
     )
+    memory_embedding_model = resolve_memory_embedding_model(
+        embedding_model=embedding_model_used,
+        lmstudio_model=lmstudio_model_run,
+    )
+    if weighted_effective and not memory_embedding_model:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "weighted_retrieval_enabled requires embedding_model or lmstudio_model "
+                "for memory embeddings (/v1/embeddings)"
+            ),
+        )
 
     preflight_est = _compute_preflight_estimate(
         settings,
@@ -975,6 +996,7 @@ async def queue_simulation_run(
         importance_scoring_enabled=importance_effective,
         importance_scoring_mode=importance_mode,
         weighted_retrieval_enabled=weighted_effective,
+        memory_embedding_model=memory_embedding_model,
     )
     run_warnings.extend(preflight_est.warnings)
 

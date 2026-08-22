@@ -8,6 +8,15 @@ from mirofish_backend.config import Settings
 from mirofish_backend.simulation.memory_retrieval import RetrievalWeights
 
 
+def resolve_memory_embedding_model(
+    *,
+    embedding_model: str,
+    lmstudio_model: str,
+) -> str:
+    """Model id for memory-index ``/v1/embeddings`` calls (iter-50)."""
+    return (embedding_model or lmstudio_model or "").strip()
+
+
 def resolve_weighted_retrieval_enabled(
     *,
     request_flag: bool | None,

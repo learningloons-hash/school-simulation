@@ -18,12 +18,30 @@ EmbedBatchFn = Callable[..., Awaitable[list[list[float]]]]
 _TURN_VECTORS: dict[tuple[str, str], list[float]] = {}
 # simulation_id -> situation fingerprint -> vector (one embed per distinct situation per sim)
 _SITUATION_VECTORS: dict[tuple[str, str], list[float]] = {}
+_EMBED_API_CALLS: int = 0
 
 
 def clear_memory_index_cache() -> None:
     """Test helper: drop in-memory turn/situation vectors."""
+    global _EMBED_API_CALLS
     _TURN_VECTORS.clear()
     _SITUATION_VECTORS.clear()
+    _EMBED_API_CALLS = 0
+
+
+def memory_embed_api_call_count() -> int:
+    """Count of embedding API requests (excludes cache hits) since last cache clear."""
+    return _EMBED_API_CALLS
+
+
+def reset_memory_embed_api_call_count() -> None:
+    global _EMBED_API_CALLS
+    _EMBED_API_CALLS = 0
+
+
+def _record_embed_api_call() -> None:
+    global _EMBED_API_CALLS
+    _EMBED_API_CALLS += 1
 
 
 def _situation_key(situation_text: str) -> str:
@@ -62,6 +80,7 @@ async def embed_turn(
         return _TURN_VECTORS[key]
     embed_fn = embed_batch or embed_texts_openai_compatible
     try:
+        _record_embed_api_call()
         vecs = await embed_fn(base_url=lmstudio_base_url, model=embedding_model, texts=[text])
     except Exception as exc:
         logger.warning("memory index embed_turn failed sim=%s turn=%s: %s", simulation_id[:12], turn_id[:8], exc)
@@ -90,6 +109,7 @@ async def embed_situation(
         return _SITUATION_VECTORS[key]
     embed_fn = embed_batch or embed_texts_openai_compatible
     try:
+        _record_embed_api_call()
         vecs = await embed_fn(base_url=lmstudio_base_url, model=embedding_model, texts=[text])
     except Exception as exc:
         logger.warning("memory index embed_situation failed sim=%s: %s", simulation_id[:12], exc)

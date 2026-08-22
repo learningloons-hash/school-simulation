@@ -43,7 +43,7 @@ from mirofish_backend.simulation.likert import (
     resolve_likert_anchor_labels,
     resolve_likert_indicators,
 )
-from mirofish_backend.rag.memory_index import embed_situation, embed_turn
+from mirofish_backend.rag.memory_index import embed_situation, embed_turn, memory_embed_api_call_count, reset_memory_embed_api_call_count
 from mirofish_backend.rag.retrieve import retrieve_top_k, snippets_for_prompt
 from mirofish_backend.simulation.memory_retrieval import (
     RetrievalWeights,
@@ -56,6 +56,7 @@ from mirofish_backend.simulation.transcript_writer import (
     close_transcript,
     open_transcript,
 )
+from mirofish_backend.simulation.weighted_retrieval import resolve_memory_embedding_model
 from mirofish_backend.simulation.memory_context import (
     build_memory_context_inclusion_records,
 )
@@ -737,12 +738,21 @@ async def run_simulation_task(
     if scoring_mode not in ("per_turn", "per_round_batch"):
         scoring_mode = "per_turn"
 
-    mem_embed_model = (embedding_model or lmstudio_model or "").strip()
+    mem_embed_model = resolve_memory_embedding_model(
+        embedding_model=embedding_model,
+        lmstudio_model=lmstudio_model,
+    )
+    if weighted_retrieval_enabled and not mem_embed_model:
+        raise ValueError(
+            "weighted_retrieval_enabled requires embedding_model or lmstudio_model for memory embeddings"
+        )
     retrieval_weights = RetrievalWeights(
         recency=retrieval_weight_recency,
         importance=retrieval_weight_importance,
         relevance=retrieval_weight_relevance,
     )
+    if weighted_retrieval_enabled:
+        reset_memory_embed_api_call_count()
 
     if round_summary_enabled:
         agent_roster = [(a.name, a.role) for a in agents]
@@ -1555,6 +1565,12 @@ async def run_simulation_task(
                             },
                         },
                     )
+                if weighted_retrieval_enabled:
+                    await merge_simulation_config_snapshot(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        updates={"weighted_retrieval_embed_api_calls": memory_embed_api_call_count()},
+                    )
                 await update_simulation_token_totals(
                     sqlite_path,
                     simulation_id=simulation_id,
@@ -1588,6 +1604,12 @@ async def run_simulation_task(
                     "output_tokens": importance_out_acc,
                 },
             },
+        )
+    if weighted_retrieval_enabled:
+        await merge_simulation_config_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            updates={"weighted_retrieval_embed_api_calls": memory_embed_api_call_count()},
         )
     await update_simulation_token_totals(
         sqlite_path,

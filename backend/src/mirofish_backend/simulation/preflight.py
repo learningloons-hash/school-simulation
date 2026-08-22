@@ -75,6 +75,7 @@ def estimate_run_preflight(
     importance_scoring_enabled: bool = False,
     importance_scoring_mode: str = "per_turn",
     weighted_retrieval_enabled: bool = False,
+    memory_embedding_model: str = "",
 ) -> PreflightEstimate:
     """
     Pure preflight estimator: turn counts, rough token/cost envelope, context pressure warnings.
@@ -115,12 +116,22 @@ def estimate_run_preflight(
             llm_turns += llm_speaking
 
     if weighted_retrieval_enabled and total_speaking > 0:
-        llm_speaking = max(0, llm_turns - likert_llm_turns - (rounds if importance_scoring_enabled else 0))
-        embed_calls = total_speaking + llm_speaking
-        warnings_extra_embed = (
-            f"preflight: weighted retrieval adds ~{embed_calls} embedding API calls "
-            "(turn writes + situation queries; local LM Studio /v1/embeddings)."
-        )
+        mem_embed = (memory_embedding_model or "").strip()
+        if not mem_embed:
+            warnings_extra_embed = (
+                "preflight: weighted_retrieval_enabled requires embedding_model or lmstudio_model; "
+                "run will be rejected."
+            )
+        else:
+            llm_speaking = max(
+                0,
+                llm_turns - likert_llm_turns - (rounds if importance_scoring_enabled else 0),
+            )
+            embed_calls = total_speaking + llm_speaking
+            warnings_extra_embed = (
+                f"preflight: weighted retrieval adds ~{embed_calls} embedding API calls "
+                "(turn writes + situation queries; local LM Studio /v1/embeddings)."
+            )
     else:
         warnings_extra_embed = None
 
