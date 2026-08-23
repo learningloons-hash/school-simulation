@@ -12,7 +12,7 @@
 |-------|--------|
 | **Task** | `senna-iter-52` — ablation harness |
 | **Branch** | `main` |
-| **Commit** | `ad6eddc` |
+| **Commit** | `0085a2b` |
 | **Date** | 2026-08-23 |
 
 ### Definition of Done
