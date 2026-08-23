@@ -1,0 +1,25 @@
+{
+  "arc": "11",
+  "harness": "senna-iter-52",
+  "command": "(not yet run — populate via scripts/run_arc11_ablation.py)",
+  "run_profile": {
+    "scenario_id": "fsbb_comparator",
+    "agent_limit": 3,
+    "total_rounds": 5,
+    "visibility_policy": "network_bounded",
+    "sampling_strategy": "full_census"
+  },
+  "seeds": [42, 43, 44],
+  "conditions": [
+    "baseline",
+    "+importance",
+    "+importance+retrieval",
+    "+importance+retrieval+reflection"
+  ],
+  "baseline_reference": {
+    "source": "docs/diagnostics/ARC10_MEASURED_BASELINE_REAL_RUN.md",
+    "simulation_id": "21a6d94e0af141de95da73fc3c41f759"
+  },
+  "runs": [],
+  "aggregated_by_condition": {}
+}

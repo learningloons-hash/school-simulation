@@ -1,0 +1,26 @@
+{
+  "source": "docs/diagnostics/ARC10_MEASURED_BASELINE_REAL_RUN.md",
+  "simulation_id": "21a6d94e0af141de95da73fc3c41f759",
+  "metrics": {
+    "membench_factual_mean": 1.0,
+    "membench_reflective_mean": 1.0,
+    "interview_category_means": {
+      "memory_retrieval": 2.0,
+      "planning": 2.0,
+      "reaction": 1.333333,
+      "reflection": 2.0,
+      "self_knowledge": 2.0
+    },
+    "memory_group_addressed_proportion": 0.666667,
+    "memory_exclusion_breakdown": {
+      "char_budget_truncated": 0,
+      "included_clean": 43,
+      "network_filtered": 0,
+      "recency_cut": 21,
+      "same_round_peer": 15,
+      "visibility_policy": 10
+    },
+    "memory_included_clean": 43,
+    "memory_recency_cut": 21
+  }
+}
