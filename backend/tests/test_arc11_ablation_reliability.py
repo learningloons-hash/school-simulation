@@ -23,6 +23,7 @@ if str(_SCRIPTS) not in sys.path:
 
 from run_arc11_ablation import (  # noqa: E402
     build_parser,
+    check_transcript_for_llm_errors,
     load_dotenv_if_present,
     run_ablation_preflight,
     run_diagnostics_with_retry,
@@ -37,6 +38,8 @@ class _FakeSettings:
     embedding_model = ""
     llm_provider = "lmstudio"
     sqlite_path = ":memory:"
+    anthropic_api_key = "sk-ant-test-not-real"
+    anthropic_model = "claude-haiku-4-5-20251001"
 
 
 # ---------------------------------------------------------------------------
@@ -58,6 +61,22 @@ def test_load_dotenv_sets_unset_vars_only(tmp_path, monkeypatch) -> None:
     assert load_dotenv_if_present(env_file) is True
     assert __import__("os").environ["EMBEDDING_MODEL"] == "text-embedding-nomic-embed-text-v1.5"
     assert __import__("os").environ["ANTHROPIC_API_KEY"] == "already-set"
+
+
+def test_load_dotenv_fills_empty_shell_export(tmp_path, monkeypatch) -> None:
+    """
+    Regression: Mark's real key in backend/.env was correct (curl confirmed it worked),
+    but the script still hit a 401 -- his shell had ANTHROPIC_API_KEY exported as an
+    EMPTY string, which the original 'key not in os.environ' check treated as
+    "already set" and refused to overwrite. A present-but-empty export must not shadow
+    a real value from .env.
+    """
+    env_file = tmp_path / ".env"
+    env_file.write_text("ANTHROPIC_API_KEY=sk-ant-real-value\n")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+
+    assert load_dotenv_if_present(env_file) is True
+    assert __import__("os").environ["ANTHROPIC_API_KEY"] == "sk-ant-real-value"
 
 
 def test_load_dotenv_missing_file_returns_false(tmp_path) -> None:
@@ -245,3 +264,153 @@ async def test_diagnostics_retry_gives_up_with_actionable_message() -> None:
                 )
     assert "anthropic_default" in str(exc_info.value)
     assert "--skip-interview" in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# Anthropic preflight leg
+# ---------------------------------------------------------------------------
+
+
+def _mock_lmstudio_ok_client():
+    models_resp = MagicMock()
+    models_resp.status_code = 200
+    return _mock_async_client(get_response=models_resp)
+
+
+@pytest.mark.asyncio
+async def test_preflight_skips_anthropic_when_profiles_are_local() -> None:
+    mock_client = _mock_lmstudio_ok_client()
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "run_arc11_ablation.chat_completion_openai_compatible",
+            new_callable=AsyncMock,
+            return_value=("OK", 1, 1),
+        ):
+            with patch(
+                "run_arc11_ablation.embed_texts_openai_compatible",
+                new_callable=AsyncMock,
+                return_value=[[0.1]],
+            ):
+                with patch(
+                    "mirofish_backend.llm.claude_client.chat_completion_anthropic",
+                    new_callable=AsyncMock,
+                ) as mock_anthropic:
+                    await run_ablation_preflight(
+                        _FakeSettings(),
+                        check_embeddings=True,
+                        interview_profile_id="local_lmstudio_default",
+                        judge_profile_id="local_lmstudio_default",
+                    )
+    mock_anthropic.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_preflight_anthropic_401_gives_actionable_message() -> None:
+    mock_client = _mock_lmstudio_ok_client()
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    response = httpx.Response(401, request=request)
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "run_arc11_ablation.chat_completion_openai_compatible",
+            new_callable=AsyncMock,
+            return_value=("OK", 1, 1),
+        ):
+            with patch(
+                "run_arc11_ablation.embed_texts_openai_compatible",
+                new_callable=AsyncMock,
+                return_value=[[0.1]],
+            ):
+                with patch(
+                    "mirofish_backend.llm.claude_client.chat_completion_anthropic",
+                    new_callable=AsyncMock,
+                    side_effect=httpx.HTTPStatusError("401", request=request, response=response),
+                ):
+                    with pytest.raises(RuntimeError, match="HTTP 401") as exc_info:
+                        await run_ablation_preflight(
+                            _FakeSettings(),
+                            check_embeddings=True,
+                            interview_profile_id=ANTHROPIC_DEFAULT_ID,
+                            judge_profile_id=ANTHROPIC_DEFAULT_ID,
+                        )
+    assert "ANTHROPIC_API_KEY" in str(exc_info.value)
+    assert "local_lmstudio_default" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_preflight_missing_anthropic_key_fails_before_call() -> None:
+    class _NoKeySettings(_FakeSettings):
+        anthropic_api_key = ""
+
+    mock_client = _mock_lmstudio_ok_client()
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "run_arc11_ablation.chat_completion_openai_compatible",
+            new_callable=AsyncMock,
+            return_value=("OK", 1, 1),
+        ):
+            with patch(
+                "run_arc11_ablation.embed_texts_openai_compatible",
+                new_callable=AsyncMock,
+                return_value=[[0.1]],
+            ):
+                with patch.dict(__import__("os").environ, {"ANTHROPIC_API_KEY": ""}, clear=False):
+                    with pytest.raises(RuntimeError, match="no ANTHROPIC_API_KEY is set"):
+                        await run_ablation_preflight(
+                            _NoKeySettings(),
+                            check_embeddings=True,
+                            interview_profile_id=ANTHROPIC_DEFAULT_ID,
+                            judge_profile_id=ANTHROPIC_DEFAULT_ID,
+                        )
+
+
+@pytest.mark.asyncio
+async def test_preflight_anthropic_success_passes_silently() -> None:
+    mock_client = _mock_lmstudio_ok_client()
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "run_arc11_ablation.chat_completion_openai_compatible",
+            new_callable=AsyncMock,
+            return_value=("OK", 1, 1),
+        ):
+            with patch(
+                "run_arc11_ablation.embed_texts_openai_compatible",
+                new_callable=AsyncMock,
+                return_value=[[0.1]],
+            ):
+                with patch(
+                    "mirofish_backend.llm.claude_client.chat_completion_anthropic",
+                    new_callable=AsyncMock,
+                    return_value=("OK", 1, 1),
+                ):
+                    await run_ablation_preflight(
+                        _FakeSettings(),
+                        check_embeddings=True,
+                        interview_profile_id=ANTHROPIC_DEFAULT_ID,
+                        judge_profile_id=ANTHROPIC_DEFAULT_ID,
+                    )  # no raise
+
+
+# ---------------------------------------------------------------------------
+# Post-run transcript LLM-error scan
+# ---------------------------------------------------------------------------
+
+
+def test_transcript_check_passes_clean_bundle() -> None:
+    bundle = {"transcript": [{"raw_response": "I think we should..."}, {"raw_response": "Agreed."}]}
+    check_transcript_for_llm_errors(bundle, simulation_id="sim-1", condition="baseline", seed=42)
+
+
+def test_transcript_check_raises_on_llm_error_placeholder() -> None:
+    bundle = {
+        "transcript": [
+            {"raw_response": "fine turn"},
+            {"raw_response": "[LLM error] RuntimeError: OpenAI-compatible HTTP 400: Context size has been exceeded."},
+        ]
+    }
+    with pytest.raises(RuntimeError, match=r"1/2 turns in simulation sim-1") as exc_info:
+        check_transcript_for_llm_errors(bundle, simulation_id="sim-1", condition="baseline", seed=42)
+    assert "context length" in str(exc_info.value)
+
+
+def test_transcript_check_handles_empty_bundle() -> None:
+    check_transcript_for_llm_errors({}, simulation_id="sim-1", condition="baseline", seed=42)

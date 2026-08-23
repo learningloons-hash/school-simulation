@@ -70,9 +70,13 @@ _DEFAULT_ENV_FILE = _REPO_ROOT / "backend" / ".env"
 def load_dotenv_if_present(path: Path) -> bool:
     """
     Minimal ``.env`` loader (no new dependency): sets ``os.environ`` for any
-    ``KEY=VALUE`` line not already set in the environment, so real shell
-    exports still win. Skips blank lines and ``#`` comments. Returns True if
-    the file was found and read.
+    ``KEY=VALUE`` line not already set to a non-empty value in the
+    environment, so real shell exports still win. A variable that's exported
+    but empty (e.g. a stale entry in a shell profile) is treated the same as
+    unset -- it almost never reflects deliberate intent, and silently letting
+    it shadow a real value in .env produces exactly the kind of "valid key,
+    still 401" failure this loader exists to prevent. Skips blank lines and
+    ``#`` comments. Returns True if the file was found and read.
     """
     import os
 
@@ -85,7 +89,7 @@ def load_dotenv_if_present(path: Path) -> bool:
         key, _, value = line.partition("=")
         key = key.strip()
         value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
+        if key and not os.environ.get(key):
             os.environ[key] = value
     print(f"[ablation] loaded env from {path}", flush=True)
     return True
@@ -105,13 +109,25 @@ def print_config_banner(settings) -> None:
     print(f"  LLM_PROVIDER      = {settings.llm_provider}", flush=True)
 
 
-async def run_ablation_preflight(settings, *, check_embeddings: bool) -> None:
+async def run_ablation_preflight(
+    settings,
+    *,
+    check_embeddings: bool,
+    interview_profile_id: str | None = None,
+    judge_profile_id: str | None = None,
+) -> None:
     """
     Fail fast, with actionable text, before queuing the full sweep. Probes
     ``GET /models``, one chat completion, and (if ``check_embeddings``) one
     embedding call against the LM Studio server configured in ``settings``.
+    If ``interview_profile_id``/``judge_profile_id`` resolve to Anthropic (the
+    default), also does one live Anthropic call so an invalid/expired API key
+    surfaces here instead of ~10-20 minutes into the sweep, mid-interview.
     """
     import httpx
+
+    from mirofish_backend.llm.claude_client import chat_completion_anthropic
+    from mirofish_backend.llm.model_profiles import get_builtin_profile
 
     base_url = settings.lmstudio_base_url
     lm_model = settings.lmstudio_model
@@ -176,6 +192,65 @@ async def run_ablation_preflight(settings, *, check_embeddings: bool) -> None:
         raise RuntimeError(f"[preflight] embedding call against {embedding_model!r} returned no vector.")
 
     print("[preflight] OK — /models, chat completion, and embeddings all reachable.", flush=True)
+
+    needs_anthropic = False
+    for pid in (interview_profile_id, judge_profile_id):
+        if not pid:
+            continue
+        profile = get_builtin_profile(pid, settings)
+        if profile is not None and profile.provider_type == "anthropic":
+            needs_anthropic = True
+
+    if not needs_anthropic:
+        return
+
+    api_key = (settings.anthropic_api_key or "").strip() or __import__("os").environ.get(
+        "ANTHROPIC_API_KEY", ""
+    ).strip()
+    if not api_key:
+        raise RuntimeError(
+            "[preflight] --interview-profile-id/--judge-profile-id resolve to Anthropic, but no "
+            "ANTHROPIC_API_KEY is set.\n"
+            "  -> Add ANTHROPIC_API_KEY=sk-ant-... to backend/.env, or export it in the shell."
+        )
+
+    try:
+        text, _, _ = await chat_completion_anthropic(
+            api_key=api_key,
+            model=settings.anthropic_model,
+            system_prompt="Reply with the single word: OK",
+            user_prompt="ping",
+            temperature=0.0,
+            max_tokens=8,
+            timeout_s=30.0,
+        )
+    except httpx.HTTPStatusError as exc:
+        status = exc.response.status_code if exc.response is not None else "?"
+        raise RuntimeError(
+            f"[preflight] Anthropic call failed: HTTP {status} against model="
+            f"{settings.anthropic_model!r}.\n"
+            "  -> 401 with a key that looks right in backend/.env? Check your shell doesn't "
+            "already have ANTHROPIC_API_KEY exported as EMPTY (e.g. a stale line in your shell "
+            "profile) -- an empty exported var shadows the real one from .env. "
+            "Try: echo \"[$ANTHROPIC_API_KEY]\" (before sourcing .env) -- [] means this is it.\n"
+            "  -> Confirm the key itself works (must be double-quoted so $ANTHROPIC_API_KEY "
+            "expands):\n"
+            "       set -a; source backend/.env; set +a\n"
+            "       curl https://api.anthropic.com/v1/messages \\\n"
+            '         -H "x-api-key: $ANTHROPIC_API_KEY" \\\n'
+            '         -H "anthropic-version: 2023-06-01" \\\n'
+            '         -H "content-type: application/json" \\\n'
+            f'         -d \'{{"model": "{settings.anthropic_model}", "max_tokens": 8, '
+            '"messages": [{"role": "user", "content": "hi"}]}\'\n'
+            "  -> Or run with --interview-profile-id local_lmstudio_default "
+            "--judge-profile-id local_lmstudio_default to skip Anthropic entirely."
+        ) from exc
+    except Exception as exc:
+        raise RuntimeError(f"[preflight] Anthropic call failed: {exc}") from exc
+    if not text:
+        raise RuntimeError("[preflight] Anthropic call returned empty content.")
+
+    print("[preflight] OK — Anthropic reachable and authorized.", flush=True)
 
 
 def build_simulation_request(
@@ -259,6 +334,35 @@ async def run_diagnostics_with_retry(
             backoff *= 2
 
 
+def check_transcript_for_llm_errors(
+    bundle: dict, *, simulation_id: str, condition: str, seed: int
+) -> None:
+    """
+    The orchestrator catches LLM call failures per-turn and substitutes
+    ``"[LLM error] <ExceptionType>: <message>"`` as that turn's raw_response
+    so a single bad turn doesn't crash a production run — but for an ablation
+    sweep that means a run can "complete" while silently recording fabricated
+    turns instead of real agent dialogue. Abort loudly rather than bank a
+    condition's data point on a transcript full of error strings.
+    """
+    transcript = bundle.get("transcript") or []
+    failed = [t for t in transcript if str(t.get("raw_response") or "").startswith("[LLM error]")]
+    if not failed:
+        return
+    sample = failed[0].get("raw_response", "")[:200]
+    raise RuntimeError(
+        f"[ablation] {len(failed)}/{len(transcript)} turns in simulation {simulation_id} "
+        f"(condition={condition!r}, seed={seed}) failed at the LLM call and were recorded as "
+        f"error placeholders, not real agent turns. Sample: {sample!r}\n"
+        "  -> This run's data is not usable for the sweep. Common cause: LM Studio's loaded "
+        "context length for the chat model is too small for a RAG-enabled, multi-round "
+        "simulation (context grows every round). Reload the chat model in LM Studio with a "
+        "larger Context Length and re-run.\n"
+        "  -> Aborting rather than continuing to bank corrupted runs into "
+        "arc11_ablation_results.json."
+    )
+
+
 async def run_ablation_via_api(
     *,
     settings,
@@ -303,6 +407,7 @@ async def run_ablation_via_api(
     bundle = await get_simulation_export_bundle(settings.sqlite_path, simulation_id=resp.id)
     if bundle is None:
         raise RuntimeError(f"missing export bundle for {resp.id}")
+    check_transcript_for_llm_errors(bundle, simulation_id=resp.id, condition=condition, seed=seed)
     metrics = extract_normalized_metrics(diag)
     dispersion = compute_dispersion_metrics(export_bundle=bundle, diagnostics_summary=diag)
     cost = extract_cost_metrics(bundle, wall_clock_seconds=elapsed)
@@ -409,7 +514,12 @@ async def _main_async(args: argparse.Namespace) -> dict:
     if not args.skip_preflight:
         # fsbb_comparator has rag_enabled=True, so embeddings are always exercised by
         # the simulation itself regardless of --skip-interview.
-        await run_ablation_preflight(settings, check_embeddings=True)
+        await run_ablation_preflight(
+            settings,
+            check_embeddings=True,
+            interview_profile_id=args.interview_profile_id,
+            judge_profile_id=args.judge_profile_id,
+        )
     sqlite_path = args.sqlite_path or settings.sqlite_path
     await schema_init(sqlite_path)
     profile = AblationRunProfile(
