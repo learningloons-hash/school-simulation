@@ -19,6 +19,8 @@
 ## Run profile (matches Arc 10 measured baseline)
 
 - Scenario `fsbb_comparator`, 3 agents, 5 rounds, `network_bounded` + generated network CSV, `full_census` tier-1.
+- **`reflection_trigger_threshold` 35** on the reflection arm (production default 150 cannot fire in 5 rounds). CLI: `--reflection-threshold`.
+- Synthetic `network_csv` — deltas vs measured baseline are indicative; ladder comparison within sweep is primary.
 
 ## Reproducibility
 

@@ -25,7 +25,9 @@
         "agent_limit": { "type": "integer", "minimum": 1 },
         "total_rounds": { "type": "integer", "minimum": 1 },
         "visibility_policy": { "type": "string" },
-        "sampling_strategy": { "type": "string" }
+        "sampling_strategy": { "type": "string" },
+        "reflection_trigger_threshold": { "type": "integer", "minimum": 1 },
+        "network_csv_note": { "type": "string" }
       }
     },
     "seeds": { "type": "array", "items": { "type": "integer" } },

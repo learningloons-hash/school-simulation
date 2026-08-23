@@ -20,6 +20,7 @@ if str(_SCRIPTS) not in sys.path:
 from run_arc10_diagnostics import run_arc10_diagnostics  # noqa: E402
 
 from mirofish_backend.db.schema import init_db
+from mirofish_backend.db.repo import get_simulation_export_bundle
 from mirofish_backend.diagnostics import architectural_interview as ai_mod
 from mirofish_backend.diagnostics.arc11_ablation import (
     ABLATION_CONDITIONS,
@@ -182,6 +183,12 @@ def test_compute_deltas_vs_fixture_baseline() -> None:
     assert deltas["memory_exclusion_breakdown"]["recency_cut"] == 4
 
 
+def test_ablation_profile_reflection_threshold_default() -> None:
+    profile = AblationRunProfile()
+    assert profile.reflection_trigger_threshold == 35
+    assert profile.sampling_strategy == "full_census"
+
+
 def test_network_csv_for_fsbb_comparator() -> None:
     csv_text = build_network_csv_for_scenario(scenario_id="fsbb_comparator", agent_limit=3)
     lines = [ln for ln in csv_text.strip().splitlines() if ln]
@@ -193,7 +200,7 @@ def test_network_csv_for_fsbb_comparator() -> None:
 async def test_ablation_harness_one_seed_four_conditions(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_ablation_llm_stack(monkeypatch)
     baseline = load_measured_baseline_summary(BASELINE_FIXTURE)
-    profile = AblationRunProfile(total_rounds=2)
+    profile = AblationRunProfile(total_rounds=2, reflection_trigger_threshold=10)
     seed = 42
     records = []
 
@@ -223,6 +230,10 @@ async def test_ablation_harness_one_seed_four_conditions(monkeypatch: pytest.Mon
             snap_flags = (rec.cost or {}).get("importance_scoring_token_totals")
             if flags["importance_scoring_enabled"]:
                 assert snap_flags is not None or rec.cost.get("total_input_tokens") is not None
+            if condition == "+importance+retrieval+reflection":
+                export_bundle = await get_simulation_export_bundle(db_path, simulation_id=rec.simulation_id)
+                assert export_bundle is not None
+                assert len(export_bundle.get("agent_reflections") or []) > 0
 
         payload = build_ablation_results_payload(
             profile=profile,

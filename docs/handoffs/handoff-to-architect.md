@@ -2,53 +2,41 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for review — `senna-iter-52`.
+**Status:** Ready for review — `senna-iter-52` follow-up.
 
 ---
 
-## Builder report — `senna-iter-52` Ablation Harness
+## Builder report — `senna-iter-52` follow-up
 
 | Field | Value |
 |-------|--------|
-| **Task** | `senna-iter-52` — ablation harness |
+| **Task** | Ablation reflection threshold + profile metadata |
 | **Branch** | `main` |
-| **Commit** | `0085a2b` |
+| **Commit** | _(pending)_ |
 | **Date** | 2026-08-23 |
 
-### Definition of Done
+### Changes
 
 | Item | Done? | Notes |
 |------|-------|-------|
-| Script: 4 conditions × ≥3 seeds | YES | `scripts/run_arc11_ablation.py`; default seeds 42–44 |
-| Arc 10 diagnostics + interview on each run | YES | `run_arc10_diagnostics(..., execute_interview=True)` |
-| Deltas vs measured real baseline | YES | `measured_baseline_summary.json` + `compute_deltas_vs_baseline` |
-| Cost + wall-clock per condition | YES | `extract_cost_metrics` + aggregation |
-| Between-agent dispersion reported | YES | Support stdev + interview category stdev across agents |
-| CI test (stubbed) | YES | `test_senna_iter52_arc11_ablation.py` — 1 seed × 4 conditions |
-| Results JSON + markdown artifact | YES | Placeholder JSON + template MD; script overwrites on live run |
-| Closeout doc | YES | `docs/iterations/senna-iter-52-closeout.md` |
+| `reflection_trigger_threshold=35` on ablation profile | YES | `AblationRunProfile`; CLI `--reflection-threshold` |
+| Live script passes threshold on reflection arm | YES | `build_simulation_request` |
+| CI path uses profile threshold (not 150) | YES | `run_ablation_simulation` via `prof.reflection_trigger_threshold` |
+| `run_profile` records threshold + network note | YES | JSON payload + schema + markdown |
+| Test: reflections fire on full stack arm | YES | threshold 10, 2 rounds; asserts `agent_reflections` non-empty |
+| Closeout updated | YES | threshold + synthetic network caveat |
 
 ### Verification
 
 ```text
 cd backend && uv run pytest tests/test_senna_iter52_arc11_ablation.py -q
-→ 8 passed in 0.49s
+→ 9 passed in 0.44s
 
 cd backend && uv run pytest -q
-→ 380 passed, 2 skipped in 6.23s
-```
-
-### Reproducibility command
-
-```text
-# Full sweep (live stack; not CI)
-python3 scripts/run_arc11_ablation.py --seeds 42 43 44
-
-# Smoke
-python3 scripts/run_arc11_ablation.py --seeds 42 --conditions baseline +importance
+→ 381 passed, 2 skipped in 6.26s
 ```
 
 ### Self-assessment
 
 - **Ready for review:** YES
-- **Open questions:** Live 12-run sweep not executed in Builder session — placeholder artifacts committed; Mark can populate via CLI above.
+- **Open questions:** Live 12-run sweep still not executed — Mark runs `python3 scripts/run_arc11_ablation.py --seeds 42 43 44` after merge.

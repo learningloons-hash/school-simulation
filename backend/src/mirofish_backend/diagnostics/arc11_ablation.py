@@ -38,6 +38,9 @@ class AblationRunProfile:
     total_rounds: int = 5
     visibility_policy: str = "network_bounded"
     sampling_strategy: str = "full_census"
+    # Production default (150) cannot fire in a 5-round profile (max ~50 accumulated importance
+    # per agent). Ablation uses a lower threshold so the +reflection arm exercises the mechanism.
+    reflection_trigger_threshold: int = 35
 
 
 @dataclass
@@ -308,6 +311,8 @@ def build_ablation_results_payload(
             "total_rounds": profile.total_rounds,
             "visibility_policy": profile.visibility_policy,
             "sampling_strategy": profile.sampling_strategy,
+            "reflection_trigger_threshold": profile.reflection_trigger_threshold,
+            "network_csv_note": "synthetic chain for network_bounded (not identical to Arc 10 measured baseline network)",
         },
         "seeds": seeds,
         "conditions": conditions,
@@ -350,6 +355,8 @@ def generate_ablation_markdown(payload: dict[str, Any]) -> str:
         f"- Rounds: {profile.get('total_rounds')}",
         f"- Visibility: `{profile.get('visibility_policy')}` (+ network CSV)",
         f"- Seeds: {payload.get('seeds')}",
+        f"- Reflection threshold (reflection arm): {profile.get('reflection_trigger_threshold')}",
+        f"- Network CSV: {profile.get('network_csv_note', 'synthetic chain')}",
         "",
         "## Baseline reference",
         "",
@@ -444,6 +451,8 @@ async def run_ablation_simulation(
             **flags,
         }
     )
+    if flags["reflection_enabled"]:
+        snap["reflection_trigger_threshold"] = prof.reflection_trigger_threshold
     sim_id = await create_simulation_run(
         sqlite_path,
         name=f"arc11-{condition}-s{seed}",
@@ -492,7 +501,7 @@ async def run_ablation_simulation(
         importance_scoring_enabled=flags["importance_scoring_enabled"],
         weighted_retrieval_enabled=flags["weighted_retrieval_enabled"],
         reflection_enabled=flags["reflection_enabled"],
-        reflection_trigger_threshold=150,
+        reflection_trigger_threshold=prof.reflection_trigger_threshold,
     )
     return sim_id
 

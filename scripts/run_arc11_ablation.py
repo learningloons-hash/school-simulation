@@ -66,6 +66,9 @@ def build_simulation_request(
         importance_scoring_enabled=flags["importance_scoring_enabled"] or None,
         weighted_retrieval_enabled=flags["weighted_retrieval_enabled"] or None,
         reflection_enabled=flags["reflection_enabled"] or None,
+        reflection_trigger_threshold=(
+            profile.reflection_trigger_threshold if flags["reflection_enabled"] else None
+        ),
     )
 
 
@@ -158,6 +161,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip live architectural interview (not recommended for ablation)",
     )
     p.add_argument("--rounds", type=int, default=5, help="Total rounds (default 5)")
+    p.add_argument(
+        "--reflection-threshold",
+        type=int,
+        default=35,
+        help="reflection_trigger_threshold when reflection arm is on (default 35 for 5-round profile)",
+    )
     return p
 
 
@@ -165,7 +174,10 @@ async def _main_async(args: argparse.Namespace) -> dict:
     settings = get_settings()
     sqlite_path = args.sqlite_path or settings.sqlite_path
     await schema_init(sqlite_path)
-    profile = AblationRunProfile(total_rounds=args.rounds)
+    profile = AblationRunProfile(
+        total_rounds=args.rounds,
+        reflection_trigger_threshold=args.reflection_threshold,
+    )
     network_csv = build_network_csv_for_scenario(
         scenario_id=profile.scenario_id,
         agent_limit=profile.agent_limit,
