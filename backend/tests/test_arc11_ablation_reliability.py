@@ -25,10 +25,13 @@ from run_arc11_ablation import (  # noqa: E402
     build_parser,
     check_transcript_for_llm_errors,
     load_dotenv_if_present,
+    load_existing_records,
     run_ablation_preflight,
     run_diagnostics_with_retry,
+    write_ablation_artifacts,
 )
 
+from mirofish_backend.diagnostics.arc11_ablation import AblationRunProfile  # noqa: E402
 from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID  # noqa: E402
 
 
@@ -414,3 +417,98 @@ def test_transcript_check_raises_on_llm_error_placeholder() -> None:
 
 def test_transcript_check_handles_empty_bundle() -> None:
     check_transcript_for_llm_errors({}, simulation_id="sim-1", condition="baseline", seed=42)
+
+
+# ---------------------------------------------------------------------------
+# Resume / incremental persistence
+#
+# Regression coverage for: Mark's sweep completed 3 baseline runs (~25 min of
+# real local LLM + Anthropic-interview work) then hit a single-turn ReadTimeout
+# on run 4 and aborted -- with the old write-once-at-the-end behavior, that
+# would have thrown away all 3 successful runs and the JSON output would never
+# even have been created. Resume + write-after-every-run fixes both.
+# ---------------------------------------------------------------------------
+
+_BASELINE_REF = {
+    "source": "docs/diagnostics/ARC10_MEASURED_BASELINE_REAL_RUN.md",
+    "simulation_id": "baseline-sim",
+    "metrics": {"factual_accuracy": 1.0, "reflective_accuracy": 1.0},
+}
+
+
+def _write_artifacts(records, tmp_path, **overrides):
+    kwargs = dict(
+        profile=AblationRunProfile(),
+        seeds=[42],
+        conditions=["baseline"],
+        records=records,
+        baseline_ref=_BASELINE_REF,
+        command="test-command",
+        json_out=tmp_path / "results.json",
+        markdown_out=tmp_path / "results.md",
+    )
+    kwargs.update(overrides)
+    return write_ablation_artifacts(**kwargs), kwargs["json_out"], kwargs["markdown_out"]
+
+
+def _fake_record(condition: str, seed: int, sim_id: str):
+    from mirofish_backend.diagnostics.arc11_ablation import AblationRunRecord
+
+    return AblationRunRecord(
+        condition=condition,
+        seed=seed,
+        simulation_id=sim_id,
+        wall_clock_seconds=123.0,
+        diagnostics={"some": "diag"},
+        cost={"wall_clock_seconds": 123.0},
+        dispersion={},
+        metrics={"factual_accuracy": 1.0},
+        deltas_vs_baseline={},
+    )
+
+
+def test_write_ablation_artifacts_creates_json_and_markdown(tmp_path) -> None:
+    records = [_fake_record("baseline", 42, "sim-a")]
+    payload, json_out, md_out = _write_artifacts(records, tmp_path)
+    assert json_out.is_file()
+    assert md_out.is_file()
+    assert payload["runs"][0]["simulation_id"] == "sim-a"
+
+
+def test_load_existing_records_missing_file_returns_empty(tmp_path) -> None:
+    assert load_existing_records(tmp_path / "nope.json") == []
+
+
+def test_load_existing_records_round_trips_condition_and_seed(tmp_path) -> None:
+    records = [
+        _fake_record("baseline", 42, "sim-a"),
+        _fake_record("baseline", 43, "sim-b"),
+    ]
+    _payload, json_out, _md = _write_artifacts(records, tmp_path)
+
+    loaded = load_existing_records(json_out)
+    assert {(r.condition, r.seed) for r in loaded} == {("baseline", 42), ("baseline", 43)}
+    assert {r.simulation_id for r in loaded} == {"sim-a", "sim-b"}
+
+
+def test_load_existing_records_handles_malformed_json(tmp_path) -> None:
+    bad = tmp_path / "results.json"
+    bad.write_text("{not valid json", encoding="utf-8")
+    assert load_existing_records(bad) == []
+
+
+def test_resume_pending_skips_completed_condition_seed_pairs(tmp_path) -> None:
+    """Mirrors the skip-logic in _main_async without needing a live run."""
+    existing = [
+        _fake_record("baseline", 42, "sim-a"),
+        _fake_record("baseline", 43, "sim-b"),
+        _fake_record("baseline", 44, "sim-c"),
+    ]
+    _payload, json_out, _md = _write_artifacts(existing, tmp_path)
+
+    loaded = load_existing_records(json_out)
+    done = {(r.condition, r.seed) for r in loaded}
+    all_pairs = [("baseline", s) for s in (42, 43, 44)] + [("+importance", s) for s in (42, 43, 44)]
+    pending = [p for p in all_pairs if p not in done]
+
+    assert pending == [("+importance", 42), ("+importance", 43), ("+importance", 44)]

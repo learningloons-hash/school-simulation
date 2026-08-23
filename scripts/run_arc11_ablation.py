@@ -425,6 +425,75 @@ async def run_ablation_via_api(
     )
 
 
+def load_existing_records(json_out: Path) -> list[AblationRunRecord]:
+    """
+    Reconstruct AblationRunRecord objects from a previously written
+    arc11_ablation_results.json so a crashed/interrupted sweep can resume
+    without redoing already-completed (condition, seed) runs -- each local
+    run costs several minutes, and losing 3 completed runs to one failed
+    4th run (as happened on Mark's first two sweep attempts) is exactly the
+    kind of avoidable cost this harness should not impose.
+
+    ``diagnostics`` is not persisted in the JSON output (only its derived
+    metrics/dispersion/cost/deltas are) and isn't needed again -- aggregation
+    and markdown generation only read the derived fields.
+    """
+    if not json_out.is_file():
+        return []
+    try:
+        payload = json.loads(json_out.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"[ablation] could not read existing {json_out} ({exc}); starting fresh.", flush=True)
+        return []
+    records: list[AblationRunRecord] = []
+    for r in payload.get("runs") or []:
+        try:
+            records.append(
+                AblationRunRecord(
+                    condition=r["condition"],
+                    seed=r["seed"],
+                    simulation_id=r["simulation_id"],
+                    wall_clock_seconds=r.get("wall_clock_seconds") or 0.0,
+                    diagnostics={},
+                    cost=r.get("cost") or {},
+                    dispersion=r.get("dispersion") or {},
+                    metrics=r.get("metrics") or {},
+                    deltas_vs_baseline=r.get("deltas_vs_baseline") or {},
+                )
+            )
+        except KeyError:
+            continue  # malformed entry -- skip rather than abort resume entirely
+    return records
+
+
+def write_ablation_artifacts(
+    *,
+    profile: AblationRunProfile,
+    seeds: list[int],
+    conditions: list[str],
+    records: list[AblationRunRecord],
+    baseline_ref: dict,
+    command: str,
+    json_out: Path,
+    markdown_out: Path,
+) -> dict:
+    """Build the combined payload and write both artifacts. Called after every
+    run (not just at the end) so progress survives a later crash."""
+    payload = build_ablation_results_payload(
+        profile=profile,
+        seeds=seeds,
+        conditions=conditions,
+        records=records,
+        baseline_ref=baseline_ref,
+        command=command,
+    )
+    json_out.parent.mkdir(parents=True, exist_ok=True)
+    json_out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    md = generate_ablation_markdown(payload)
+    markdown_out.write_text(md, encoding="utf-8")
+    return payload
+
+
 _HELP_EPILOG = """\
 LM Studio setup (required for the default local sweep):
   1. Load a chat/LLM model (e.g. google/gemma-4-26b-a4b) -> set LMSTUDIO_MODEL.
@@ -505,6 +574,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip the /models + chat + embeddings connectivity probe (not recommended).",
     )
+    p.add_argument(
+        "--fresh",
+        action="store_true",
+        help=(
+            "Ignore any existing --json-out and redo every (condition, seed) run. Default "
+            "resumes: (condition, seed) pairs already present in --json-out are skipped, and "
+            "results are written after every run, not just at the end -- a crash or abort "
+            "partway through no longer costs the runs that already succeeded."
+        ),
+    )
     return p
 
 
@@ -534,46 +613,69 @@ async def _main_async(args: argparse.Namespace) -> dict:
     baseline_metrics = baseline_ref["metrics"]
     command = " ".join(sys.argv)
 
-    records: list[AblationRunRecord] = []
-    for condition in args.conditions:
-        for seed in args.seeds:
-            rec = await run_ablation_via_api(
-                settings=settings,
-                condition=condition,
-                seed=seed,
-                profile=profile,
-                network_csv=network_csv,
-                fixtures_dir=args.fixtures_dir.resolve(),
-                baseline_metrics=baseline_metrics,
-                execute_interview=not args.skip_interview,
-                interview_profile_id=args.interview_profile_id,
-                judge_profile_id=args.judge_profile_id,
-            )
-            records.append(rec)
-            print(
-                json.dumps(
-                    {
-                        "condition": condition,
-                        "seed": seed,
-                        "simulation_id": rec.simulation_id,
-                        "wall_clock_seconds": rec.cost.get("wall_clock_seconds"),
-                    }
-                ),
-                flush=True,
-            )
+    records: list[AblationRunRecord] = [] if args.fresh else load_existing_records(args.json_out)
+    done: set[tuple[str, int]] = {(r.condition, r.seed) for r in records}
+    pending = [
+        (condition, seed)
+        for condition in args.conditions
+        for seed in args.seeds
+        if (condition, seed) not in done
+    ]
+    if records:
+        print(
+            f"[ablation] resuming from {args.json_out}: {len(records)} run(s) already complete, "
+            f"{len(pending)} remaining. Use --fresh to ignore and redo everything.",
+            flush=True,
+        )
 
-    payload = build_ablation_results_payload(
+    for condition, seed in pending:
+        rec = await run_ablation_via_api(
+            settings=settings,
+            condition=condition,
+            seed=seed,
+            profile=profile,
+            network_csv=network_csv,
+            fixtures_dir=args.fixtures_dir.resolve(),
+            baseline_metrics=baseline_metrics,
+            execute_interview=not args.skip_interview,
+            interview_profile_id=args.interview_profile_id,
+            judge_profile_id=args.judge_profile_id,
+        )
+        records.append(rec)
+        print(
+            json.dumps(
+                {
+                    "condition": condition,
+                    "seed": seed,
+                    "simulation_id": rec.simulation_id,
+                    "wall_clock_seconds": rec.cost.get("wall_clock_seconds"),
+                }
+            ),
+            flush=True,
+        )
+        # Persist after every run, not just at the end -- a later crash shouldn't cost
+        # runs that already succeeded.
+        write_ablation_artifacts(
+            profile=profile,
+            seeds=list(args.seeds),
+            conditions=list(args.conditions),
+            records=records,
+            baseline_ref=baseline_ref,
+            command=command,
+            json_out=args.json_out,
+            markdown_out=args.markdown_out,
+        )
+
+    payload = write_ablation_artifacts(
         profile=profile,
         seeds=list(args.seeds),
         conditions=list(args.conditions),
         records=records,
         baseline_ref=baseline_ref,
         command=command,
+        json_out=args.json_out,
+        markdown_out=args.markdown_out,
     )
-    args.json_out.parent.mkdir(parents=True, exist_ok=True)
-    args.json_out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    md = generate_ablation_markdown(payload)
-    args.markdown_out.write_text(md, encoding="utf-8")
     payload["artifacts"] = {
         "json": str(args.json_out),
         "markdown": str(args.markdown_out),
