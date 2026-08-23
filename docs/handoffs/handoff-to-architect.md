@@ -12,7 +12,7 @@
 |-------|--------|
 | **Task** | Ablation reflection threshold + profile metadata |
 | **Branch** | `main` |
-| **Commit** | _(pending)_ |
+| **Commit** | `36933c3` |
 | **Date** | 2026-08-23 |
 
 ### Changes
