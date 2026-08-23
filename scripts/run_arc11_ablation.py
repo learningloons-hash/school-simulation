@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
-"""Arc 11 memory-mechanism ablation sweep (senna-iter-52)."""
+"""Arc 11 memory-mechanism ablation sweep (senna-iter-52).
+
+**Local model requirement:** by default this sweep drives the simulation LLM
+through LM Studio (``LMSTUDIO_BASE_URL``, default ``http://127.0.0.1:1234/v1``)
+and, because ``fsbb_comparator`` has ``rag_enabled: true``, also needs a working
+``/v1/embeddings`` endpoint on the same server. LM Studio serves chat and
+embeddings as two independent model slots — **you must load two models**:
+
+  1. A chat/LLM model (e.g. ``google/gemma-4-26b-a4b``) — set via ``LMSTUDIO_MODEL``.
+  2. An embedding model (e.g. ``text-embedding-nomic-embed-text-v1.5``) — set via
+     ``EMBEDDING_MODEL``. **MLX chat models do not serve ``/v1/embeddings``** —
+     loading only the chat model will pass chat preflight and then fail every
+     simulation with RAG on with ``HTTP 400: No models loaded``.
+
+Run ``--interview-profile-id anthropic_default --judge-profile-id anthropic_default``
+to route the post-run architectural interview through Claude instead, which is
+useful when the local model is saturated after a long sweep.
+"""
 
 from __future__ import annotations
 
@@ -39,12 +56,126 @@ from mirofish_backend.diagnostics.arc11_ablation import (
     generate_ablation_markdown,
     load_measured_baseline_summary,
 )
-from mirofish_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
+from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
+from mirofish_backend.llm.openai_compatible_client import chat_completion_openai_compatible
+from mirofish_backend.rag.embeddings import embed_texts_openai_compatible
 
 _DEFAULT_FIXTURES = _REPO_ROOT / "backend/tests/fixtures/membench"
 _DEFAULT_BASELINE = _REPO_ROOT / "backend/tests/fixtures/arc11/measured_baseline_summary.json"
 _DEFAULT_JSON_OUT = _REPO_ROOT / "docs/diagnostics/arc11_ablation_results.json"
 _DEFAULT_MD_OUT = _REPO_ROOT / "docs/diagnostics/ARC11_ABLATION_RESULTS.md"
+_DEFAULT_ENV_FILE = _REPO_ROOT / "backend" / ".env"
+
+
+def load_dotenv_if_present(path: Path) -> bool:
+    """
+    Minimal ``.env`` loader (no new dependency): sets ``os.environ`` for any
+    ``KEY=VALUE`` line not already set in the environment, so real shell
+    exports still win. Skips blank lines and ``#`` comments. Returns True if
+    the file was found and read.
+    """
+    import os
+
+    if not path.is_file():
+        return False
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+    print(f"[ablation] loaded env from {path}", flush=True)
+    return True
+
+
+def print_config_banner(settings) -> None:
+    """Non-secret startup banner: resolved model/URL config actually in effect."""
+    embedding_model = settings.embedding_model or settings.lmstudio_model
+    print("[ablation] config:", flush=True)
+    print(f"  LMSTUDIO_BASE_URL = {settings.lmstudio_base_url}", flush=True)
+    print(f"  LMSTUDIO_MODEL    = {settings.lmstudio_model}", flush=True)
+    print(
+        f"  EMBEDDING_MODEL   = {embedding_model}"
+        + ("" if settings.embedding_model else " (unset -> falling back to LMSTUDIO_MODEL)"),
+        flush=True,
+    )
+    print(f"  LLM_PROVIDER      = {settings.llm_provider}", flush=True)
+
+
+async def run_ablation_preflight(settings, *, check_embeddings: bool) -> None:
+    """
+    Fail fast, with actionable text, before queuing the full sweep. Probes
+    ``GET /models``, one chat completion, and (if ``check_embeddings``) one
+    embedding call against the LM Studio server configured in ``settings``.
+    """
+    import httpx
+
+    base_url = settings.lmstudio_base_url
+    lm_model = settings.lmstudio_model
+    embedding_model = settings.embedding_model or settings.lmstudio_model
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{base_url.rstrip('/')}/models")
+    except httpx.ConnectError as exc:
+        raise RuntimeError(
+            f"[preflight] cannot reach LM Studio at {base_url} ({exc}).\n"
+            "  -> Is LM Studio running? Check the server toggle in LM Studio's Developer tab.\n"
+            f"  -> curl {base_url.rstrip('/')}/models"
+        ) from exc
+    if resp.status_code != 200:
+        raise RuntimeError(
+            f"[preflight] GET {base_url}/models returned HTTP {resp.status_code}: {resp.text[:300]}"
+        )
+
+    try:
+        text, _, _ = await chat_completion_openai_compatible(
+            base_url=base_url,
+            model=lm_model,
+            messages=[{"role": "user", "content": "Reply with the single word: OK"}],
+            temperature=0.0,
+            max_tokens=8,
+            timeout_s=30.0,
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            f"[preflight] chat completion against model={lm_model!r} failed: {exc}\n"
+            f"  -> Load {lm_model!r} as the active chat model in LM Studio, or set LMSTUDIO_MODEL "
+            "to a model you have loaded.\n"
+            f"  -> curl {base_url.rstrip('/')}/chat/completions -H 'Content-Type: application/json' "
+            f'-d \'{{"model": "{lm_model}", "messages": [{{"role": "user", "content": "hi"}}]}}\''
+        ) from exc
+    if not text:
+        raise RuntimeError(f"[preflight] chat completion against {lm_model!r} returned empty content.")
+
+    if not check_embeddings:
+        return
+
+    try:
+        vectors = await embed_texts_openai_compatible(
+            base_url=base_url,
+            model=embedding_model,
+            texts=["preflight probe"],
+            timeout_s=30.0,
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            f"[preflight] embedding call against model={embedding_model!r} failed: {exc}\n"
+            "  -> fsbb_comparator has rag_enabled=True, so a loaded embedding model is required.\n"
+            f"  -> Load an embedding model (e.g. text-embedding-nomic-embed-text-v1.5) in LM Studio's "
+            "Developer tab, IN ADDITION to your chat model — MLX chat models do not serve "
+            "/v1/embeddings.\n"
+            "  -> Then set EMBEDDING_MODEL to that model's id (backend/.env or shell export).\n"
+            f"  -> curl {base_url.rstrip('/')}/embeddings -H 'Content-Type: application/json' "
+            f'-d \'{{"model": "{embedding_model}", "input": ["hi"]}}\''
+        ) from exc
+    if not vectors or not vectors[0]:
+        raise RuntimeError(f"[preflight] embedding call against {embedding_model!r} returned no vector.")
+
+    print("[preflight] OK — /models, chat completion, and embeddings all reachable.", flush=True)
 
 
 def build_simulation_request(
@@ -72,6 +203,62 @@ def build_simulation_request(
     )
 
 
+async def run_diagnostics_with_retry(
+    *,
+    settings,
+    simulation_id: str,
+    fixtures_dir: Path,
+    seed: int,
+    execute_interview: bool,
+    interview_profile_id: str,
+    judge_profile_id: str,
+    max_attempts: int = 3,
+    initial_backoff_s: float = 2.0,
+):
+    """
+    Run Arc 10 diagnostics (incl. live architectural interview) with retry/backoff
+    on transient connection failures — the interview step is the most exposed to a
+    saturated or briefly-restarted local LM Studio server after a long sweep.
+    """
+    import httpx
+
+    attempt = 0
+    backoff = initial_backoff_s
+    while True:
+        attempt += 1
+        try:
+            return await run_arc10_diagnostics(
+                sqlite_path=settings.sqlite_path,
+                simulation_id=simulation_id,
+                fixtures_dir=fixtures_dir,
+                membench_seed=seed,
+                membench_answer_mode="memory_match",
+                execute_interview=execute_interview,
+                interview_profile_id=interview_profile_id,
+                judge_profile_id=judge_profile_id,
+                force_interview=False,
+                interview_temperature=0.2,
+                interview_max_tokens=1024,
+            )
+        except (httpx.ConnectError, httpx.ReadTimeout, httpx.RemoteProtocolError) as exc:
+            if attempt >= max_attempts:
+                raise RuntimeError(
+                    f"[interview] gave up after {attempt} attempts against "
+                    f"profile={interview_profile_id!r}: {exc}\n"
+                    "  -> Local model likely saturated/restarted after the sweep. Retry with "
+                    "--interview-profile-id anthropic_default --judge-profile-id anthropic_default, "
+                    "or re-run with --skip-interview and backfill later via "
+                    "scripts/run_architectural_interview.py."
+                ) from exc
+            print(
+                f"[interview] attempt {attempt}/{max_attempts} failed ({exc}); "
+                f"retrying in {backoff:.0f}s",
+                flush=True,
+            )
+            await asyncio.sleep(backoff)
+            backoff *= 2
+
+
 async def run_ablation_via_api(
     *,
     settings,
@@ -82,6 +269,8 @@ async def run_ablation_via_api(
     fixtures_dir: Path,
     baseline_metrics: dict,
     execute_interview: bool,
+    interview_profile_id: str,
+    judge_profile_id: str,
 ) -> AblationRunRecord:
     req = build_simulation_request(
         condition=condition,
@@ -102,18 +291,14 @@ async def run_ablation_via_api(
         timeout_seconds=3600.0,
     )
     elapsed = time.perf_counter() - t0
-    diag = await run_arc10_diagnostics(
-        sqlite_path=settings.sqlite_path,
+    diag = await run_diagnostics_with_retry(
+        settings=settings,
         simulation_id=resp.id,
         fixtures_dir=fixtures_dir,
-        membench_seed=seed,
-        membench_answer_mode="memory_match",
+        seed=seed,
         execute_interview=execute_interview,
-        interview_profile_id=LOCAL_LMSTUDIO_DEFAULT_ID,
-        judge_profile_id=LOCAL_LMSTUDIO_DEFAULT_ID,
-        force_interview=False,
-        interview_temperature=0.2,
-        interview_max_tokens=1024,
+        interview_profile_id=interview_profile_id,
+        judge_profile_id=judge_profile_id,
     )
     bundle = await get_simulation_export_bundle(settings.sqlite_path, simulation_id=resp.id)
     if bundle is None:
@@ -135,8 +320,30 @@ async def run_ablation_via_api(
     )
 
 
+_HELP_EPILOG = """\
+LM Studio setup (required for the default local sweep):
+  1. Load a chat/LLM model (e.g. google/gemma-4-26b-a4b) -> set LMSTUDIO_MODEL.
+  2. Load an EMBEDDING model too (e.g. text-embedding-nomic-embed-text-v1.5) -> set
+     EMBEDDING_MODEL. fsbb_comparator has rag_enabled=True, so this is not optional.
+     MLX chat models do NOT serve /v1/embeddings -- loading only the chat model passes
+     chat preflight and then fails every sim with "HTTP 400: No models loaded".
+  3. Verify by hand if preflight ever seems wrong:
+       curl http://127.0.0.1:1234/v1/models
+       curl http://127.0.0.1:1234/v1/embeddings -d '{"model": "<EMBEDDING_MODEL>", "input": ["hi"]}'
+
+If the local model is saturated after a long sweep, keep the sim on LM Studio but move the
+post-run interview to Claude:
+  python3 scripts/run_arc11_ablation.py --interview-profile-id anthropic_default \\
+      --judge-profile-id anthropic_default
+"""
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Arc 11 memory ablation harness (senna-iter-52)")
+    p = argparse.ArgumentParser(
+        description="Arc 11 memory ablation harness (senna-iter-52)",
+        epilog=_HELP_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     p.add_argument(
         "--conditions",
         nargs="+",
@@ -167,11 +374,42 @@ def build_parser() -> argparse.ArgumentParser:
         default=35,
         help="reflection_trigger_threshold when reflection arm is on (default 35 for 5-round profile)",
     )
+    p.add_argument(
+        "--interview-profile-id",
+        default=ANTHROPIC_DEFAULT_ID,
+        help=(
+            "Model profile for the architectural interview + judge (default: anthropic_default). "
+            f"Use {LOCAL_LMSTUDIO_DEFAULT_ID} to keep the interview on-device, but expect it to be "
+            "the first thing to fail if LM Studio is saturated after a long sweep."
+        ),
+    )
+    p.add_argument(
+        "--judge-profile-id",
+        default=ANTHROPIC_DEFAULT_ID,
+        help="Model profile for judge scoring (default: anthropic_default).",
+    )
+    p.add_argument(
+        "--env-file",
+        type=Path,
+        default=_DEFAULT_ENV_FILE,
+        help=f"Optional .env to load before running (default: {_DEFAULT_ENV_FILE}). "
+        "Only fills vars not already set in the shell.",
+    )
+    p.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip the /models + chat + embeddings connectivity probe (not recommended).",
+    )
     return p
 
 
 async def _main_async(args: argparse.Namespace) -> dict:
     settings = get_settings()
+    print_config_banner(settings)
+    if not args.skip_preflight:
+        # fsbb_comparator has rag_enabled=True, so embeddings are always exercised by
+        # the simulation itself regardless of --skip-interview.
+        await run_ablation_preflight(settings, check_embeddings=True)
     sqlite_path = args.sqlite_path or settings.sqlite_path
     await schema_init(sqlite_path)
     profile = AblationRunProfile(
@@ -198,6 +436,8 @@ async def _main_async(args: argparse.Namespace) -> dict:
                 fixtures_dir=args.fixtures_dir.resolve(),
                 baseline_metrics=baseline_metrics,
                 execute_interview=not args.skip_interview,
+                interview_profile_id=args.interview_profile_id,
+                judge_profile_id=args.judge_profile_id,
             )
             records.append(rec)
             print(
@@ -233,9 +473,13 @@ async def _main_async(args: argparse.Namespace) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # Must run before get_settings() (inside _main_async) so pydantic-settings picks up
+    # any vars this fills in. Real shell exports always take precedence.
+    load_dotenv_if_present(args.env_file)
     try:
         payload = asyncio.run(_main_async(args))
     except (ValueError, RuntimeError) as exc:
+        print(f"\n{exc}\n", file=sys.stderr)
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         return 1
     print(json.dumps({"status": "ok", "run_count": len(payload.get("runs") or [])}))
