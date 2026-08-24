@@ -1,25 +1,2683 @@
 {
-  "arc": "11",
-  "harness": "senna-iter-52",
-  "command": "(not yet run — populate via scripts/run_arc11_ablation.py)",
-  "run_profile": {
-    "scenario_id": "fsbb_comparator",
-    "agent_limit": 3,
-    "total_rounds": 5,
-    "visibility_policy": "network_bounded",
-    "sampling_strategy": "full_census"
+  "aggregated_by_condition": {
+    "+importance": {
+      "cost": {
+        "estimated_cost_usd": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "total_input_tokens": {
+          "max": 31402.0,
+          "mean": 30739.333333,
+          "min": 30408.0,
+          "n": 3,
+          "stdev": 468.576094
+        },
+        "total_output_tokens": {
+          "max": 4009.0,
+          "mean": 3849.666667,
+          "min": 3770.0,
+          "n": 3,
+          "stdev": 112.66568
+        },
+        "wall_clock_seconds": {
+          "max": 195.47,
+          "mean": 159.351333,
+          "min": 130.294,
+          "n": 3,
+          "stdev": 27.072428
+        }
+      },
+      "diagnostic_deltas_vs_measured_baseline": {
+        "interview_reflection_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "membench_factual_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "membench_reflective_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        }
+      },
+      "dispersion": {
+        "final_round_support_stdev": {
+          "max": 0.049216,
+          "mean": 0.04381,
+          "min": 0.032998,
+          "n": 3,
+          "stdev": 0.007645
+        }
+      },
+      "run_count": 3,
+      "runs": [
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 4775,
+              "output_tokens": 895
+            },
+            "reflection_token_totals": null,
+            "total_input_tokens": 30408,
+            "total_output_tokens": 3770,
+            "wall_clock_seconds": 152.29,
+            "weighted_retrieval_embed_api_calls": null
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": -0.666667,
+              "planning": 0.0,
+              "reaction": -0.666666,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 17,
+              "network_filtered": 0,
+              "recency_cut": -1,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.471405,
+              "planning": 0.0,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 1.333333,
+              "planning": 2.0,
+              "reaction": 0.666667,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 60,
+              "network_filtered": 0,
+              "recency_cut": 20,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 60,
+            "memory_recency_cut": 20
+          },
+          "seed": 42,
+          "simulation_id": "78594ff2bc0243bb930abeba1eae9ca4",
+          "wall_clock_seconds": 152.29
+        },
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 4775,
+              "output_tokens": 895
+            },
+            "reflection_token_totals": null,
+            "total_input_tokens": 30408,
+            "total_output_tokens": 3770,
+            "wall_clock_seconds": 130.294,
+            "weighted_retrieval_embed_api_calls": null
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": -0.333333,
+              "planning": 0.0,
+              "reaction": -0.666666,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 17,
+              "network_filtered": 0,
+              "recency_cut": -1,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.471405,
+              "planning": 0.0,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 1.666667,
+              "planning": 2.0,
+              "reaction": 0.666667,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 60,
+              "network_filtered": 0,
+              "recency_cut": 20,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 60,
+            "memory_recency_cut": 20
+          },
+          "seed": 43,
+          "simulation_id": "a9b0e56afc8541ae9d2e26081396ae7d",
+          "wall_clock_seconds": 130.294
+        },
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 5006,
+              "output_tokens": 903
+            },
+            "reflection_token_totals": null,
+            "total_input_tokens": 31402,
+            "total_output_tokens": 4009,
+            "wall_clock_seconds": 195.47,
+            "weighted_retrieval_embed_api_calls": null
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": -1.0,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 17,
+              "network_filtered": 0,
+              "recency_cut": -1,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.55
+            ],
+            "final_round_support_stdev": 0.032998,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 2.0,
+              "planning": 2.0,
+              "reaction": 0.333333,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 60,
+              "network_filtered": 0,
+              "recency_cut": 20,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 60,
+            "memory_recency_cut": 20
+          },
+          "seed": 44,
+          "simulation_id": "aef3a419b57940b380052c7b59168950",
+          "wall_clock_seconds": 195.47
+        }
+      ],
+      "seeds": [
+        42,
+        43,
+        44
+      ]
+    },
+    "+importance+retrieval": {
+      "cost": {
+        "estimated_cost_usd": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "total_input_tokens": {
+          "max": 33182.0,
+          "mean": 33022.0,
+          "min": 32942.0,
+          "n": 3,
+          "stdev": 113.137085
+        },
+        "total_output_tokens": {
+          "max": 4095.0,
+          "mean": 4085.666667,
+          "min": 4067.0,
+          "n": 3,
+          "stdev": 13.199327
+        },
+        "wall_clock_seconds": {
+          "max": 306.574,
+          "mean": 198.917,
+          "min": 144.288,
+          "n": 3,
+          "stdev": 76.127801
+        }
+      },
+      "diagnostic_deltas_vs_measured_baseline": {
+        "interview_reflection_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "membench_factual_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "membench_reflective_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        }
+      },
+      "dispersion": {
+        "final_round_support_stdev": {
+          "max": 0.049216,
+          "mean": 0.04381,
+          "min": 0.032998,
+          "n": 3,
+          "stdev": 0.007645
+        }
+      },
+      "run_count": 3,
+      "runs": [
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 5061,
+              "output_tokens": 906
+            },
+            "reflection_token_totals": null,
+            "total_input_tokens": 33182,
+            "total_output_tokens": 4067,
+            "wall_clock_seconds": 306.574,
+            "weighted_retrieval_embed_api_calls": 30
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": -1.0,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 26,
+              "network_filtered": 0,
+              "recency_cut": 0,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.55
+            ],
+            "final_round_support_stdev": 0.032998,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 2.0,
+              "planning": 2.0,
+              "reaction": 0.333333,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 69,
+              "network_filtered": 0,
+              "recency_cut": 21,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 69,
+            "memory_recency_cut": 21
+          },
+          "seed": 42,
+          "simulation_id": "424bd246de8d4d7faab7db6eae314d69",
+          "wall_clock_seconds": 306.574
+        },
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 5016,
+              "output_tokens": 979
+            },
+            "reflection_token_totals": null,
+            "total_input_tokens": 32942,
+            "total_output_tokens": 4095,
+            "wall_clock_seconds": 144.288,
+            "weighted_retrieval_embed_api_calls": 30
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": -0.333333,
+              "planning": -0.333333,
+              "reaction": -1.0,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 26,
+              "network_filtered": 0,
+              "recency_cut": 0,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 1.0,
+                "planning": 1.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.471405,
+              "planning": 0.471405,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 1.666667,
+              "planning": 1.666667,
+              "reaction": 0.333333,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 69,
+              "network_filtered": 0,
+              "recency_cut": 21,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 69,
+            "memory_recency_cut": 21
+          },
+          "seed": 43,
+          "simulation_id": "c38cf9ef808545adbe98cf986e6c75b7",
+          "wall_clock_seconds": 144.288
+        },
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 5016,
+              "output_tokens": 979
+            },
+            "reflection_token_totals": null,
+            "total_input_tokens": 32942,
+            "total_output_tokens": 4095,
+            "wall_clock_seconds": 145.889,
+            "weighted_retrieval_embed_api_calls": 30
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": -0.666667,
+              "planning": 0.0,
+              "reaction": -1.0,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 26,
+              "network_filtered": 0,
+              "recency_cut": 0,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.471405,
+              "planning": 0.0,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 1.333333,
+              "planning": 2.0,
+              "reaction": 0.333333,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 69,
+              "network_filtered": 0,
+              "recency_cut": 21,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 69,
+            "memory_recency_cut": 21
+          },
+          "seed": 44,
+          "simulation_id": "45f7e7a9d549422fb605b338c003b258",
+          "wall_clock_seconds": 145.889
+        }
+      ],
+      "seeds": [
+        42,
+        43,
+        44
+      ]
+    },
+    "+importance+retrieval+reflection": {
+      "cost": {
+        "estimated_cost_usd": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "total_input_tokens": {
+          "max": 37009.0,
+          "mean": 37002.333333,
+          "min": 36994.0,
+          "n": 3,
+          "stdev": 6.236096
+        },
+        "total_output_tokens": {
+          "max": 4640.0,
+          "mean": 4567.0,
+          "min": 4518.0,
+          "n": 3,
+          "stdev": 52.618121
+        },
+        "wall_clock_seconds": {
+          "max": 186.449,
+          "mean": 184.797333,
+          "min": 183.864,
+          "n": 3,
+          "stdev": 1.171198
+        }
+      },
+      "diagnostic_deltas_vs_measured_baseline": {
+        "interview_reflection_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "membench_factual_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "membench_reflective_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        }
+      },
+      "dispersion": {
+        "final_round_support_stdev": {
+          "max": 0.049216,
+          "mean": 0.049216,
+          "min": 0.049216,
+          "n": 3,
+          "stdev": 0.0
+        }
+      },
+      "run_count": 3,
+      "runs": [
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 5016,
+              "output_tokens": 976
+            },
+            "reflection_token_totals": {
+              "input_tokens": 4067,
+              "output_tokens": 548
+            },
+            "total_input_tokens": 37009,
+            "total_output_tokens": 4640,
+            "wall_clock_seconds": 186.449,
+            "weighted_retrieval_embed_api_calls": 33
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": -0.666667,
+              "planning": 0.0,
+              "reaction": -1.0,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 26,
+              "network_filtered": 0,
+              "recency_cut": 0,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.471405,
+              "planning": 0.0,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 1.333333,
+              "planning": 2.0,
+              "reaction": 0.333333,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 69,
+              "network_filtered": 0,
+              "recency_cut": 21,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 69,
+            "memory_recency_cut": 21
+          },
+          "seed": 42,
+          "simulation_id": "6f21849dd2e3495b8ea9124ec2bcbc38",
+          "wall_clock_seconds": 186.449
+        },
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 5016,
+              "output_tokens": 979
+            },
+            "reflection_token_totals": {
+              "input_tokens": 4052,
+              "output_tokens": 423
+            },
+            "total_input_tokens": 36994,
+            "total_output_tokens": 4518,
+            "wall_clock_seconds": 184.079,
+            "weighted_retrieval_embed_api_calls": 33
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": -0.666667,
+              "planning": -0.333333,
+              "reaction": -0.666666,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 26,
+              "network_filtered": 0,
+              "recency_cut": 0,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 1.0,
+                "planning": 1.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.471405,
+              "planning": 0.471405,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 1.333333,
+              "planning": 1.666667,
+              "reaction": 0.666667,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 69,
+              "network_filtered": 0,
+              "recency_cut": 21,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 69,
+            "memory_recency_cut": 21
+          },
+          "seed": 43,
+          "simulation_id": "c98f2c967b0e4848bb0485c51a910ddc",
+          "wall_clock_seconds": 184.079
+        },
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": {
+              "input_tokens": 5016,
+              "output_tokens": 979
+            },
+            "reflection_token_totals": {
+              "input_tokens": 4062,
+              "output_tokens": 448
+            },
+            "total_input_tokens": 37004,
+            "total_output_tokens": 4543,
+            "wall_clock_seconds": 183.864,
+            "weighted_retrieval_embed_api_calls": 33
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": -1.0,
+              "planning": 0.0,
+              "reaction": -1.333333,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 26,
+              "network_filtered": 0,
+              "recency_cut": 0,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 0.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 1.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.816497,
+              "planning": 0.0,
+              "reaction": 0.0,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 1.0,
+              "planning": 2.0,
+              "reaction": 0.0,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 69,
+              "network_filtered": 0,
+              "recency_cut": 21,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 69,
+            "memory_recency_cut": 21
+          },
+          "seed": 44,
+          "simulation_id": "9a618882c24a44b3a2b91ffee1b0fed3",
+          "wall_clock_seconds": 183.864
+        }
+      ],
+      "seeds": [
+        42,
+        43,
+        44
+      ]
+    },
+    "baseline": {
+      "cost": {
+        "estimated_cost_usd": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "total_input_tokens": {
+          "max": 26396.0,
+          "mean": 25887.333333,
+          "min": 25633.0,
+          "n": 3,
+          "stdev": 359.681649
+        },
+        "total_output_tokens": {
+          "max": 3106.0,
+          "mean": 2952.0,
+          "min": 2875.0,
+          "n": 3,
+          "stdev": 108.894444
+        },
+        "wall_clock_seconds": {
+          "max": 237.509,
+          "mean": 178.694333,
+          "min": 114.954,
+          "n": 3,
+          "stdev": 50.153954
+        }
+      },
+      "diagnostic_deltas_vs_measured_baseline": {
+        "interview_reflection_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "membench_factual_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        },
+        "membench_reflective_mean": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3,
+          "stdev": 0.0
+        }
+      },
+      "dispersion": {
+        "final_round_support_stdev": {
+          "max": 0.049216,
+          "mean": 0.04381,
+          "min": 0.032998,
+          "n": 3,
+          "stdev": 0.007645
+        }
+      },
+      "run_count": 3,
+      "runs": [
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": null,
+            "reflection_token_totals": null,
+            "total_input_tokens": 26396,
+            "total_output_tokens": 3106,
+            "wall_clock_seconds": 237.509,
+            "weighted_retrieval_embed_api_calls": null
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": -1.333333,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 17,
+              "network_filtered": 0,
+              "recency_cut": -1,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.55
+            ],
+            "final_round_support_stdev": 0.032998,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": 0.0,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 2.0,
+              "planning": 2.0,
+              "reaction": 0.0,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 60,
+              "network_filtered": 0,
+              "recency_cut": 20,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 60,
+            "memory_recency_cut": 20
+          },
+          "seed": 42,
+          "simulation_id": "c5bd4231f35f4eb9a494c5217e3a73f1",
+          "wall_clock_seconds": 237.509
+        },
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": null,
+            "reflection_token_totals": null,
+            "total_input_tokens": 25633,
+            "total_output_tokens": 2875,
+            "wall_clock_seconds": 183.62,
+            "weighted_retrieval_embed_api_calls": null
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": -0.333333,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 17,
+              "network_filtered": 0,
+              "recency_cut": -1,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": 0.0,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 2.0,
+              "planning": 2.0,
+              "reaction": 1.0,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 60,
+              "network_filtered": 0,
+              "recency_cut": 20,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 60,
+            "memory_recency_cut": 20
+          },
+          "seed": 43,
+          "simulation_id": "818a39f7fba349b59d243cebdd2f8292",
+          "wall_clock_seconds": 183.62
+        },
+        {
+          "cost": {
+            "estimated_cost_usd": 0.0,
+            "importance_scoring_token_totals": null,
+            "reflection_token_totals": null,
+            "total_input_tokens": 25633,
+            "total_output_tokens": 2875,
+            "wall_clock_seconds": 114.954,
+            "weighted_retrieval_embed_api_calls": null
+          },
+          "deltas_vs_baseline": {
+            "interview_category_means": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": -0.666666,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            },
+            "membench_factual_mean": 0.0,
+            "membench_reflective_mean": 0.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 17,
+              "network_filtered": 0,
+              "recency_cut": -1,
+              "same_round_peer": -15,
+              "visibility_policy": -10
+            },
+            "memory_group_addressed_proportion": 0.0
+          },
+          "dispersion": {
+            "final_round_support_levels": [
+              0.55,
+              0.62,
+              0.5
+            ],
+            "final_round_support_stdev": 0.049216,
+            "interview_agent_category_means": {
+              "middle_manager_001_001": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "principal_001_000": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 0.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              },
+              "teacher_001_002": {
+                "memory_retrieval": 2.0,
+                "planning": 2.0,
+                "reaction": 1.0,
+                "reflection": 2.0,
+                "self_knowledge": 2.0
+              }
+            },
+            "interview_category_stdev_across_agents": {
+              "memory_retrieval": 0.0,
+              "planning": 0.0,
+              "reaction": 0.471405,
+              "reflection": 0.0,
+              "self_knowledge": 0.0
+            }
+          },
+          "metrics": {
+            "interview_category_means": {
+              "memory_retrieval": 2.0,
+              "planning": 2.0,
+              "reaction": 0.666667,
+              "reflection": 2.0,
+              "self_knowledge": 2.0
+            },
+            "membench_factual_mean": 1.0,
+            "membench_reflective_mean": 1.0,
+            "memory_exclusion_breakdown": {
+              "char_budget_truncated": 0,
+              "included_clean": 60,
+              "network_filtered": 0,
+              "recency_cut": 20,
+              "same_round_peer": 0,
+              "visibility_policy": 0
+            },
+            "memory_group_addressed_proportion": 0.666667,
+            "memory_included_clean": 60,
+            "memory_recency_cut": 20
+          },
+          "seed": 44,
+          "simulation_id": "55246ef8d0c64e50b14bc4795d728681",
+          "wall_clock_seconds": 114.954
+        }
+      ],
+      "seeds": [
+        42,
+        43,
+        44
+      ]
+    }
   },
-  "seeds": [42, 43, 44],
+  "arc": "11",
+  "baseline_reference": {
+    "metrics": {
+      "interview_category_means": {
+        "memory_retrieval": 2.0,
+        "planning": 2.0,
+        "reaction": 1.333333,
+        "reflection": 2.0,
+        "self_knowledge": 2.0
+      },
+      "membench_factual_mean": 1.0,
+      "membench_reflective_mean": 1.0,
+      "memory_exclusion_breakdown": {
+        "char_budget_truncated": 0,
+        "included_clean": 43,
+        "network_filtered": 0,
+        "recency_cut": 21,
+        "same_round_peer": 15,
+        "visibility_policy": 10
+      },
+      "memory_group_addressed_proportion": 0.666667,
+      "memory_included_clean": 43,
+      "memory_recency_cut": 21
+    },
+    "simulation_id": "21a6d94e0af141de95da73fc3c41f759",
+    "source": "docs/diagnostics/ARC10_MEASURED_BASELINE_REAL_RUN.md"
+  },
+  "command": "../scripts/run_arc11_ablation.py --seeds 42 43 44",
   "conditions": [
     "baseline",
     "+importance",
     "+importance+retrieval",
     "+importance+retrieval+reflection"
   ],
-  "baseline_reference": {
-    "source": "docs/diagnostics/ARC10_MEASURED_BASELINE_REAL_RUN.md",
-    "simulation_id": "21a6d94e0af141de95da73fc3c41f759"
+  "harness": "senna-iter-52",
+  "run_profile": {
+    "agent_limit": 3,
+    "network_csv_note": "synthetic chain for network_bounded (not identical to Arc 10 measured baseline network)",
+    "reflection_trigger_threshold": 35,
+    "sampling_strategy": "full_census",
+    "scenario_id": "fsbb_comparator",
+    "total_rounds": 5,
+    "visibility_policy": "network_bounded"
   },
-  "runs": [],
-  "aggregated_by_condition": {}
+  "runs": [
+    {
+      "condition": "baseline",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": null,
+        "reflection_token_totals": null,
+        "total_input_tokens": 26396,
+        "total_output_tokens": 3106,
+        "wall_clock_seconds": 237.509,
+        "weighted_retrieval_embed_api_calls": null
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": -1.333333,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 17,
+          "network_filtered": 0,
+          "recency_cut": -1,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.55
+        ],
+        "final_round_support_stdev": 0.032998,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": 0.0,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 2.0,
+          "planning": 2.0,
+          "reaction": 0.0,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 60,
+          "network_filtered": 0,
+          "recency_cut": 20,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 60,
+        "memory_recency_cut": 20
+      },
+      "seed": 42,
+      "simulation_id": "c5bd4231f35f4eb9a494c5217e3a73f1",
+      "wall_clock_seconds": 237.509
+    },
+    {
+      "condition": "baseline",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": null,
+        "reflection_token_totals": null,
+        "total_input_tokens": 25633,
+        "total_output_tokens": 2875,
+        "wall_clock_seconds": 183.62,
+        "weighted_retrieval_embed_api_calls": null
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": -0.333333,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 17,
+          "network_filtered": 0,
+          "recency_cut": -1,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": 0.0,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 2.0,
+          "planning": 2.0,
+          "reaction": 1.0,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 60,
+          "network_filtered": 0,
+          "recency_cut": 20,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 60,
+        "memory_recency_cut": 20
+      },
+      "seed": 43,
+      "simulation_id": "818a39f7fba349b59d243cebdd2f8292",
+      "wall_clock_seconds": 183.62
+    },
+    {
+      "condition": "baseline",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": null,
+        "reflection_token_totals": null,
+        "total_input_tokens": 25633,
+        "total_output_tokens": 2875,
+        "wall_clock_seconds": 114.954,
+        "weighted_retrieval_embed_api_calls": null
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": -0.666666,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 17,
+          "network_filtered": 0,
+          "recency_cut": -1,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 2.0,
+          "planning": 2.0,
+          "reaction": 0.666667,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 60,
+          "network_filtered": 0,
+          "recency_cut": 20,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 60,
+        "memory_recency_cut": 20
+      },
+      "seed": 44,
+      "simulation_id": "55246ef8d0c64e50b14bc4795d728681",
+      "wall_clock_seconds": 114.954
+    },
+    {
+      "condition": "+importance",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 4775,
+          "output_tokens": 895
+        },
+        "reflection_token_totals": null,
+        "total_input_tokens": 30408,
+        "total_output_tokens": 3770,
+        "wall_clock_seconds": 152.29,
+        "weighted_retrieval_embed_api_calls": null
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": -0.666667,
+          "planning": 0.0,
+          "reaction": -0.666666,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 17,
+          "network_filtered": 0,
+          "recency_cut": -1,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.471405,
+          "planning": 0.0,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 1.333333,
+          "planning": 2.0,
+          "reaction": 0.666667,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 60,
+          "network_filtered": 0,
+          "recency_cut": 20,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 60,
+        "memory_recency_cut": 20
+      },
+      "seed": 42,
+      "simulation_id": "78594ff2bc0243bb930abeba1eae9ca4",
+      "wall_clock_seconds": 152.29
+    },
+    {
+      "condition": "+importance",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 4775,
+          "output_tokens": 895
+        },
+        "reflection_token_totals": null,
+        "total_input_tokens": 30408,
+        "total_output_tokens": 3770,
+        "wall_clock_seconds": 130.294,
+        "weighted_retrieval_embed_api_calls": null
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": -0.333333,
+          "planning": 0.0,
+          "reaction": -0.666666,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 17,
+          "network_filtered": 0,
+          "recency_cut": -1,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.471405,
+          "planning": 0.0,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 1.666667,
+          "planning": 2.0,
+          "reaction": 0.666667,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 60,
+          "network_filtered": 0,
+          "recency_cut": 20,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 60,
+        "memory_recency_cut": 20
+      },
+      "seed": 43,
+      "simulation_id": "a9b0e56afc8541ae9d2e26081396ae7d",
+      "wall_clock_seconds": 130.294
+    },
+    {
+      "condition": "+importance",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 5006,
+          "output_tokens": 903
+        },
+        "reflection_token_totals": null,
+        "total_input_tokens": 31402,
+        "total_output_tokens": 4009,
+        "wall_clock_seconds": 195.47,
+        "weighted_retrieval_embed_api_calls": null
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": -1.0,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 17,
+          "network_filtered": 0,
+          "recency_cut": -1,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.55
+        ],
+        "final_round_support_stdev": 0.032998,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 2.0,
+          "planning": 2.0,
+          "reaction": 0.333333,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 60,
+          "network_filtered": 0,
+          "recency_cut": 20,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 60,
+        "memory_recency_cut": 20
+      },
+      "seed": 44,
+      "simulation_id": "aef3a419b57940b380052c7b59168950",
+      "wall_clock_seconds": 195.47
+    },
+    {
+      "condition": "+importance+retrieval",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 5061,
+          "output_tokens": 906
+        },
+        "reflection_token_totals": null,
+        "total_input_tokens": 33182,
+        "total_output_tokens": 4067,
+        "wall_clock_seconds": 306.574,
+        "weighted_retrieval_embed_api_calls": 30
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": -1.0,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 26,
+          "network_filtered": 0,
+          "recency_cut": 0,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.55
+        ],
+        "final_round_support_stdev": 0.032998,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.0,
+          "planning": 0.0,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 2.0,
+          "planning": 2.0,
+          "reaction": 0.333333,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 69,
+          "network_filtered": 0,
+          "recency_cut": 21,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 69,
+        "memory_recency_cut": 21
+      },
+      "seed": 42,
+      "simulation_id": "424bd246de8d4d7faab7db6eae314d69",
+      "wall_clock_seconds": 306.574
+    },
+    {
+      "condition": "+importance+retrieval",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 5016,
+          "output_tokens": 979
+        },
+        "reflection_token_totals": null,
+        "total_input_tokens": 32942,
+        "total_output_tokens": 4095,
+        "wall_clock_seconds": 144.288,
+        "weighted_retrieval_embed_api_calls": 30
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": -0.333333,
+          "planning": -0.333333,
+          "reaction": -1.0,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 26,
+          "network_filtered": 0,
+          "recency_cut": 0,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 1.0,
+            "planning": 1.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.471405,
+          "planning": 0.471405,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 1.666667,
+          "planning": 1.666667,
+          "reaction": 0.333333,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 69,
+          "network_filtered": 0,
+          "recency_cut": 21,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 69,
+        "memory_recency_cut": 21
+      },
+      "seed": 43,
+      "simulation_id": "c38cf9ef808545adbe98cf986e6c75b7",
+      "wall_clock_seconds": 144.288
+    },
+    {
+      "condition": "+importance+retrieval",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 5016,
+          "output_tokens": 979
+        },
+        "reflection_token_totals": null,
+        "total_input_tokens": 32942,
+        "total_output_tokens": 4095,
+        "wall_clock_seconds": 145.889,
+        "weighted_retrieval_embed_api_calls": 30
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": -0.666667,
+          "planning": 0.0,
+          "reaction": -1.0,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 26,
+          "network_filtered": 0,
+          "recency_cut": 0,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.471405,
+          "planning": 0.0,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 1.333333,
+          "planning": 2.0,
+          "reaction": 0.333333,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 69,
+          "network_filtered": 0,
+          "recency_cut": 21,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 69,
+        "memory_recency_cut": 21
+      },
+      "seed": 44,
+      "simulation_id": "45f7e7a9d549422fb605b338c003b258",
+      "wall_clock_seconds": 145.889
+    },
+    {
+      "condition": "+importance+retrieval+reflection",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 5016,
+          "output_tokens": 976
+        },
+        "reflection_token_totals": {
+          "input_tokens": 4067,
+          "output_tokens": 548
+        },
+        "total_input_tokens": 37009,
+        "total_output_tokens": 4640,
+        "wall_clock_seconds": 186.449,
+        "weighted_retrieval_embed_api_calls": 33
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": -0.666667,
+          "planning": 0.0,
+          "reaction": -1.0,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 26,
+          "network_filtered": 0,
+          "recency_cut": 0,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.471405,
+          "planning": 0.0,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 1.333333,
+          "planning": 2.0,
+          "reaction": 0.333333,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 69,
+          "network_filtered": 0,
+          "recency_cut": 21,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 69,
+        "memory_recency_cut": 21
+      },
+      "seed": 42,
+      "simulation_id": "6f21849dd2e3495b8ea9124ec2bcbc38",
+      "wall_clock_seconds": 186.449
+    },
+    {
+      "condition": "+importance+retrieval+reflection",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 5016,
+          "output_tokens": 979
+        },
+        "reflection_token_totals": {
+          "input_tokens": 4052,
+          "output_tokens": 423
+        },
+        "total_input_tokens": 36994,
+        "total_output_tokens": 4518,
+        "wall_clock_seconds": 184.079,
+        "weighted_retrieval_embed_api_calls": 33
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": -0.666667,
+          "planning": -0.333333,
+          "reaction": -0.666666,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 26,
+          "network_filtered": 0,
+          "recency_cut": 0,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 1.0,
+            "planning": 1.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 1.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.471405,
+          "planning": 0.471405,
+          "reaction": 0.471405,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 1.333333,
+          "planning": 1.666667,
+          "reaction": 0.666667,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 69,
+          "network_filtered": 0,
+          "recency_cut": 21,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 69,
+        "memory_recency_cut": 21
+      },
+      "seed": 43,
+      "simulation_id": "c98f2c967b0e4848bb0485c51a910ddc",
+      "wall_clock_seconds": 184.079
+    },
+    {
+      "condition": "+importance+retrieval+reflection",
+      "cost": {
+        "estimated_cost_usd": 0.0,
+        "importance_scoring_token_totals": {
+          "input_tokens": 5016,
+          "output_tokens": 979
+        },
+        "reflection_token_totals": {
+          "input_tokens": 4062,
+          "output_tokens": 448
+        },
+        "total_input_tokens": 37004,
+        "total_output_tokens": 4543,
+        "wall_clock_seconds": 183.864,
+        "weighted_retrieval_embed_api_calls": 33
+      },
+      "deltas_vs_baseline": {
+        "interview_category_means": {
+          "memory_retrieval": -1.0,
+          "planning": 0.0,
+          "reaction": -1.333333,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        },
+        "membench_factual_mean": 0.0,
+        "membench_reflective_mean": 0.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 26,
+          "network_filtered": 0,
+          "recency_cut": 0,
+          "same_round_peer": -15,
+          "visibility_policy": -10
+        },
+        "memory_group_addressed_proportion": 0.0
+      },
+      "dispersion": {
+        "final_round_support_levels": [
+          0.55,
+          0.62,
+          0.5
+        ],
+        "final_round_support_stdev": 0.049216,
+        "interview_agent_category_means": {
+          "middle_manager_001_001": {
+            "memory_retrieval": 2.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "principal_001_000": {
+            "memory_retrieval": 0.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          },
+          "teacher_001_002": {
+            "memory_retrieval": 1.0,
+            "planning": 2.0,
+            "reaction": 0.0,
+            "reflection": 2.0,
+            "self_knowledge": 2.0
+          }
+        },
+        "interview_category_stdev_across_agents": {
+          "memory_retrieval": 0.816497,
+          "planning": 0.0,
+          "reaction": 0.0,
+          "reflection": 0.0,
+          "self_knowledge": 0.0
+        }
+      },
+      "metrics": {
+        "interview_category_means": {
+          "memory_retrieval": 1.0,
+          "planning": 2.0,
+          "reaction": 0.0,
+          "reflection": 2.0,
+          "self_knowledge": 2.0
+        },
+        "membench_factual_mean": 1.0,
+        "membench_reflective_mean": 1.0,
+        "memory_exclusion_breakdown": {
+          "char_budget_truncated": 0,
+          "included_clean": 69,
+          "network_filtered": 0,
+          "recency_cut": 21,
+          "same_round_peer": 0,
+          "visibility_policy": 0
+        },
+        "memory_group_addressed_proportion": 0.666667,
+        "memory_included_clean": 69,
+        "memory_recency_cut": 21
+      },
+      "seed": 44,
+      "simulation_id": "9a618882c24a44b3a2b91ffee1b0fed3",
+      "wall_clock_seconds": 183.864
+    }
+  ],
+  "seeds": [
+    42,
+    43,
+    44
+  ]
 }
