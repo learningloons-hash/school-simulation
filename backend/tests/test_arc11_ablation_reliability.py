@@ -23,6 +23,7 @@ if str(_SCRIPTS) not in sys.path:
 
 from run_arc11_ablation import (  # noqa: E402
     build_parser,
+    build_simulation_request,
     check_transcript_for_llm_errors,
     load_dotenv_if_present,
     load_existing_records,
@@ -269,6 +270,50 @@ async def test_diagnostics_retry_gives_up_with_actionable_message() -> None:
     assert "--skip-interview" in str(exc_info.value)
 
 
+@pytest.mark.asyncio
+async def test_diagnostics_retry_forces_interview_on_retry_after_partial_write() -> None:
+    """
+    Regression test for a real failure hit on a live ablation sweep: attempt 1's
+    interview step wrote some (but not all) response rows before hitting a
+    transient ReadTimeout; because ``simulation_id`` is always freshly-queued by
+    this same ablation run, any "already exists" rows found on retry can only be
+    our own partial write from attempt 1 -- so retries must force-replace them
+    rather than colliding with the uniqueness guard in
+    ``run_architectural_interview_for_simulation``.
+    """
+    calls: list[bool] = []
+
+    async def flaky(**kwargs):
+        calls.append(kwargs["force_interview"])
+        if len(calls) < 2:
+            # Simulate: partial interview rows already written, then a bare
+            # ReadTimeout with no message text (as observed live) -- the exact
+            # shape httpx raises for a stalled connection.
+            raise httpx.ReadTimeout("", request=None)
+        # Attempt 2 must have force_interview=True, or this would be the point
+        # where a real run hit "architectural interview already exists".
+        assert kwargs["force_interview"] is True
+        return {"ok": True}
+
+    with patch("run_arc11_ablation.run_arc10_diagnostics", new=flaky):
+        with patch("run_arc11_ablation.asyncio.sleep", new=AsyncMock()):
+            result = await run_diagnostics_with_retry(
+                settings=_FakeSettings(),
+                simulation_id="sim-1",
+                fixtures_dir=Path("."),
+                seed=42,
+                execute_interview=True,
+                interview_profile_id=ANTHROPIC_DEFAULT_ID,
+                judge_profile_id=ANTHROPIC_DEFAULT_ID,
+                max_attempts=3,
+                initial_backoff_s=0.01,
+            )
+    assert result == {"ok": True}
+    # First attempt must NOT force -- don't clobber a genuinely pre-existing
+    # interview unless we've already failed once ourselves.
+    assert calls == [False, True]
+
+
 # ---------------------------------------------------------------------------
 # Anthropic preflight leg
 # ---------------------------------------------------------------------------
@@ -391,6 +436,88 @@ async def test_preflight_anthropic_success_passes_silently() -> None:
                         interview_profile_id=ANTHROPIC_DEFAULT_ID,
                         judge_profile_id=ANTHROPIC_DEFAULT_ID,
                     )  # no raise
+
+
+# ---------------------------------------------------------------------------
+# --llm-provider anthropic / --no-rag: skip LM Studio checks that aren't needed
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_preflight_check_lmstudio_chat_false_skips_chat_probe() -> None:
+    models_resp = MagicMock()
+    models_resp.status_code = 200
+    mock_client = _mock_async_client(get_response=models_resp)
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "run_arc11_ablation.chat_completion_openai_compatible",
+            new_callable=AsyncMock,
+        ) as mock_chat:
+            with patch(
+                "run_arc11_ablation.embed_texts_openai_compatible",
+                new_callable=AsyncMock,
+                return_value=[[0.1]],
+            ):
+                await run_ablation_preflight(
+                    _FakeSettings(),
+                    check_embeddings=True,
+                    check_lmstudio_chat=False,
+                )
+    mock_chat.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_preflight_no_lmstudio_checks_needed_skips_models_probe_too() -> None:
+    """--llm-provider anthropic --no-rag together: nothing about LM Studio matters."""
+    mock_client = _mock_async_client()
+    with patch("httpx.AsyncClient", return_value=mock_client) as mock_client_cls:
+        await run_ablation_preflight(
+            _FakeSettings(),
+            check_embeddings=False,
+            check_lmstudio_chat=False,
+        )
+    mock_client_cls.assert_not_called()
+
+
+def test_build_simulation_request_threads_provider_overrides() -> None:
+    req = build_simulation_request(
+        condition="baseline",
+        seed=42,
+        profile=AblationRunProfile(),
+        network_csv="source_agent_id,target_agent_id,influence_weight\n",
+        llm_provider="anthropic",
+        model_profile_id=ANTHROPIC_DEFAULT_ID,
+        rag_enabled=False,
+    )
+    assert req.llm_provider == "anthropic"
+    assert req.model_profile_id == ANTHROPIC_DEFAULT_ID
+    assert req.rag_enabled is False
+
+
+def test_build_simulation_request_defaults_leave_provider_unset() -> None:
+    req = build_simulation_request(
+        condition="baseline",
+        seed=42,
+        profile=AblationRunProfile(),
+        network_csv="source_agent_id,target_agent_id,influence_weight\n",
+    )
+    assert req.llm_provider is None
+    assert req.model_profile_id is None
+    assert req.rag_enabled is None
+
+
+def test_cli_provider_override_flags_default_to_none() -> None:
+    args = build_parser().parse_args([])
+    assert args.llm_provider is None
+    assert args.model_profile_id is None
+    assert args.no_rag is False
+
+
+def test_cli_accepts_anthropic_provider_and_no_rag() -> None:
+    args = build_parser().parse_args(["--llm-provider", "anthropic", "--no-rag"])
+    assert args.llm_provider == "anthropic"
+    assert args.no_rag is True
 
 
 # ---------------------------------------------------------------------------

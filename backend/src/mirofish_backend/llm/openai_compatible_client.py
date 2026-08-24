@@ -37,7 +37,12 @@ async def chat_completion_openai_compatible(
     messages: list[dict[str, Any]],
     temperature: float,
     max_tokens: int = 512,
-    timeout_s: float = 120.0,
+    # 120s was too tight for local models under real load (RAG + importance-scoring
+    # calls stacking on modest hardware) -- observed ReadTimeouts escalating from
+    # 1/15 to 5/15 turns across an Arc 11 ablation sweep on a Mac Mini. Hosted
+    # providers (OpenAI/OpenRouter via this same client) will never approach this,
+    # so raising it only helps the local-model case and costs nothing elsewhere.
+    timeout_s: float = 300.0,
     api_key: str | None = None,
 ) -> tuple[str, int | None, int | None]:
     """
