@@ -323,6 +323,9 @@ async def init_db(sqlite_path: str) -> None:
         await _ensure_column(db, "agent_round_likert", "effective_provider", "TEXT")
         await _ensure_column(db, "agent_round_likert", "effective_model", "TEXT")
         await _ensure_column(db, "agent_round_likert", "effective_profile_id", "TEXT")
+        await _ensure_column(db, "user_scenarios", "source_repo", "TEXT")
+        await _ensure_column(db, "user_scenarios", "source_commit", "TEXT")
+        await _ensure_column(db, "user_scenarios", "seeded_at", "TIMESTAMP")
 
         await db.commit()
         logger.info("SQLite schema initialized")

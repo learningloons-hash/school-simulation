@@ -1739,19 +1739,30 @@ async def upsert_user_scenario(
     display_name: str,
     document_json: str,
     scenario_doc_version: str = "1",
+    source_repo: str | None = None,
+    source_commit: str | None = None,
 ) -> None:
     async with aiosqlite.connect(sqlite_path) as db:
         await db.execute(
             """
-            INSERT INTO user_scenarios (scenario_id, display_name, document_json, scenario_doc_version, updated_at)
-            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO user_scenarios (
+              scenario_id, display_name, document_json, scenario_doc_version,
+              source_repo, source_commit, seeded_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT(scenario_id) DO UPDATE SET
               display_name = excluded.display_name,
               document_json = excluded.document_json,
               scenario_doc_version = excluded.scenario_doc_version,
+              source_repo = COALESCE(excluded.source_repo, user_scenarios.source_repo),
+              source_commit = COALESCE(excluded.source_commit, user_scenarios.source_commit),
+              seeded_at = CASE
+                WHEN excluded.source_repo IS NOT NULL THEN CURRENT_TIMESTAMP
+                ELSE user_scenarios.seeded_at
+              END,
               updated_at = CURRENT_TIMESTAMP;
             """,
-            (scenario_id, display_name, document_json, scenario_doc_version),
+            (scenario_id, display_name, document_json, scenario_doc_version, source_repo, source_commit),
         )
         await db.commit()
 
@@ -1772,7 +1783,8 @@ async def get_user_scenario_row(sqlite_path: str, *, scenario_id: str) -> dict[s
     async with aiosqlite.connect(sqlite_path) as db:
         cursor = await db.execute(
             """
-            SELECT scenario_id, display_name, document_json, scenario_doc_version, updated_at
+            SELECT scenario_id, display_name, document_json, scenario_doc_version,
+                   updated_at, source_repo, source_commit, seeded_at
             FROM user_scenarios WHERE scenario_id = ?;
             """,
             (scenario_id,),
@@ -1786,6 +1798,9 @@ async def get_user_scenario_row(sqlite_path: str, *, scenario_id: str) -> dict[s
             "document_json": row[2],
             "scenario_doc_version": row[3],
             "updated_at": row[4],
+            "source_repo": row[5],
+            "source_commit": row[6],
+            "seeded_at": row[7],
         }
 
 
@@ -1793,7 +1808,8 @@ async def list_user_scenario_rows(sqlite_path: str) -> list[dict[str, Any]]:
     async with aiosqlite.connect(sqlite_path) as db:
         cursor = await db.execute(
             """
-            SELECT scenario_id, display_name, document_json, scenario_doc_version, updated_at
+            SELECT scenario_id, display_name, document_json, scenario_doc_version,
+                   updated_at, source_repo, source_commit, seeded_at
             FROM user_scenarios ORDER BY scenario_id ASC;
             """,
         )
@@ -1805,6 +1821,9 @@ async def list_user_scenario_rows(sqlite_path: str) -> list[dict[str, Any]]:
             "document_json": r[2],
             "scenario_doc_version": r[3],
             "updated_at": r[4],
+            "source_repo": r[5],
+            "source_commit": r[6],
+            "seeded_at": r[7],
         }
         for r in rows
     ]

@@ -1,0 +1,2 @@
+Synthetic briefing text for CI reunification tests only.
+No real case material.

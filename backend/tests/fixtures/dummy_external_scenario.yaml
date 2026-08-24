@@ -1,0 +1,30 @@
+scenario_id: dummy_external_scenario
+name: Dummy External Scenario
+policy_events:
+  "1": "Synthetic policy event for CI reunification test."
+  "2": "Second round policy text."
+rag_enabled: true
+rag_corpus_paths:
+  - dummy_external_scenario/brief.txt
+personas:
+  - persona_id: agent_alpha
+    role: coordinator
+    name: Alpha
+    role_level: 1
+    style_cues: Brief and neutral.
+    beliefs:
+      test_belief: 0.5
+  - persona_id: agent_beta
+    role: participant
+    name: Beta
+    role_level: 2
+    style_cues: Reflective.
+    beliefs:
+      test_belief: 0.4
+  - persona_id: agent_gamma
+    role: observer
+    name: Gamma
+    role_level: 3
+    style_cues: Observational.
+    beliefs:
+      test_belief: 0.3

@@ -1,0 +1,9 @@
+{
+  "scenario_id": "ciepss_school_b",
+  "source_repo": "https://github.com/learningloons-hash/senna-sstrf-study.git",
+  "source_commit": "47013659309c5ac047dbc53dcea3fd1441d74042",
+  "yaml_rel_path": "backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml",
+  "corpus_rel_dir": null,
+  "seeded_at": "2026-08-24T05:54:30+00:00",
+  "dirty": false
+}
