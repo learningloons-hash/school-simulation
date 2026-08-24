@@ -37,7 +37,7 @@ cd backend && uv run pytest -q
 
 ### Commit
 
-`TBD` — `senna-iter-54` Part A: fixture reunification
+`93368c9` — `senna-iter-54` Part A: fixture reunification
 
 ### Manual steps run
 
