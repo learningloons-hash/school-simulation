@@ -51,8 +51,10 @@ scripts/sstrf_*.py
 !scripts/sstrf_scoring_*.py
 !scripts/sstrf_elicitation_transcript.py
 !scripts/sstrf_rq1_scoring.py
+!scripts/run_sstrf_validity_trials.py
 backend/tests/test_sstrf_*.py
 !backend/tests/test_sstrf_rq1_scoring.py
+!backend/tests/test_sstrf_validity_v2_harness.py
 backend/tests/test_claude_client.py
 backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml
 docs/handoffs/HANDOFF_SSTRF_*
