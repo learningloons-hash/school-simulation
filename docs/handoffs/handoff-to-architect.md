@@ -38,7 +38,7 @@ cd backend && uv run pytest -q
 
 ### Commit
 
-`c0a6bfc` — `senna-iter-55` Part A (study rehearsal harness)
+`e093caa` — `senna-iter-55` Part A (study rehearsal harness)
 
 ### Open questions
 
