@@ -2,7 +2,7 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for review — `senna-iter-56` Part A complete.
+**Status:** Ready for review — `senna-iter-56` Part B complete.
 
 ---
 
@@ -10,21 +10,27 @@
 
 | Field | Value |
 |-------|--------|
-| **Iteration** | `senna-iter-56` Part A |
-| **Commit** | `906f260` |
-| **Tests** | `428 passed, 2 skipped` (`uv run pytest -q`) |
+| **Iteration** | `senna-iter-56` Part B |
+| **Commit** | `6f92902` |
+| **Tests** | N/A (docs only; no code changes) |
 
 ### Delivered
 
-1. **`economics.py`** — Extended `PROVIDER_PRICE_MAP` with `anthropic_haiku_3_5`, `anthropic_haiku_4_5`, `anthropic_sonnet`, `anthropic_opus_4`, `anthropic_opus_5`; kept generic `anthropic` as Sonnet-tier fallback. `PRICE_MAP_DATE` → `2026-08-25`. Env overrides now apply only to generic `anthropic` fallback (granular keys use map defaults). `resolve_billing_provider_key` accepts `effective_model` and resolves per-model keys for Anthropic turns.
+1. **`docs/diagnostics/ARC12_CONVERGENCE_CALIBRATION.md`**
+   - Stopping rule (float state, patience=2, no default threshold)
+   - Full `convergence_delta` tables for all six iter-55 RQ1 runs (sqlite/export source)
+   - Counterfactual threshold analysis (0.05 → round 3; 0.02 → round 8 uniformly)
+   - **Recommendation:** `convergence_threshold = 0.02`, `convergence_patience = 2`
+   - Repro SQL included
 
-2. **`model_profiles.py`** — Added `resolve_anthropic_pricing_key(model_id)`. `anthropic_default` sets `pricing_key` from `settings.anthropic_model`.
+2. **`docs/diagnostics/ARC12_STUDY_COST_TABLE.md`**
+   - Per-run table: config, seed, rounds, agents, tokens, cost, wall-clock, cost/round
+   - RQ1-15 and RQ1-20 totals and means; grand total $15.90 / ~899 s
+   - Config snapshot + pricing footnote (iter-55 generic bucket vs Part A Haiku rates)
+   - RQ2 explicitly deferred — no invented numbers
 
-3. **Tests** — `test_senna_iter56_price_map.py` (7 cases: Haiku 4.5, Opus 5, Opus 4 legacy, cost differential, unknown fallback, profile wiring, legacy provider fallback). Updated `test_iteration29.py` and `test_senna_arc8_economics.py` for Haiku 3.5 default rates.
+### Not in scope
 
-4. **`capabilities.py`** — Economics blurb notes per-model defaults.
-
-### Not in scope (Part B/C)
-
-- Convergence threshold calibration doc
-- Study cost table from iter-55 runs
+- iter-56 closeout (separate seed)
+- iter-57/58
+- New simulation runs or extraction scripts (sqlite query sufficient)
