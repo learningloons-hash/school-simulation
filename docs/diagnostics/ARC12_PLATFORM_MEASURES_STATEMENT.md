@@ -6,6 +6,23 @@
 
 **Product state:** `export_version` **14** (`backend/src/mirofish_backend/export_bundle.py`); platform closeout through **senna-iter-56** (`adb2763`).
 
+**Scoring system (GM-F delivered):** [`SSTRF_RQ1_SCORING_SYSTEM_V2.md`](../research/SSTRF_RQ1_SCORING_SYSTEM_V2.md) — supersedes the misread in §1 below.
+
+---
+
+## 0. Correction — build rule vs study scoring (GM-F, 2026-08-25)
+
+Earlier drafts of this document (§1, §4, §7) stated that scoring must **never use correspondence with CIEPSS**. That **misread** the Arc 11 non-negotiable.
+
+| Context | Rule |
+|---------|------|
+| **Platform development (Arc 11)** | Judge *builds* on platform measures — **never** select architecture by whether it reproduces a study case (fitting to the test set). |
+| **Study scoring (RQ1)** | The study's purpose **is** correspondence with CIEPSS dynamics. Propositions are CIEPSS findings; raters judge whether simulation evidence exhibits them. |
+
+**Still prohibited:** lexical matching, string overlap, embedding similarity to CIEPSS source text. Raters score dynamics from transcripts + elicitation against proposition statements — **not** against shown CIEPSS source text.
+
+**Not correspondence instruments** (diagnostic only, excluded from proposition scoring): MemBench, architectural interview. See GM-F §0 instrument table.
+
 ---
 
 ## 1. Scope
@@ -16,7 +33,7 @@
 | **Post-run diagnostics** | Scripts run **after** the live simulation (architectural interview, MemBench adapter, ablation summaries) — not part of the orchestrator loop unless explicitly invoked |
 | **External judge** | Any proposition-level or study-level scoring GM-F defines — **not implemented in product code today** |
 
-**Non-negotiable (Arc 11):** Judge and study validity claims **build on platform measures** (transcript, float state, diagnostics adapters). They **never** use correspondence with CIEPSS source text or “did the agent say what CIEPSS said.”
+**Arc 11 build rule:** Platform development judges **build on platform measures** — not on whether a configuration reproduces a study case. **Study scoring** (GM-F v2) judges correspondence with CIEPSS **dynamics** from transcript + elicitation evidence via rubric — never lexical overlap with source text.
 
 **Standing constraint (Arc 12):** iter-54–56 runs are **rehearsal / calibration**, not study-validity runs. This document describes **measure availability**, not study outcomes.
 
@@ -201,8 +218,8 @@ For each measure: **what**, **format**, **provenance**, **when produced**, **ava
 
 | Gap | Detail |
 |-----|--------|
-| **Proposition-level scores (P1–Pn)** | No built-in SSTRF proposition binding or pass/fail until GM-F defines criterion + external judge (or study-repo harness) |
-| **CIEPSS correspondence** | No text matching against CIEPSS corpus or “ground truth” dialogue |
+| **Proposition-level scores (P1–Pn) in product** | Defined in [`SSTRF_RQ1_SCORING_SYSTEM_V2.md`](../research/SSTRF_RQ1_SCORING_SYSTEM_V2.md); implemented via study-repo judge harness (iter-57 Part B) — not orchestrator output |
+| **Lexical CIEPSS matching** | Never — correspondence is dynamic/rubric-based, not string overlap |
 | **Blind plausibility ratings** | Arc 9 packet pipeline exists on **study repo** (iter-42); not product-orchestrator output |
 | **RQ2 actor scale** | ~20 documented actors + synthetic remainder **not rehearsed** — iter-55 `--skip-rq2` |
 | **MemBench / interview at study scale** | Adapters exist but were **not executed** on iter-55 six runs |
@@ -244,7 +261,7 @@ For each measure: **what**, **format**, **provenance**, **when produced**, **ava
 
 Checklist for scoring-system design (D1):
 
-1. **Bind propositions to platform measures** — map each testable claim to transcript, float state, Likert (if enabled), interview category, MemBench cell, or explicit external judge input — not CIEPSS text overlap.
+1. **Bind propositions to correspondence evidence** — per GM-F v2: elicitation responses + transcripts for raters; float state supporting only; MemBench/interview excluded from scoring. No lexical CIEPSS overlap.
 2. **Respect study profile switches** — `ciepss_school_b` today: Likert off, mechanisms off, 8 agents, network-bounded; convergence recommend τ = 0.02 if early stop used.
 3. **Separate live vs post-run** — orchestrator delivers §3.1–3.3, 3.6–3.11 during run; §3.4–3.5 require explicit post-run scripts.
 4. **Price and horizon** — use [`ARC12_STUDY_COST_TABLE.md`](./ARC12_STUDY_COST_TABLE.md) for RQ1 economics; RQ2 row empty until fixture exists.

@@ -43,9 +43,14 @@ Proposal.pdf
 Proposal.*
 simulation-study/
 docs/research/
+!docs/research/SSTRF_RATER_CALIBRATION_SET.md
 articles/
 scripts/sstrf_*.py
+!scripts/sstrf_scoring_*.py
+!scripts/sstrf_elicitation_transcript.py
+!scripts/sstrf_rq1_scoring.py
 backend/tests/test_sstrf_*.py
+!backend/tests/test_sstrf_rq1_scoring.py
 backend/tests/test_claude_client.py
 backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml
 docs/handoffs/HANDOFF_SSTRF_*
