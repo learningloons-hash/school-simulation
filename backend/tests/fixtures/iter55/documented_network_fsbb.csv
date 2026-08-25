@@ -1,0 +1,4 @@
+source_agent_id,target_agent_id,influence_weight
+principal_001_000,middle_manager_001_001,1.0
+middle_manager_001_001,teacher_001_002,0.8
+principal_001_000,teacher_001_002,0.5
