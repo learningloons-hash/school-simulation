@@ -12,7 +12,7 @@
 |-------|--------|
 | **Task** | `senna-iter-58` Part B — study seeds + freeze manifest |
 | **Branch** | `main` |
-| **Commit** | `d5bbdd5` |
+| **Commit** | `66ea88e` |
 | **Verification** | `cd backend && uv run pytest tests/test_senna_iter58_freeze.py -q` → **5 passed** |
 
 ### Delivered
@@ -32,5 +32,5 @@
 
 ### Notes for Architect
 
-- `pre_reg_commit` in freeze = Part A filing (`e3e74b9`); PREREG §7 seeds table updated in Part B commit `d5bbdd5`.
+- `pre_reg_commit` in freeze = Part A filing (`e3e74b9`); PREREG §7 seeds table updated in Part B commit `66ea88e`.
 - Study seeds 500–509 verified disjoint from diagnostic JSON seeds {42, 43, 44}.
