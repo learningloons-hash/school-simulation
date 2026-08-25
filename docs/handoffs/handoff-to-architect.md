@@ -2,7 +2,7 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for review — `senna-iter-56` closeout complete.
+**Status:** Ready for review — `senna-iter-57` Part A complete.
 
 ---
 
@@ -10,16 +10,18 @@
 
 | Field | Value |
 |-------|--------|
-| **Iteration** | `senna-iter-56` closeout |
-| **Commit** | `d1c62f8` |
+| **Iteration** | `senna-iter-57` Part A |
+| **Commit** | `cd2f750` |
 | **Tests** | N/A (docs only) |
 
 ### Delivered
 
-- **`docs/iterations/senna-iter-56-closeout.md`** — Parts A/B summary, ARC12 §3 DoD checklist (all met), iter-57 handoff notes (GM-F drafts scoring; Ops platform-measures statement only), iter-58 Mark-signature note, commits table, iter-56→iter-57 gate.
+- **`docs/diagnostics/ARC12_PLATFORM_MEASURES_STATEMENT.md`** — Ops input for GM-F: scope, export v14 inventory (transcript, float state, Likert, MemBench, interview, memory log, reflections, convergence, economics, config_snapshot), explicit gaps, iter-55/56 evidence links, iter-43 harness interface, GM-F checklist. **No scoring criterion.**
+
+### Blocked (Part B)
+
+- Calibration harness content in iter-43 machinery — **until GM-F delivers scoring system**
 
 ### Not in scope
 
-- iter-57 implementation
-- iter-58 pre-reg
-- `CLAUDE.md` Arc Status update
+- Scoring design, P5 decision, judge model, iter-58 pre-reg
