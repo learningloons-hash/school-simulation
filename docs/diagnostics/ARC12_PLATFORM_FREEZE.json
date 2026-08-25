@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "signature_status": "unsigned",
+  "frozen_at": "2026-08-25T04:41:00+00:00",
+  "platform_code_commit": "da906c3efee7e0e769c388e3dc09986eae6f93c3",
+  "scoring_harness_commit": "177306a75725e1fb168fc173cf104d289c3726ae",
+  "pre_reg_commit": "e3e74b9efee7e0e769c388e3dc09986eae6f93c3",
+  "pre_reg_path": "docs/research/PREREG_SSTRF_RQ1_V2.md",
+  "export_version": 14,
+  "fixture_provenance": {
+    "manifest_path": "docs/diagnostics/ciepss_school_b_provenance.json",
+    "scenario_id": "ciepss_school_b",
+    "source_repo": "https://github.com/learningloons-hash/senna-sstrf-study.git",
+    "source_commit": "47013659309c5ac047dbc53dcea3fd1441d74042",
+    "yaml_rel_path": "backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml",
+    "network_csv_rel_path": "docs/research/fixtures/ciepss_school_b_network.csv",
+    "seeded_at": "2026-08-24T05:54:30+00:00",
+    "dirty": false
+  },
+  "scoring_system": {
+    "path": "docs/research/SSTRF_RQ1_SCORING_SYSTEM_V2.md",
+    "blob_hash": "8130b7455422a1c474dd0cc1a647816b1fe593b8"
+  },
+  "study_seeds": {
+    "path": "docs/diagnostics/ARC12_STUDY_SEEDS.json"
+  }
+}

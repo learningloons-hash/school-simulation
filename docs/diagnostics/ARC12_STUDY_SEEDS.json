@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "selection_rule": "First ten integers >= 500 not in the exclusion set (500, 501, …, 509).",
+  "excluded_seeds": [42, 43, 44],
+  "excluded_seeds_source": "All \"seed\" values in docs/diagnostics/*.json (Arc 11 ablation, iter-54 confound, iter-55 rehearsal)",
+  "drafted_at": "2026-08-25T04:41:00+00:00",
+  "trials": [
+    {"trial_label": "trial-A", "random_seed": 500},
+    {"trial_label": "trial-B", "random_seed": 501},
+    {"trial_label": "trial-C", "random_seed": 502},
+    {"trial_label": "trial-D", "random_seed": 503},
+    {"trial_label": "trial-E", "random_seed": 504},
+    {"trial_label": "trial-F", "random_seed": 505},
+    {"trial_label": "trial-G", "random_seed": 506},
+    {"trial_label": "trial-H", "random_seed": 507},
+    {"trial_label": "trial-I", "random_seed": 508},
+    {"trial_label": "trial-J", "random_seed": 509}
+  ]
+}

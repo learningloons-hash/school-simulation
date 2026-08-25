@@ -31,7 +31,7 @@ Earlier drafts of this document (§1, §4, §7) stated that scoring must **never
 |------|------------|
 | **Study trial** | One completed `simulation_run` using scenario **`ciepss_school_b`**, 8 agents, Anthropic tier, documented CIEPSS network, `network_bounded` visibility — the iter-55 RQ1 rehearsal profile |
 | **Post-run diagnostics** | Scripts run **after** the live simulation (architectural interview, MemBench adapter, ablation summaries) — not part of the orchestrator loop unless explicitly invoked |
-| **External judge** | Any proposition-level or study-level scoring GM-F defines — **not implemented in product code today** |
+| **External judge** | GM-F v2 correspondence scoring via judge harness on product `main` (`scripts/sstrf_scoring_*.py`, iter-57 `177306a`) — not orchestrator output |
 
 **Arc 11 build rule:** Platform development judges **build on platform measures** — not on whether a configuration reproduces a study case. **Study scoring** (GM-F v2) judges correspondence with CIEPSS **dynamics** from transcript + elicitation evidence via rubric — never lexical overlap with source text.
 
@@ -218,7 +218,7 @@ For each measure: **what**, **format**, **provenance**, **when produced**, **ava
 
 | Gap | Detail |
 |-----|--------|
-| **Proposition-level scores (P1–Pn) in product** | Defined in [`SSTRF_RQ1_SCORING_SYSTEM_V2.md`](../research/SSTRF_RQ1_SCORING_SYSTEM_V2.md); implemented via study-repo judge harness (iter-57 Part B) — not orchestrator output |
+| **Proposition-level scores (P1–Pn) in product** | Not produced by orchestrator; GM-F v2 criterion implemented in judge harness on product `main` (iter-57 Part B, `177306a`, 56 tests in `test_sstrf_rq1_scoring.py`) |
 | **Lexical CIEPSS matching** | Never — correspondence is dynamic/rubric-based, not string overlap |
 | **Blind plausibility ratings** | Arc 9 packet pipeline exists on **study repo** (iter-42); not product-orchestrator output |
 | **RQ2 actor scale** | ~20 documented actors + synthetic remainder **not rehearsed** — iter-55 `--skip-rq2` |
@@ -243,17 +243,20 @@ For each measure: **what**, **format**, **provenance**, **when produced**, **ava
 
 ---
 
-## 6. Study-repo iter-43 calibration harness (interface only)
+## 6. RQ1 scoring harness (product `main`, iter-57 Part B)
 
-**Location:** study repo (`senna-sstrf-study` / `sstrf-local` branch), **not** product `main`. Delivered iter-43; verified iter-44 ([`senna-iter-44-closeout.md`](../iterations/senna-iter-44-closeout.md): `test_sstrf_rq1_scoring.py` — 1-vs-2 discrimination + double-miss gate).
+**Location:** product repo `main` — `scripts/sstrf_scoring_*.py`, `scripts/sstrf_rq1_scoring.py`,
+`backend/tests/test_sstrf_rq1_scoring.py` (commit `177306a`, **56 tests**).
 
-**Interface (Ops view):**
+**Status:** GM-F scoring system v2 **implemented** (iter-57 Part B). Calibration content C1–C5,
+per-agent scoring (17 judgements/trial), rater packet leakage checks, adjudication, and
+aggregation per [`SSTRF_RQ1_SCORING_SYSTEM_V2.md`](../research/SSTRF_RQ1_SCORING_SYSTEM_V2.md).
 
-- Consumes **export bundles** (or equivalent trial artifacts) from Senna runs
-- Supports **calibration trials** with known expected score levels for judge discrimination testing
-- **Does not** define proposition text or study thresholds — those are GM-F inputs
+**Interface:** Consumes elicitation JSON + export bundles; does not define proposition text or
+thresholds (GM-F document is authoritative).
 
-**Part B (iter-57):** Ops implements calibration set **content** inside this machinery **after** GM-F delivers the scoring system. **Blocked until then.**
+**Study-repo note:** Arc 9 iter-43 originally delivered on `sstrf-local`; product `main` now hosts
+the v2 harness with synthetic fixtures (iter-43 pattern).
 
 ---
 
@@ -266,10 +269,10 @@ Checklist for scoring-system design (D1):
 3. **Separate live vs post-run** — orchestrator delivers §3.1–3.3, 3.6–3.11 during run; §3.4–3.5 require explicit post-run scripts.
 4. **Price and horizon** — use [`ARC12_STUDY_COST_TABLE.md`](./ARC12_STUDY_COST_TABLE.md) for RQ1 economics; RQ2 row empty until fixture exists.
 5. **P5 and compound propositions** — platform provides judge **inputs** (transcript + diagnostics); structural reachability of score levels is a **criterion design** question (Phase V note in ARC12 §4).
-6. **Pre-reg (iter-58)** — scoring system + full `config_snapshot` fields + platform commit + study-repo fixture hash; **Mark signature** before study output.
+6. **Pre-reg (iter-58)** — [`PREREG_SSTRF_RQ1_V2.md`](../research/PREREG_SSTRF_RQ1_V2.md) drafted; study seeds and platform freeze in [`ARC12_PLATFORM_FREEZE.json`](./ARC12_PLATFORM_FREEZE.json) — **Mark signature** before study output.
 
-**Ops next step:** await GM-F scoring delivery → seed **iter-57 Part B** (calibration harness content).
+**Ops next step:** iter-58 freeze complete — await **Mark signature** on pre-reg v2, then execute validity trials under frozen config.
 
 ---
 
-*Document: senna-iter-57 Part A. No scoring criterion authored here.*
+*Document: senna-iter-57 Part A; updated senna-iter-58 Part B (freeze housekeeping).*

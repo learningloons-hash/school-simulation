@@ -179,20 +179,32 @@ architectural interview outputs.
 
 ## 7. Study seeds and trial labels
 
-**Placeholder — fixed in Part B (`docs/diagnostics/ARC12_STUDY_SEEDS.json`).**
+Ten trials share one fixture, one case, one model, and one prompt structure; they differ only
+by `random_seed`. Trial labels: `trial-A` … `trial-J`.
 
-Ten trials will share one fixture, one case, one model, and one prompt structure; they differ
-only by `random_seed`. Trial labels: `trial-A` … `trial-J`.
+**Manifest:** [`docs/diagnostics/ARC12_STUDY_SEEDS.json`](../diagnostics/ARC12_STUDY_SEEDS.json)
 
-Seeds will be:
+**Selection rule:** first ten integers ≥ 500 not in the Arc 9–12 development exclusion set
+(42, 43, 44) → seeds **500–509**.
 
-- Fixed in advance before any validity trial is run.
-- **Distinct** from Arc 9–12 development seeds **42, 43, 44** and from every seed listed in
-  Arc 9–12 diagnostic JSON under `docs/diagnostics/`.
-- Recorded in the platform freeze manifest (Part B) and inserted into this section when Part B
-  lands.
+| Trial label | `random_seed` |
+|---|---|
+| trial-A | 500 |
+| trial-B | 501 |
+| trial-C | 502 |
+| trial-D | 503 |
+| trial-E | 504 |
+| trial-F | 505 |
+| trial-G | 506 |
+| trial-H | 507 |
+| trial-I | 508 |
+| trial-J | 509 |
 
-Until Part B commits, **no validity trial may be executed.**
+**Platform freeze:** [`docs/diagnostics/ARC12_PLATFORM_FREEZE.json`](../diagnostics/ARC12_PLATFORM_FREEZE.json)
+records platform commit, fixture provenance, scoring document hash, and seed manifest.
+
+Validity trials may proceed **only after Mark signs** this pre-registration (§Signature) and the
+freeze manifest is binding.
 
 ---
 
