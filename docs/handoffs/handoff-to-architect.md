@@ -2,7 +2,7 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for review — `senna-iter-54` Part C complete.
+**Status:** Ready for review — `senna-iter-54` closeout (Architect drafted pending commit).
 
 ---
 
@@ -10,34 +10,25 @@
 
 ### Summary
 
-Evidence-only individuation report synthesising Arc 11 (local 8B) and Part B (Anthropic) dispersion data. No code, no new runs.
+Combined iter-54 closeout doc written per seeded spec §4. Documentation only.
 
-**Deliverable:** `docs/diagnostics/ARC12_INDIVIDUATION_FINDING.md`
+**Deliverable:** `docs/iterations/senna-iter-54-closeout.md`
 
-### DoD (Part C §3)
+### DoD
 
-| Item | YES/NO | Note |
-|------|--------|------|
-| Arc 11 dispersion stated (≈0.00 / ≈0.31 / ≈0.27) | YES | §1, sourced from iter-53 closeout |
-| Part B dispersion reported separately from mechanism call | YES | §2 — support stdev + interview stdev; cites Part B interpretation without adopting it |
-| Study-validity framing for P1/P3/P4 | YES | §3 — labelled study-validity, not mechanism quality |
-| Stops before mechanism-defaults conclusion | YES | §4 — GM-F's call |
-| Legible without Arc 11 closeout | YES | Metric definitions + summary table included |
-| Evidence-only, no transcript scoring | YES | |
-
-### Verification
-
-No pytest (documentation-only slice).
+| Item | YES/NO |
+|------|--------|
+| Parts A/B/C summarised with commits | YES |
+| GM-F evidence synthesis (no defaults recommendation) | YES |
+| iter-58 provenance pointer | YES |
+| iter-55 carry-forward notes | YES |
+| iter-54 → iter-55 gate explicit | YES |
+| Legible without prior handoffs | YES |
 
 ### Commit
 
-`615ffc1` — `senna-iter-54` Part C (individuation finding)
-
-### Open questions
-
-- `iter-54` combined closeout doc — out of scope unless Mark asks
-- Study-profile dispersion verification deferred to `iter-55` rehearsal
+Pending — `senna-iter-54` closeout
 
 ---
 
-**Spawn line for Architect:** Review Part C against `handoff-to-builder.md` § Active task and `HANDOFF_SENNA_ITER54.md` §3.
+**Spawn line for Architect:** Review closeout against `handoff-to-builder.md` § Active task.
