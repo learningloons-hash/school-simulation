@@ -1,0 +1,747 @@
+{
+  "harness": "senna-iter-55",
+  "profile": {
+    "scenario_id": "ciepss_school_b",
+    "agent_limit": 8,
+    "visibility_policy": "network_bounded",
+    "sampling_strategy": "full_census",
+    "network_csv_rel_path": "docs/research/fixtures/ciepss_school_b_network.csv",
+    "network_csv_note": "documented CIEPSS links from study repo (not synthetic chain)"
+  },
+  "interim_mechanism_flags": {
+    "importance_scoring_enabled": false,
+    "weighted_retrieval_enabled": false,
+    "reflection_enabled": false
+  },
+  "interim_flags_note": "GM-F formal ruling pending; iter-53 frozen defaults until ruled otherwise.",
+  "rq2": {
+    "skipped": true,
+    "note": "RQ2 (~20 documented actors + synthetic remainder) deferred \u2014 no platform scenario fixture today; pending Lee (2020) case per ARC12 \u00a77. Re-run without --skip-rq2 when study-repo fixture and scenario exist."
+  },
+  "command": "../scripts/run_arc12_study_rehearsal.py --study-repo-path /Users/home/cursor-projects/project-1/senna-sstrf-study --network-csv-rel-path docs/research/fixtures/ciepss_school_b_network.csv --llm-provider anthropic --seeds 42 43 44 --rounds 15 20 --skip-rq2",
+  "runs": [
+    {
+      "label": "RQ1-15",
+      "rounds": 15,
+      "seed": 42,
+      "simulation_id": "8c6d1ec1968348e4b2a3b14b008d8652",
+      "status": "completed",
+      "mechanics": {
+        "wall_clock_seconds": 128.917,
+        "total_input_tokens": 540800,
+        "total_output_tokens": 30987,
+        "estimated_cost_usd": 2.087205,
+        "llm_error_count": 0,
+        "context_length_failure_count": 0,
+        "group_addressed_proportion": 0.25,
+        "memory_exclusion_breakdown": {
+          "included_clean": 221,
+          "char_budget_truncated": 2,
+          "visibility_policy": 850,
+          "network_filtered": 0,
+          "recency_cut": 349,
+          "same_round_peer": 58
+        },
+        "state_update_source_counts": {
+          "model_parsed": 120
+        },
+        "token_totals_by_round": {
+          "1": {
+            "input_tokens": 3446,
+            "output_tokens": 1287,
+            "turns": 8
+          },
+          "2": {
+            "input_tokens": 9017,
+            "output_tokens": 1486,
+            "turns": 8
+          },
+          "3": {
+            "input_tokens": 13463,
+            "output_tokens": 1655,
+            "turns": 8
+          },
+          "4": {
+            "input_tokens": 17456,
+            "output_tokens": 1840,
+            "turns": 8
+          },
+          "5": {
+            "input_tokens": 21587,
+            "output_tokens": 1998,
+            "turns": 8
+          },
+          "6": {
+            "input_tokens": 25912,
+            "output_tokens": 2211,
+            "turns": 8
+          },
+          "7": {
+            "input_tokens": 30856,
+            "output_tokens": 2304,
+            "turns": 8
+          },
+          "8": {
+            "input_tokens": 35825,
+            "output_tokens": 2235,
+            "turns": 8
+          },
+          "9": {
+            "input_tokens": 40353,
+            "output_tokens": 2206,
+            "turns": 8
+          },
+          "10": {
+            "input_tokens": 44885,
+            "output_tokens": 2271,
+            "turns": 8
+          },
+          "11": {
+            "input_tokens": 49794,
+            "output_tokens": 2298,
+            "turns": 8
+          },
+          "12": {
+            "input_tokens": 54782,
+            "output_tokens": 2285,
+            "turns": 8
+          },
+          "13": {
+            "input_tokens": 59583,
+            "output_tokens": 2293,
+            "turns": 8
+          },
+          "14": {
+            "input_tokens": 64402,
+            "output_tokens": 2302,
+            "turns": 8
+          },
+          "15": {
+            "input_tokens": 69439,
+            "output_tokens": 2316,
+            "turns": 8
+          }
+        },
+        "final_round_support_stdev": 0.071414,
+        "network_csv_applied": true,
+        "network_edge_count": 9,
+        "visibility_effective": "network_bounded"
+      }
+    },
+    {
+      "label": "RQ1-15",
+      "rounds": 15,
+      "seed": 43,
+      "simulation_id": "5e7d44a5da1d47cfb9a6dc7d2a590876",
+      "status": "completed",
+      "mechanics": {
+        "wall_clock_seconds": 129.401,
+        "total_input_tokens": 503056,
+        "total_output_tokens": 29554,
+        "estimated_cost_usd": 1.952478,
+        "llm_error_count": 0,
+        "context_length_failure_count": 0,
+        "group_addressed_proportion": 0.25,
+        "memory_exclusion_breakdown": {
+          "included_clean": 217,
+          "char_budget_truncated": 6,
+          "visibility_policy": 857,
+          "network_filtered": 0,
+          "recency_cut": 349,
+          "same_round_peer": 51
+        },
+        "state_update_source_counts": {
+          "model_parsed": 120
+        },
+        "token_totals_by_round": {
+          "1": {
+            "input_tokens": 3446,
+            "output_tokens": 1344,
+            "turns": 8
+          },
+          "2": {
+            "input_tokens": 9132,
+            "output_tokens": 1541,
+            "turns": 8
+          },
+          "3": {
+            "input_tokens": 13697,
+            "output_tokens": 1728,
+            "turns": 8
+          },
+          "4": {
+            "input_tokens": 17680,
+            "output_tokens": 1878,
+            "turns": 8
+          },
+          "5": {
+            "input_tokens": 21628,
+            "output_tokens": 2090,
+            "turns": 8
+          },
+          "6": {
+            "input_tokens": 25607,
+            "output_tokens": 2076,
+            "turns": 8
+          },
+          "7": {
+            "input_tokens": 29643,
+            "output_tokens": 2125,
+            "turns": 8
+          },
+          "8": {
+            "input_tokens": 33829,
+            "output_tokens": 2095,
+            "turns": 8
+          },
+          "9": {
+            "input_tokens": 37862,
+            "output_tokens": 2084,
+            "turns": 8
+          },
+          "10": {
+            "input_tokens": 41794,
+            "output_tokens": 2048,
+            "turns": 8
+          },
+          "11": {
+            "input_tokens": 45647,
+            "output_tokens": 2141,
+            "turns": 8
+          },
+          "12": {
+            "input_tokens": 49730,
+            "output_tokens": 2094,
+            "turns": 8
+          },
+          "13": {
+            "input_tokens": 53772,
+            "output_tokens": 2120,
+            "turns": 8
+          },
+          "14": {
+            "input_tokens": 57783,
+            "output_tokens": 2121,
+            "turns": 8
+          },
+          "15": {
+            "input_tokens": 61806,
+            "output_tokens": 2069,
+            "turns": 8
+          }
+        },
+        "final_round_support_stdev": 0.046904,
+        "network_csv_applied": true,
+        "network_edge_count": 9,
+        "visibility_effective": "network_bounded"
+      }
+    },
+    {
+      "label": "RQ1-15",
+      "rounds": 15,
+      "seed": 44,
+      "simulation_id": "2f995f368c814d0e9b142f6c689bd720",
+      "status": "completed",
+      "mechanics": {
+        "wall_clock_seconds": 132.406,
+        "total_input_tokens": 509397,
+        "total_output_tokens": 29197,
+        "estimated_cost_usd": 1.966146,
+        "llm_error_count": 0,
+        "context_length_failure_count": 0,
+        "group_addressed_proportion": 0.25,
+        "memory_exclusion_breakdown": {
+          "included_clean": 219,
+          "char_budget_truncated": 4,
+          "visibility_policy": 855,
+          "network_filtered": 0,
+          "recency_cut": 349,
+          "same_round_peer": 53
+        },
+        "state_update_source_counts": {
+          "model_parsed": 120
+        },
+        "token_totals_by_round": {
+          "1": {
+            "input_tokens": 3446,
+            "output_tokens": 1313,
+            "turns": 8
+          },
+          "2": {
+            "input_tokens": 9084,
+            "output_tokens": 1495,
+            "turns": 8
+          },
+          "3": {
+            "input_tokens": 13490,
+            "output_tokens": 1609,
+            "turns": 8
+          },
+          "4": {
+            "input_tokens": 17250,
+            "output_tokens": 1790,
+            "turns": 8
+          },
+          "5": {
+            "input_tokens": 21047,
+            "output_tokens": 1998,
+            "turns": 8
+          },
+          "6": {
+            "input_tokens": 25144,
+            "output_tokens": 1955,
+            "turns": 8
+          },
+          "7": {
+            "input_tokens": 29233,
+            "output_tokens": 2091,
+            "turns": 8
+          },
+          "8": {
+            "input_tokens": 33712,
+            "output_tokens": 2042,
+            "turns": 8
+          },
+          "9": {
+            "input_tokens": 37798,
+            "output_tokens": 2022,
+            "turns": 8
+          },
+          "10": {
+            "input_tokens": 42101,
+            "output_tokens": 2104,
+            "turns": 8
+          },
+          "11": {
+            "input_tokens": 46565,
+            "output_tokens": 2086,
+            "turns": 8
+          },
+          "12": {
+            "input_tokens": 50988,
+            "output_tokens": 2098,
+            "turns": 8
+          },
+          "13": {
+            "input_tokens": 55308,
+            "output_tokens": 2138,
+            "turns": 8
+          },
+          "14": {
+            "input_tokens": 59796,
+            "output_tokens": 2229,
+            "turns": 8
+          },
+          "15": {
+            "input_tokens": 64435,
+            "output_tokens": 2227,
+            "turns": 8
+          }
+        },
+        "final_round_support_stdev": 0.03937,
+        "network_csv_applied": true,
+        "network_edge_count": 9,
+        "visibility_effective": "network_bounded"
+      }
+    },
+    {
+      "label": "RQ1-20",
+      "rounds": 20,
+      "seed": 42,
+      "simulation_id": "fa54ad08d90a459ca352fb6d8aaf9dff",
+      "status": "completed",
+      "mechanics": {
+        "wall_clock_seconds": 169.18,
+        "total_input_tokens": 918862,
+        "total_output_tokens": 40685,
+        "estimated_cost_usd": 3.366861,
+        "llm_error_count": 0,
+        "context_length_failure_count": 0,
+        "group_addressed_proportion": 0.25,
+        "memory_exclusion_breakdown": {
+          "included_clean": 303,
+          "char_budget_truncated": 0,
+          "visibility_policy": 1164,
+          "network_filtered": 0,
+          "recency_cut": 479,
+          "same_round_peer": 74
+        },
+        "state_update_source_counts": {
+          "model_parsed": 160
+        },
+        "token_totals_by_round": {
+          "1": {
+            "input_tokens": 3446,
+            "output_tokens": 1297,
+            "turns": 8
+          },
+          "2": {
+            "input_tokens": 9037,
+            "output_tokens": 1447,
+            "turns": 8
+          },
+          "3": {
+            "input_tokens": 13426,
+            "output_tokens": 1636,
+            "turns": 8
+          },
+          "4": {
+            "input_tokens": 17354,
+            "output_tokens": 1815,
+            "turns": 8
+          },
+          "5": {
+            "input_tokens": 21397,
+            "output_tokens": 2003,
+            "turns": 8
+          },
+          "6": {
+            "input_tokens": 25585,
+            "output_tokens": 2037,
+            "turns": 8
+          },
+          "7": {
+            "input_tokens": 29855,
+            "output_tokens": 2108,
+            "turns": 8
+          },
+          "8": {
+            "input_tokens": 34389,
+            "output_tokens": 1976,
+            "turns": 8
+          },
+          "9": {
+            "input_tokens": 38436,
+            "output_tokens": 2086,
+            "turns": 8
+          },
+          "10": {
+            "input_tokens": 42707,
+            "output_tokens": 2107,
+            "turns": 8
+          },
+          "11": {
+            "input_tokens": 47200,
+            "output_tokens": 2139,
+            "turns": 8
+          },
+          "12": {
+            "input_tokens": 51739,
+            "output_tokens": 2129,
+            "turns": 8
+          },
+          "13": {
+            "input_tokens": 56295,
+            "output_tokens": 2200,
+            "turns": 8
+          },
+          "14": {
+            "input_tokens": 60997,
+            "output_tokens": 2086,
+            "turns": 8
+          },
+          "15": {
+            "input_tokens": 65484,
+            "output_tokens": 2214,
+            "turns": 8
+          },
+          "16": {
+            "input_tokens": 70351,
+            "output_tokens": 2249,
+            "turns": 8
+          },
+          "17": {
+            "input_tokens": 75367,
+            "output_tokens": 2347,
+            "turns": 8
+          },
+          "18": {
+            "input_tokens": 80468,
+            "output_tokens": 2251,
+            "turns": 8
+          },
+          "19": {
+            "input_tokens": 85222,
+            "output_tokens": 2246,
+            "turns": 8
+          },
+          "20": {
+            "input_tokens": 90107,
+            "output_tokens": 2312,
+            "turns": 8
+          }
+        },
+        "final_round_support_stdev": 0.050436,
+        "network_csv_applied": true,
+        "network_edge_count": 9,
+        "visibility_effective": "network_bounded"
+      }
+    },
+    {
+      "label": "RQ1-20",
+      "rounds": 20,
+      "seed": 43,
+      "simulation_id": "a91dcb4cd3f545ab9f2c96fcaeab7de2",
+      "status": "completed",
+      "mechanics": {
+        "wall_clock_seconds": 155.18,
+        "total_input_tokens": 915151,
+        "total_output_tokens": 39890,
+        "estimated_cost_usd": 3.343803,
+        "llm_error_count": 0,
+        "context_length_failure_count": 0,
+        "group_addressed_proportion": 0.25,
+        "memory_exclusion_breakdown": {
+          "included_clean": 303,
+          "char_budget_truncated": 0,
+          "visibility_policy": 1169,
+          "network_filtered": 0,
+          "recency_cut": 479,
+          "same_round_peer": 69
+        },
+        "state_update_source_counts": {
+          "model_parsed": 160
+        },
+        "token_totals_by_round": {
+          "1": {
+            "input_tokens": 3446,
+            "output_tokens": 1301,
+            "turns": 8
+          },
+          "2": {
+            "input_tokens": 9037,
+            "output_tokens": 1528,
+            "turns": 8
+          },
+          "3": {
+            "input_tokens": 13516,
+            "output_tokens": 1757,
+            "turns": 8
+          },
+          "4": {
+            "input_tokens": 17674,
+            "output_tokens": 1879,
+            "turns": 8
+          },
+          "5": {
+            "input_tokens": 21701,
+            "output_tokens": 1966,
+            "turns": 8
+          },
+          "6": {
+            "input_tokens": 25613,
+            "output_tokens": 2163,
+            "turns": 8
+          },
+          "7": {
+            "input_tokens": 30170,
+            "output_tokens": 2073,
+            "turns": 8
+          },
+          "8": {
+            "input_tokens": 34428,
+            "output_tokens": 2074,
+            "turns": 8
+          },
+          "9": {
+            "input_tokens": 38762,
+            "output_tokens": 2115,
+            "turns": 8
+          },
+          "10": {
+            "input_tokens": 43191,
+            "output_tokens": 2086,
+            "turns": 8
+          },
+          "11": {
+            "input_tokens": 47622,
+            "output_tokens": 2155,
+            "turns": 8
+          },
+          "12": {
+            "input_tokens": 52064,
+            "output_tokens": 2159,
+            "turns": 8
+          },
+          "13": {
+            "input_tokens": 56653,
+            "output_tokens": 2127,
+            "turns": 8
+          },
+          "14": {
+            "input_tokens": 61057,
+            "output_tokens": 2093,
+            "turns": 8
+          },
+          "15": {
+            "input_tokens": 65402,
+            "output_tokens": 2038,
+            "turns": 8
+          },
+          "16": {
+            "input_tokens": 69839,
+            "output_tokens": 2095,
+            "turns": 8
+          },
+          "17": {
+            "input_tokens": 74505,
+            "output_tokens": 2090,
+            "turns": 8
+          },
+          "18": {
+            "input_tokens": 79077,
+            "output_tokens": 2053,
+            "turns": 8
+          },
+          "19": {
+            "input_tokens": 83453,
+            "output_tokens": 2060,
+            "turns": 8
+          },
+          "20": {
+            "input_tokens": 87941,
+            "output_tokens": 2078,
+            "turns": 8
+          }
+        },
+        "final_round_support_stdev": 0.02222,
+        "network_csv_applied": true,
+        "network_edge_count": 9,
+        "visibility_effective": "network_bounded"
+      }
+    },
+    {
+      "label": "RQ1-20",
+      "rounds": 20,
+      "seed": 44,
+      "simulation_id": "5332c81e67f3402f9a11f35c68db9072",
+      "status": "completed",
+      "mechanics": {
+        "wall_clock_seconds": 184.516,
+        "total_input_tokens": 864217,
+        "total_output_tokens": 39039,
+        "estimated_cost_usd": 3.178236,
+        "llm_error_count": 0,
+        "context_length_failure_count": 0,
+        "group_addressed_proportion": 0.25,
+        "memory_exclusion_breakdown": {
+          "included_clean": 297,
+          "char_budget_truncated": 6,
+          "visibility_policy": 1173,
+          "network_filtered": 0,
+          "recency_cut": 479,
+          "same_round_peer": 66
+        },
+        "state_update_source_counts": {
+          "model_parsed": 160
+        },
+        "token_totals_by_round": {
+          "1": {
+            "input_tokens": 3446,
+            "output_tokens": 1328,
+            "turns": 8
+          },
+          "2": {
+            "input_tokens": 9099,
+            "output_tokens": 1517,
+            "turns": 8
+          },
+          "3": {
+            "input_tokens": 13551,
+            "output_tokens": 1666,
+            "turns": 8
+          },
+          "4": {
+            "input_tokens": 17445,
+            "output_tokens": 1744,
+            "turns": 8
+          },
+          "5": {
+            "input_tokens": 21234,
+            "output_tokens": 2009,
+            "turns": 8
+          },
+          "6": {
+            "input_tokens": 25369,
+            "output_tokens": 2017,
+            "turns": 8
+          },
+          "7": {
+            "input_tokens": 29380,
+            "output_tokens": 2107,
+            "turns": 8
+          },
+          "8": {
+            "input_tokens": 33524,
+            "output_tokens": 2120,
+            "turns": 8
+          },
+          "9": {
+            "input_tokens": 37518,
+            "output_tokens": 2104,
+            "turns": 8
+          },
+          "10": {
+            "input_tokens": 41367,
+            "output_tokens": 2056,
+            "turns": 8
+          },
+          "11": {
+            "input_tokens": 45229,
+            "output_tokens": 1994,
+            "turns": 8
+          },
+          "12": {
+            "input_tokens": 48971,
+            "output_tokens": 2040,
+            "turns": 8
+          },
+          "13": {
+            "input_tokens": 52962,
+            "output_tokens": 2028,
+            "turns": 8
+          },
+          "14": {
+            "input_tokens": 57015,
+            "output_tokens": 2015,
+            "turns": 8
+          },
+          "15": {
+            "input_tokens": 61019,
+            "output_tokens": 1979,
+            "turns": 8
+          },
+          "16": {
+            "input_tokens": 65041,
+            "output_tokens": 1973,
+            "turns": 8
+          },
+          "17": {
+            "input_tokens": 69095,
+            "output_tokens": 2046,
+            "turns": 8
+          },
+          "18": {
+            "input_tokens": 73367,
+            "output_tokens": 2084,
+            "turns": 8
+          },
+          "19": {
+            "input_tokens": 77675,
+            "output_tokens": 2120,
+            "turns": 8
+          },
+          "20": {
+            "input_tokens": 81910,
+            "output_tokens": 2092,
+            "turns": 8
+          }
+        },
+        "final_round_support_stdev": 0.016583,
+        "network_csv_applied": true,
+        "network_edge_count": 9,
+        "visibility_effective": "network_bounded"
+      }
+    }
+  ]
+}
