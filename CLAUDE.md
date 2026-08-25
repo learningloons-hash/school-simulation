@@ -27,3 +27,5 @@
 | 6 | Context Bounding & Simulation Transcripts | ✅ CLOSED |
 | 7 | Model Portability Foundation | ✅ CLOSED (GM PASS) — [`docs/handoffs/HANDOFF_SENNA_ARC7.md`](docs/handoffs/HANDOFF_SENNA_ARC7.md) (`senna-iter-30`–`34`) |
 | 8 | Model Ecosystem and Guardrails | ✅ CLOSED (GM PASS) — [`docs/handoffs/HANDOFF_SENNA_ARC8.md`](docs/handoffs/HANDOFF_SENNA_ARC8.md) (`senna-iter-35`–`39`) |
+| 11 | Memory Architecture | ✅ CLOSED (GM PASS WITH ISSUES, 2026-08-24) — [`docs/handoffs/HANDOFF_SENNA_ARC11.md`](docs/handoffs/HANDOFF_SENNA_ARC11.md) / [`senna-iter-53-closeout.md`](docs/iterations/senna-iter-53-closeout.md) (`senna-iter-49`–`53`) |
+| 12 | Freeze and Study Readiness | 🚧 IN PROGRESS — [`docs/handoffs/HANDOFF_SENNA_ARC12.md`](docs/handoffs/HANDOFF_SENNA_ARC12.md) (`senna-iter-54`–`58`; iter-57 ✅, iter-58 pending Mark signature) |

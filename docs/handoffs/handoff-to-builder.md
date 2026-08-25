@@ -4,90 +4,91 @@
 
 ---
 
-## Active task — `senna-iter-54` closeout
+## Active task — `senna-iter-58` Part A (pre-registration v2 draft)
 
 | Field | Value |
 |-------|--------|
 | **Arc** | 12 — Freeze and Study Readiness |
-| **Spec** | [`HANDOFF_SENNA_ITER54.md`](./HANDOFF_SENNA_ITER54.md) §4 + §5 |
+| **Spec** | [`HANDOFF_SENNA_ARC12.md`](./HANDOFF_SENNA_ARC12.md) §5 |
+| **Scoring** | [`SSTRF_RQ1_SCORING_SYSTEM_V2.md`](../research/SSTRF_RQ1_SCORING_SYSTEM_V2.md) — incorporate by reference, do not rewrite propositions |
 | **Branch** | `main` |
-| **Base** | `37d8419` (Part C) |
-| **Commit** | One commit for closeout only |
+| **Base** | iter-57 closeout commit |
+| **Commit** | One commit for Part A only |
 
 ### Goal
 
-Write the combined iter-54 closeout doc. Documentation only — no code, no new runs.
+Draft **pre-registration v2** for RQ1. Documentation only — no live study runs, no scoring live trials. **Mark signs before any study output exists** — leave an explicit signature block; do not mark as signed.
 
-### Deliverable
+### Required deliverable
 
-**New file:** `docs/iterations/senna-iter-54-closeout.md`
+**New file:** `docs/research/PREREG_SSTRF_RQ1_V2.md`
 
-Follow the tone/structure of [`senna-iter-53-closeout.md`](../iterations/senna-iter-53-closeout.md) — evidence tables, plain findings, explicit gates.
+Follow ARC12 §5. Must record and resolve:
 
-### Required sections
+| Field | Source to cite |
+|-------|----------------|
+| Platform commit | `git rev-parse HEAD` at commit time |
+| Fixture repo + commit | [`ciepss_school_b_provenance.json`](../diagnostics/ciepss_school_b_provenance.json) — **not** the DB row |
+| Generator model + tier | GM-F v2 §9 — `claude-haiku-4-5-20251001`, Anthropic |
+| Full config snapshot | GM-F v2 §9 table + mechanism flags all `false`, `likert_self_report_enabled: false`, `convergence_threshold: null`, `working_memory_last_k: 2`, `peer_context_max_chars: 1200`, `visibility_policy: network_bounded`, documented network CSV path |
+| Scoring system | `SSTRF_RQ1_SCORING_SYSTEM_V2.md` at same commit (path + hash) |
+| Study seeds | **Placeholder** — "fixed in Part B (`ARC12_STUDY_SEEDS.json`)" until Part B lands |
+| Convergence | Record τ=0.02 from [`ARC12_CONVERGENCE_CALIBRATION.md`](../diagnostics/ARC12_CONVERGENCE_CALIBRATION.md) as **calibrated but not applied**; study uses fixed 20 rounds per GM-F §8 |
+| Excluded development work | Arcs 9–12 rehearsal seeds 42/43/44; Phase C and Phase V prior pilots |
+| Framing | GM-F v2 §3 verbatim — ten trials are repeated samples of one generative process, not independent hypothesis tests |
 
-1. **Header** — spec ref, arc, date, status: iter-54 scope **CLOSED**; mechanism-defaults verdict **pending GM-F** (iter-54 → iter-55 gate).
+Include **Signature** section:
 
-2. **Part A summary** — Option 1 fixture reunification (`93368c9`):
-   - Study repo @ `47013659309c5ac047dbc53dcea3fd1441d74042`
-   - `ciepss_school_b` seeded; smoke sim `c28fe9b01eb147cf924844287ea07d8b` → `completed`
-   - `docs/diagnostics/ciepss_school_b_provenance.json` — **flag for iter-58 pre-reg citation**
-   - `docs/SETUP_STUDY_FIXTURES.md`
-   - Pre-flight §1.1: content clean, `rag_enabled` absent, 8 personas
-   - 5 CI tests pass
+```markdown
+## Signature
+**Status:** UNSIGNED — Mark must sign before any study output exists.
+**Signed by:** ___________________
+**Date:** ___________________
+```
 
-3. **Part B summary** — confound test (`e448c03`):
-   - Six runs, QA clean (0 LLM errors, 0 context-length failures)
-   - Sim ID prefixes: baseline `2e962591`/`553b7d29`/`0b75a919`; full-stack `059b3122`/`aa1241a5`/`9a5a9303`
-   - Cost **$0.96** total (~227 s wall-clock) vs ~$10 estimate
-   - **Interpretation call:** `memory_retrieval` at 2.00 both arms on Anthropic → **model confound**, not mechanism effect
-   - Env pitfall: shell `ANTHROPIC_API_KEY` shadowed `backend/.env` — document `unset` fix
+State explicitly: old `PREREG_SSTRF_RQ1.md` v1.x governs closed Phase V and is **not** reused.
 
-4. **Part C pointer** — do not duplicate full report; summarise and link [`ARC12_INDIVIDUATION_FINDING.md`](../diagnostics/ARC12_INDIVIDUATION_FINDING.md) (`37d8419`):
-   - Arc 11 vs Part B dispersion contrast
-   - Study-validity framing (P1/P3/P4)
-   - Ops does not conclude on defaults
+### Out of scope (Part A)
 
-5. **Evidence synthesis for GM-F** (§4 combined DoD) — quality, cost, dispersion together:
-   - Mechanism confound result (Part B)
-   - Individuation / study-validity evidence (Part C)
-   - **Do not issue a mechanism-defaults recommendation** — present evidence, state what GM-F must rule on, stop
-   - Reference iter-53 shipping config (all flags OFF) as current frozen state pending ruling
-
-6. **iter-55 handoff notes** — carry forward from spec §5:
-   - CIEPSS documented network has no loader path today (synthetic chain only)
-   - Dispersion must be verified on study profile (8 actors, 15–20 rounds, `ciepss_school_b`)
-
-7. **Commits table**
-
-   | Part | Commit |
-   |------|--------|
-   | A | `93368c9` |
-   | B | `e448c03` |
-   | C | `37d8419` |
-
-8. **Open question for GM-F** — mechanism defaults on/off before iter-55; cite iter-54 → iter-55 gate from ARC12 §8.
-
-### Out of scope
-
-- `CLAUDE.md` Arc Status update (GM-F PASS only)
-- `senna-iter-55` implementation
-- Code changes
-- Re-running ablation or confound test
+- Study seeds JSON (Part B)
+- Freeze manifest (Part B)
+- Mark's signature (Mark)
+- Live study execution
+- RQ2 pre-reg
+- Changing GM-F proposition text or thresholds
 
 ### Verification
 
-No pytest. Closeout must be legible to someone who has not read Parts A/B/C handoffs.
+```bash
+# No new tests required for Part A — doc-only
+# Sanity: pre-reg file exists and references provenance manifest + scoring v2
+test -f docs/research/PREREG_SSTRF_RQ1_V2.md
+```
 
 ### Commit
 
-One commit on `main`: `senna-iter-54` closeout.
+`senna-iter-58` Part A (pre-reg v2 draft).
+
+---
+
+## Queued — `senna-iter-58` Part B (seeds + freeze manifest)
+
+**Do not start until Part A is committed and Architect seeds Part B.**
+
+| Deliverable | Purpose |
+|-------------|---------|
+| `docs/diagnostics/ARC12_STUDY_SEEDS.json` | Ten study seeds, fixed; **must not** include 42, 43, 44 or any seed listed in Arc 9–12 diagnostic JSON under `docs/diagnostics/` |
+| `docs/diagnostics/ARC12_PLATFORM_FREEZE.json` | Platform commit, fixture provenance ref, scoring doc ref, seeds ref, `frozen_at` ISO timestamp |
+| Update `PREREG_SSTRF_RQ1_V2.md` | Replace seeds placeholder with manifest path + seed list |
+| `backend/tests/test_senna_iter58_freeze.py` | Assert seeds ∉ exclusion set; freeze JSON schema fields present |
+| Housekeeping | `ARC12_PLATFORM_MEASURES_STATEMENT.md` §6 — Part B complete; §1 external-judge row → harness on `main` |
+
+**Seed selection rule (document in JSON):** e.g. first ten integers ≥500 not in exclusion set, or SHA256-derived — must be deterministic and auditable. Label trials `trial-A` … `trial-J` in manifest.
+
+**After Mark signs:** freeze is binding; no platform changes until study completes or pre-reg is formally amended.
 
 ---
 
 ## Completed (do not redo)
 
-- `senna-iter-54` Part A (`93368c9`)
-- `senna-iter-54` Part B (`e448c03`)
-- `senna-iter-54` Part C (`37d8419`)
-- `senna-iter-54` closeout — `docs/iterations/senna-iter-54-closeout.md` (pending commit)
+- `senna-iter-54`–`57` (incl. scoring harness `177306a`, Architect PASS)
