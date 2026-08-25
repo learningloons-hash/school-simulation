@@ -30,6 +30,32 @@ HYBRID_ROUTING_DESCRIPTION = (
     "Uses Claude on the first turn of each round, then the local model for remaining turns."
 )
 
+
+def resolve_anthropic_pricing_key(model_id: str | None) -> str:
+    """Map Anthropic ``model_id`` to a ``PROVIDER_PRICE_MAP`` billing key (iter-56)."""
+    mid = (model_id or "").strip().lower()
+    if not mid:
+        return "anthropic"
+    if "haiku" in mid:
+        if "4-5" in mid or "4.5" in mid:
+            return "anthropic_haiku_4_5"
+        return "anthropic_haiku_3_5"
+    if "opus" in mid:
+        if "4-1" in mid or "4.1" in mid:
+            return "anthropic_opus_4"
+        if "opus-4-20" in mid:
+            return "anthropic_opus_4"
+        if any(tok in mid for tok in ("4-5", "4.5", "4-6", "4.6", "4-7", "4.7", "4-8", "4.8")):
+            return "anthropic_opus_5"
+        if "opus-5" in mid or "opus_5" in mid:
+            return "anthropic_opus_5"
+        if mid.startswith("claude-opus-4-") or mid == "claude-opus-4":
+            return "anthropic_opus_4"
+        return "anthropic_opus_5"
+    if "sonnet" in mid:
+        return "anthropic_sonnet"
+    return "anthropic"
+
 _BUILTIN_PROFILE_FACTORIES: dict[str, Callable[[Settings], "ModelProfile"]] = {}
 
 
@@ -230,7 +256,7 @@ def anthropic_default(settings: Settings) -> ModelProfile:
         base_url=None,
         model_id=settings.anthropic_model,
         api_key_env="ANTHROPIC_API_KEY",
-        pricing_key="anthropic",
+        pricing_key=resolve_anthropic_pricing_key(settings.anthropic_model),
         is_builtin=True,
         capabilities=ModelCapabilities(
             context_window=200_000,

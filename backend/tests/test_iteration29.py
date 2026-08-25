@@ -187,8 +187,8 @@ def test_get_simulation_anthropic_provider_positive_estimated_cost(monkeypatch, 
         else:
             raise AssertionError("run did not complete")
         eco = st.get("economics") or {}
-    # 2 turns × (100 in @ $3/M + 20 out @ $15/M) = 2 × 0.0006 = 0.0012
-    assert float(eco.get("estimated_cost_usd") or 0) == pytest.approx(0.0012, rel=1e-5)
+    # 2 turns × (100 in @ $0.80/M + 20 out @ $4/M) default Haiku 3.5 = 2 × 0.00016 = 0.00032
+    assert float(eco.get("estimated_cost_usd") or 0) == pytest.approx(0.00032, rel=1e-5)
     assert eco.get("total_input_tokens") == 200
     assert eco.get("total_output_tokens") == 40
 
@@ -210,12 +210,13 @@ def test_economics_pure_functions() -> None:
                 {
                     "effective_provider": "anthropic",
                     "effective_profile_id": "anthropic_default",
+                    "effective_model": "claude-3-5-haiku-20241022",
                     "input_tokens": 100,
                     "output_tokens": 20,
                 }
             ]
         )
-        == pytest.approx(0.0006, rel=1e-5)
+        == pytest.approx(0.00016, rel=1e-5)
     )
     assert (
         estimated_run_cost_usd_from_transcript(

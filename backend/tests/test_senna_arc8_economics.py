@@ -69,7 +69,7 @@ def test_resolve_billing_provider_key_by_profile() -> None:
             effective_profile_id=ANTHROPIC_DEFAULT_ID,
             effective_provider="anthropic",
         )
-        == "anthropic"
+        == "anthropic_haiku_3_5"
     )
     assert (
         resolve_billing_provider_key(

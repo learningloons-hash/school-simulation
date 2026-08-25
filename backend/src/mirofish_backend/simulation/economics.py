@@ -1,23 +1,30 @@
 """Run economics: token-derived USD estimates for thesis RQ2 (Iteration 29).
 
-Default list prices are snapshots only — override with env vars when provider pricing changes.
+Default list prices are snapshots only — override generic Anthropic fallback via
+``ANTHROPIC_INPUT_PRICE_PER_MTOK`` / ``ANTHROPIC_OUTPUT_PRICE_PER_MTOK`` when needed.
+Per-model keys (Haiku, Opus, etc.) use ``PROVIDER_PRICE_MAP`` entries (iter-56).
 """
 
 from __future__ import annotations
 
 import os
-from functools import lru_cache
 from typing import Any
 
 from mirofish_backend.config import Settings
-from mirofish_backend.llm.model_profiles import get_builtin_profile
+from mirofish_backend.llm.model_profiles import get_builtin_profile, resolve_anthropic_pricing_key
 from mirofish_backend.llm.routing_policies import HEURISTIC_PROFILE_SENTINEL
 
 # Date associated with default ``PROVIDER_PRICE_MAP`` values (cite in thesis appendices).
-PRICE_MAP_DATE = "2026-04-07"
+PRICE_MAP_DATE = "2026-08-25"
 
 PROVIDER_PRICE_MAP: dict[str, dict[str, float]] = {
+    # Sonnet-tier fallback for unknown Anthropic model ids.
     "anthropic": {"input_per_mtok": 3.00, "output_per_mtok": 15.00},
+    "anthropic_haiku_3_5": {"input_per_mtok": 0.80, "output_per_mtok": 4.00},
+    "anthropic_haiku_4_5": {"input_per_mtok": 1.00, "output_per_mtok": 5.00},
+    "anthropic_sonnet": {"input_per_mtok": 3.00, "output_per_mtok": 15.00},
+    "anthropic_opus_4": {"input_per_mtok": 15.00, "output_per_mtok": 75.00},
+    "anthropic_opus_5": {"input_per_mtok": 5.00, "output_per_mtok": 25.00},
     "lmstudio": {"input_per_mtok": 0.00, "output_per_mtok": 0.00},
     "openai": {"input_per_mtok": 0.15, "output_per_mtok": 0.60},
     "openrouter": {"input_per_mtok": 0.15, "output_per_mtok": 0.60},
@@ -34,8 +41,15 @@ def _per_mtok_rates(provider_key: str) -> tuple[float, float]:
     env_in = os.environ.get("ANTHROPIC_INPUT_PRICE_PER_MTOK")
     env_out = os.environ.get("ANTHROPIC_OUTPUT_PRICE_PER_MTOK")
     defaults = PROVIDER_PRICE_MAP.get(provider_key) or PROVIDER_PRICE_MAP["anthropic"]
-    din = float(env_in) if env_in is not None and env_in.strip() else float(defaults["input_per_mtok"])
-    dout = float(env_out) if env_out is not None and env_out.strip() else float(defaults["output_per_mtok"])
+    pk = (provider_key or "").strip().lower()
+    if pk == "anthropic" and env_in is not None and env_in.strip():
+        din = float(env_in)
+    else:
+        din = float(defaults["input_per_mtok"])
+    if pk == "anthropic" and env_out is not None and env_out.strip():
+        dout = float(env_out)
+    else:
+        dout = float(defaults["output_per_mtok"])
     return din, dout
 
 
@@ -54,23 +68,27 @@ def estimate_cost_usd(*, input_tokens: int, output_tokens: int, provider_key: st
     return round((input_tokens / 1_000_000.0) * din + (output_tokens / 1_000_000.0) * dout, 6)
 
 
-@lru_cache(maxsize=32)
 def _builtin_profile_pricing_key(profile_id: str) -> str | None:
     """Built-in profile ``pricing_key`` for post-run billing (no API keys)."""
     profile = get_builtin_profile(profile_id, Settings())
-    return profile.pricing_key if profile is not None else None
+    if profile is None:
+        return None
+    if profile.provider_type == "anthropic":
+        return resolve_anthropic_pricing_key(profile.model_id)
+    return profile.pricing_key
 
 
 def resolve_billing_provider_key(
     *,
     effective_profile_id: str | None,
     effective_provider: str | None,
+    effective_model: str | None = None,
 ) -> str:
     """
     Map a transcript row to a ``PROVIDER_PRICE_MAP`` key for ``estimate_cost_usd``.
 
     Prefer ``effective_profile_id`` → built-in ``pricing_key``. Tier-3 ``heuristic`` → $0.
-    Missing/unknown profile id → legacy: bill only when ``effective_provider == anthropic``.
+    Anthropic rows prefer ``effective_model`` when set. Missing profile id → legacy provider fallback.
     """
     pid = (effective_profile_id or "").strip()
     if pid:
@@ -78,10 +96,18 @@ def resolve_billing_provider_key(
             return "lmstudio"
         pk = _builtin_profile_pricing_key(pid)
         if pk is not None:
+            profile = get_builtin_profile(pid, Settings())
+            if profile is not None and profile.provider_type == "anthropic":
+                model_id = (effective_model or profile.model_id or "").strip()
+                if model_id:
+                    return resolve_anthropic_pricing_key(model_id)
             return pk
 
     prov = (effective_provider or "").strip().lower()
     if prov == "anthropic":
+        model_id = (effective_model or "").strip()
+        if model_id:
+            return resolve_anthropic_pricing_key(model_id)
         return "anthropic"
     return "lmstudio"
 
@@ -91,6 +117,7 @@ def _turn_cost_usd(
     effective_profile_id: str | None,
     inp: int | None,
     out: int | None,
+    effective_model: str | None = None,
 ) -> float:
     """Bill one transcript row from profile ``pricing_key`` or legacy provider fallback."""
     if inp is None or out is None:
@@ -98,6 +125,7 @@ def _turn_cost_usd(
     pk = resolve_billing_provider_key(
         effective_profile_id=effective_profile_id,
         effective_provider=effective_provider,
+        effective_model=effective_model,
     )
     return estimate_cost_usd(input_tokens=inp, output_tokens=out, provider_key=pk)
 
@@ -127,6 +155,7 @@ def estimated_run_cost_usd_from_transcript(transcript: list[dict[str, Any]]) -> 
             row.get("effective_profile_id"),
             row.get("input_tokens") if row.get("input_tokens") is not None else None,
             row.get("output_tokens") if row.get("output_tokens") is not None else None,
+            effective_model=row.get("effective_model"),
         )
     return round(total, 6)
 

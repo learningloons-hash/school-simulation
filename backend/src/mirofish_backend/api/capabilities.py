@@ -100,8 +100,9 @@ def build_capabilities_dict() -> dict:
             },
             "economics": {
                 "description": "Iteration 29: GET /simulations/{id} and export include token totals, tier turn counts, "
-                "and estimated_cost_usd from per-turn usage. Anthropic-priced turns use list defaults (pricing snapshot "
-                f"{PRICE_MAP_DATE}; override via ANTHROPIC_INPUT_PRICE_PER_MTOK / ANTHROPIC_OUTPUT_PRICE_PER_MTOK); "
+                "and estimated_cost_usd from per-turn usage. Anthropic-priced turns use per-model list defaults "
+                f"(pricing snapshot {PRICE_MAP_DATE}; generic Anthropic fallback override via "
+                "ANTHROPIC_INPUT_PRICE_PER_MTOK / ANTHROPIC_OUTPUT_PRICE_PER_MTOK); "
                 "lmstudio/heuristic turns are $0.",
             },
         },
