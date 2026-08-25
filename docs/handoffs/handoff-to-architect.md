@@ -2,7 +2,7 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for review — `senna-iter-55` Part A complete.
+**Status:** Ready for review — `senna-iter-55` Part B complete.
 
 ---
 
@@ -10,41 +10,49 @@
 
 ### Summary
 
-Study-scale rehearsal harness: documented network CSV loader, mechanics extraction module, CLI script, CI stub test. No live Anthropic runs (Part B).
+Executed six RQ1 Anthropic study rehearsal runs via `run_arc12_study_rehearsal.py`. No harness changes. Results committed with ARC12 §2 watch-item notes in markdown.
 
-### DoD (Part A)
+**Env:** `unset ANTHROPIC_API_KEY` before run so `backend/.env` loaded correctly.
+
+### DoD (Part B)
 
 | Item | YES/NO | Note |
 |------|--------|------|
-| `load_documented_network_csv` validates against run agent ids | YES | `arc12_study_rehearsal.py` |
-| `run_arc12_study_rehearsal.py` mirrors ablation patterns | YES | RQ1 matrix, interim flags banner, `--skip-rq2` |
-| Requires `ciepss_school_b` in user_scenarios | YES | Runtime check + error message points to seed script |
-| Documented network (not synthetic chain) | YES | Study repo rel path default |
-| Mechanics metrics extraction | YES | tokens, cost, QA counts, group_addressed, state_update_source, token-by-round, support stdev |
-| CI test with stub LLM | YES | `test_senna_iter55_study_rehearsal.py` (4 tests) |
-| Interim iter-53 flags documented | YES | Script banner + results payload |
-| No live runs | YES | Part B |
+| 6/6 RQ1 runs completed | YES | 15-round ×3 + 20-round ×3 |
+| QA clean (0 LLM errors, 0 ctx failures) | YES | Harness-enforced per run |
+| Results JSON + MD committed | YES | `arc12_study_rehearsal_results.{json,md}` |
+| ARC12 §2 watch items in markdown | YES | Context growth, peer/memory settings, group_addressed, provenance, dispersion, Likert/round check |
+| RQ2 deferral noted | YES | `--skip-rq2` |
+| No substantive transcript scoring | YES | Mechanics only |
 
 ### Verification
 
-```text
-cd backend && uv run pytest tests/test_senna_iter55_study_rehearsal.py -q
-....                                                                     [100%]
-4 passed in 0.71s
+No new pytest (execution-only).
 
-cd backend && uv run pytest -q
-421 passed, 2 skipped in 7.82s
+```text
+6/6 completed | QA clean | total cost US$15.90 | wall-clock ~900 s
 ```
+
+### Simulation IDs
+
+| Label | Seed | ID |
+|-------|------|-----|
+| RQ1-15 | 42 | `8c6d1ec1968348e4b2a3b14b008d8652` |
+| RQ1-15 | 43 | `5e7d44a5da1d47cfb9a6dc7d2a590876` |
+| RQ1-15 | 44 | `2f995f368c814d0e9b142f6c689bd720` |
+| RQ1-20 | 42 | `fa54ad08d90a459ca352fb6d8aaf9dff` |
+| RQ1-20 | 43 | `a91dcb4cd3f545ab9f2c96fcaeab7de2` |
+| RQ1-20 | 44 | `5332c81e67f3402f9a11f35c68db9072` |
 
 ### Commit
 
-`e093caa` — `senna-iter-55` Part A (study rehearsal harness)
+`e4f37fd` — `senna-iter-55` Part B (RQ1 study rehearsal results)
 
 ### Open questions
 
-- Part B: Mark runs live RQ1 (6 Anthropic runs) via CLI
-- RQ2 deferred until Lee (2020) fixture exists (`--skip-rq2` default)
+- iter-55 closeout doc — separate seed
+- Context growth to ~90k input tokens/round at RQ1-20 — no failures yet; iter-56 calibration should reference these runs
 
 ---
 
-**Spawn line for Architect:** Review Part A against `handoff-to-builder.md` § Active task and `HANDOFF_SENNA_ARC12.md` §2.
+**Spawn line for Architect:** Review Part B against `handoff-to-builder.md` § Active task.
