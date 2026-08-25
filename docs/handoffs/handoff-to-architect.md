@@ -53,7 +53,7 @@ Six simulation IDs (all completed, llm_err=0):
 
 ### Commit
 
-`TBD` — `senna-iter-54` Part B (Anthropic confound test results)
+`e448c03` — `senna-iter-54` Part B (Anthropic confound test results)
 
 ### Open questions
 
