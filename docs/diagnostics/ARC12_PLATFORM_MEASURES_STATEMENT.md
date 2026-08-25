@@ -271,7 +271,7 @@ Checklist for scoring-system design (D1):
 5. **P5 and compound propositions** — platform provides judge **inputs** (transcript + diagnostics); structural reachability of score levels is a **criterion design** question (Phase V note in ARC12 §4).
 6. **Pre-reg (iter-58)** — [`PREREG_SSTRF_RQ1_V2.md`](../research/PREREG_SSTRF_RQ1_V2.md) drafted; study seeds and platform freeze in [`ARC12_PLATFORM_FREEZE.json`](./ARC12_PLATFORM_FREEZE.json) — **Mark signature** before study output.
 
-**Ops next step:** iter-58 freeze complete — await **Mark signature** on pre-reg v2, then execute validity trials under frozen config.
+**Ops next step:** Pre-reg v2 **signed** (2026-08-25) — execute validity trials under frozen config (`da906c3`, seeds 500–509).
 
 ---
 

@@ -1,16 +1,16 @@
 # Pre-registration — SSTRF RQ1 Correspondence Study v2 (CIEPSS School B)
 
-> ## STATUS: **UNSIGNED DRAFT**
+> ## STATUS: **SIGNED**
 >
-> Mark must sign §Signature below **before any study output exists**. Until signed, this
-> document is a draft for review only. No validity trial may be run, scored, or cited under
-> this pre-registration.
+> Signed 2026-08-25 by Mark. Validity trials may proceed under this pre-registration and the
+> binding freeze in [`ARC12_PLATFORM_FREEZE.json`](../diagnostics/ARC12_PLATFORM_FREEZE.json).
 
 | Field | Value |
 |---|---|
 | Document | `docs/research/PREREG_SSTRF_RQ1_V2.md` |
-| Version | v2.0 (draft — iter-58 Part A) |
+| Version | v2.0 (signed — 2026-08-25) |
 | Date drafted | 2026-08-25 |
+| Date signed | 2026-08-25 |
 | Arc | 12 — Freeze and Study Readiness (`senna-iter-58` Part A) |
 | Governs | SSTRF RQ1 validity trials on CIEPSS School B (Silver et al., 2011, CRP 47/08 MS) |
 | Supersedes for new work | **`PREREG_SSTRF_RQ1.md` v1.x** — see §0 |
@@ -203,8 +203,7 @@ by `random_seed`. Trial labels: `trial-A` … `trial-J`.
 **Platform freeze:** [`docs/diagnostics/ARC12_PLATFORM_FREEZE.json`](../diagnostics/ARC12_PLATFORM_FREEZE.json)
 records platform commit, fixture provenance, scoring document hash, and seed manifest.
 
-Validity trials may proceed **only after Mark signs** this pre-registration (§Signature) and the
-freeze manifest is binding.
+Validity trials may proceed under this signed pre-registration and the binding freeze manifest.
 
 ---
 
@@ -265,8 +264,8 @@ When Mark signs this document:
 
 ## Signature
 
-**Status:** UNSIGNED — Mark must sign before any study output exists.
+**Status:** SIGNED
 
-**Signed by:** ___________________
+**Signed by:** Mark
 
-**Date:** ___________________
+**Date:** 2026-08-25

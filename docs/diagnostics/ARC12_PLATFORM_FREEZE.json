@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
-  "signature_status": "unsigned",
+  "signature_status": "signed",
+  "signed_by": "Mark",
+  "signed_at": "2026-08-25T05:07:00+00:00",
   "frozen_at": "2026-08-25T04:41:00+00:00",
   "platform_code_commit": "da906c3efee7e0e769c388e3dc09986eae6f93c3",
   "scoring_harness_commit": "177306a75725e1fb168fc173cf104d289c3726ae",

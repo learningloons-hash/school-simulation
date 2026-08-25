@@ -6,15 +6,14 @@
 
 ## Active task
 
-**None.** Arc 12 Ops build scope complete (`senna-iter-54`–`58`). **Awaiting Mark signature** on [`PREREG_SSTRF_RQ1_V2.md`](../research/PREREG_SSTRF_RQ1_V2.md) before validity trials.
+**None.** Arc 12 **CLOSED** (pre-reg signed 2026-08-25). Validity trial execution is a new workstream — seed when Mark requests.
 
 ---
 
-## Completed (do not redo)
+## Completed
 
-- `senna-iter-54`–`58` (incl. pre-reg v2 `e3e74b9`, seeds + freeze `66ea88e`, closeout)
-- Mark signature — **Mark only**; gates study execution
+- Arc 12 (`senna-iter-54`–`58`) including Mark signature on [`PREREG_SSTRF_RQ1_V2.md`](../research/PREREG_SSTRF_RQ1_V2.md)
 
-## After Mark signs
+## Next workstream (not seeded)
 
-Validity trial execution is a **new workstream** (not seeded here). Typical sequence: run 10 trials (seeds 500–509) → elicitation → judge calibration → scoring → report pass/fail regardless of outcome.
+Ten validity trials: seeds 500–509, 20 rounds each, frozen platform `da906c3` → elicitation → judge calibration → scoring → report.

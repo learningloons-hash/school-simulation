@@ -30,6 +30,8 @@ _REQUIRED_FREEZE_KEYS = frozenset(
     }
 )
 
+_SIGNED_FREEZE_KEYS = frozenset({"signed_by", "signed_at"})
+
 
 def _collect_seeds(value: object, out: set[int]) -> None:
     if isinstance(value, dict):
@@ -94,9 +96,11 @@ def test_study_seeds_selection_rule_documented(seeds_doc: dict) -> None:
     assert seeds_doc["trials"][-1]["random_seed"] == 509
 
 
-def test_freeze_manifest_required_keys_and_unsigned(freeze_doc: dict) -> None:
+def test_freeze_manifest_required_keys_and_signature(freeze_doc: dict) -> None:
     assert _REQUIRED_FREEZE_KEYS <= set(freeze_doc)
-    assert freeze_doc["signature_status"] == "unsigned"
+    assert freeze_doc["signature_status"] in ("unsigned", "signed")
+    if freeze_doc["signature_status"] == "signed":
+        assert _SIGNED_FREEZE_KEYS <= set(freeze_doc)
     assert freeze_doc["export_version"] == 14
     assert freeze_doc["pre_reg_path"] == "docs/research/PREREG_SSTRF_RQ1_V2.md"
     assert freeze_doc["study_seeds"]["path"] == "docs/diagnostics/ARC12_STUDY_SEEDS.json"

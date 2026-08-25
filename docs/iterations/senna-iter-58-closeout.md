@@ -3,7 +3,7 @@
 **Spec:** [`docs/handoffs/HANDOFF_SENNA_ARC12.md`](../handoffs/HANDOFF_SENNA_ARC12.md) §5
 **Arc:** 12 — Freeze and Study Readiness
 **Date:** 2026-08-25
-**Status:** Iteration **build scope CLOSED** (Parts A–B + this closeout). **Arc 12 closes when Mark signs** [`PREREG_SSTRF_RQ1_V2.md`](../research/PREREG_SSTRF_RQ1_V2.md) §Signature — validity trials blocked until then.
+**Status:** Iteration **CLOSED**. Pre-reg **signed** 2026-08-25 by Mark. **Arc 12 CLOSED.**
 
 ---
 
@@ -84,7 +84,7 @@ Locks the RQ1 validity study configuration in writing before any substantive tri
 | Full config snapshot | ✓ | pre-reg §4 |
 | Scoring system from iter-57 | ✓ | by reference + tracked blob |
 | Ten study seeds, distinct from dev seeds | ✓ | 500–509 |
-| **Mark signature before study output** | ⏳ | §Signature blank — **Mark action** |
+| **Mark signature before study output** | ✓ | Signed 2026-08-25 |
 
 **ARC12 §5 Ops DoD: met pending signature.**
 
@@ -132,10 +132,10 @@ Signing [`PREREG_SSTRF_RQ1_V2.md`](../research/PREREG_SSTRF_RQ1_V2.md) means:
 |-----------|--------|
 | Pre-reg v2 drafted | ✓ |
 | Seeds + freeze manifest | ✓ |
-| **Mark signed pre-reg v2** | ⏳ |
-| **Platform frozen** | ⏳ (binding on signature) |
+| **Mark signed pre-reg v2** | ✓ 2026-08-25 |
+| **Platform frozen** | ✓ binding on signature |
 
-**Ops build gate: passed.** **Study gate: open when Mark signs.**
+**Study gate: open.** Validity trials may proceed.
 
 ---
 
@@ -143,4 +143,4 @@ Signing [`PREREG_SSTRF_RQ1_V2.md`](../research/PREREG_SSTRF_RQ1_V2.md) means:
 
 **Build scope: yes.** Pre-reg drafted, seeds fixed, freeze manifest written, tests pass, architect reviewed, this closeout written.
 
-**Arc 12 complete: no — one step remains.** Mark signature on pre-reg v2. After signing: execute ten validity trials under frozen config; no platform changes until complete or formally amended.
+**Arc 12: CLOSED** (signed 2026-08-25). Execute ten validity trials under frozen config; no platform changes until complete or formally amended.
