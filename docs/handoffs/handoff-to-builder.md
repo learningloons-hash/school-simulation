@@ -4,91 +4,92 @@
 
 ---
 
-## Active task — `senna-iter-58` Part A (pre-registration v2 draft)
+## Active task — `senna-iter-58` Part B (seeds + freeze manifest)
 
 | Field | Value |
 |-------|--------|
 | **Arc** | 12 — Freeze and Study Readiness |
 | **Spec** | [`HANDOFF_SENNA_ARC12.md`](./HANDOFF_SENNA_ARC12.md) §5 |
-| **Scoring** | [`SSTRF_RQ1_SCORING_SYSTEM_V2.md`](../research/SSTRF_RQ1_SCORING_SYSTEM_V2.md) — incorporate by reference, do not rewrite propositions |
+| **Pre-reg** | [`PREREG_SSTRF_RQ1_V2.md`](../research/PREREG_SSTRF_RQ1_V2.md) (Part A, Architect PASS `e3e74b9`) |
 | **Branch** | `main` |
-| **Base** | iter-57 closeout commit |
-| **Commit** | One commit for Part A only |
+| **Base** | `e3e74b9` (Part A) |
+| **Commit** | One commit for Part B only |
 
 ### Goal
 
-Draft **pre-registration v2** for RQ1. Documentation only — no live study runs, no scoring live trials. **Mark signs before any study output exists** — leave an explicit signature block; do not mark as signed.
+Fix ten study seeds, write the platform freeze manifest, patch the pre-reg seeds section, and close Part A architect follow-ups. **No live validity trials.** Mark signature remains out of scope.
 
-### Required deliverable
+### Required deliverables
 
-**New file:** `docs/research/PREREG_SSTRF_RQ1_V2.md`
+#### 1. `docs/diagnostics/ARC12_STUDY_SEEDS.json`
 
-Follow ARC12 §5. Must record and resolve:
+Ten trials, labels `trial-A` … `trial-J`, each with `random_seed`.
 
-| Field | Source to cite |
+**Exclusion set (must not use any of these):** all `"seed"` values in `docs/diagnostics/*.json` — today **42, 43, 44** only (Arc 11 ablation, iter-54 confound, iter-55 rehearsal).
+
+**Selection rule (document in JSON):** deterministic and auditable. Recommended:
+
+> First ten integers ≥ 500 not in the exclusion set → **500–509**.
+
+Record `selection_rule`, `excluded_seeds`, `trials` array, `drafted_at` ISO timestamp.
+
+#### 2. `docs/diagnostics/ARC12_PLATFORM_FREEZE.json`
+
+Binding record for Mark to sign against. Minimum fields:
+
+| Field | Value / source |
 |-------|----------------|
-| Platform commit | `git rev-parse HEAD` at commit time |
-| Fixture repo + commit | [`ciepss_school_b_provenance.json`](../diagnostics/ciepss_school_b_provenance.json) — **not** the DB row |
-| Generator model + tier | GM-F v2 §9 — `claude-haiku-4-5-20251001`, Anthropic |
-| Full config snapshot | GM-F v2 §9 table + mechanism flags all `false`, `likert_self_report_enabled: false`, `convergence_threshold: null`, `working_memory_last_k: 2`, `peer_context_max_chars: 1200`, `visibility_policy: network_bounded`, documented network CSV path |
-| Scoring system | `SSTRF_RQ1_SCORING_SYSTEM_V2.md` at same commit (path + hash) |
-| Study seeds | **Placeholder** — "fixed in Part B (`ARC12_STUDY_SEEDS.json`)" until Part B lands |
-| Convergence | Record τ=0.02 from [`ARC12_CONVERGENCE_CALIBRATION.md`](../diagnostics/ARC12_CONVERGENCE_CALIBRATION.md) as **calibrated but not applied**; study uses fixed 20 rounds per GM-F §8 |
-| Excluded development work | Arcs 9–12 rehearsal seeds 42/43/44; Phase C and Phase V prior pilots |
-| Framing | GM-F v2 §3 verbatim — ten trials are repeated samples of one generative process, not independent hypothesis tests |
+| `platform_code_commit` | `da906c3` — iter-57 platform closeout (harness `177306a`); simulation code freeze point |
+| `pre_reg_commit` | `e3e74b9` (or current HEAD if Part B adds only manifests) |
+| `pre_reg_path` | `docs/research/PREREG_SSTRF_RQ1_V2.md` |
+| `fixture_provenance` | copy/ref [`ciepss_school_b_provenance.json`](../diagnostics/ciepss_school_b_provenance.json) |
+| `scoring_system` | path + `git hash-object` blob hash for `SSTRF_RQ1_SCORING_SYSTEM_V2.md` |
+| `study_seeds` | path `docs/diagnostics/ARC12_STUDY_SEEDS.json` |
+| `export_version` | 14 |
+| `frozen_at` | ISO timestamp at commit time |
+| `signature_status` | `unsigned` |
 
-Include **Signature** section:
+#### 3. Track scoring system v2 in git (Architect follow-up from Part A)
 
-```markdown
-## Signature
-**Status:** UNSIGNED — Mark must sign before any study output exists.
-**Signed by:** ___________________
-**Date:** ___________________
-```
+`SSTRF_RQ1_SCORING_SYSTEM_V2.md` exists locally but is **not** tracked. Add `.gitignore` allowlist and **commit the file** so freeze hash is reproducible from git.
 
-State explicitly: old `PREREG_SSTRF_RQ1.md` v1.x governs closed Phase V and is **not** reused.
+#### 4. Update `PREREG_SSTRF_RQ1_V2.md` §7
 
-### Out of scope (Part A)
+Replace placeholder with seed list + manifest path. Keep **UNSIGNED**. Do not change proposition text or thresholds.
 
-- Study seeds JSON (Part B)
-- Freeze manifest (Part B)
-- Mark's signature (Mark)
-- Live study execution
-- RQ2 pre-reg
-- Changing GM-F proposition text or thresholds
+#### 5. `backend/tests/test_senna_iter58_freeze.py`
+
+- Load `ARC12_STUDY_SEEDS.json` — exactly 10 trials, labels A–J, seeds ∉ exclusion set
+- Load `ARC12_PLATFORM_FREEZE.json` — required keys present; `signature_status == "unsigned"`
+- Scoring blob hash in freeze matches `git hash-object` on committed scoring doc
+
+#### 6. Housekeeping — `ARC12_PLATFORM_MEASURES_STATEMENT.md`
+
+- **§6:** iter-57 Part B complete; harness on product `main` (`177306a`, 56 tests)
+- **§1** external-judge row: harness implements GM-F v2 scoring (not orchestrator output)
+- **§7** ops next step: iter-58 freeze (not “await GM-F”)
+
+### Out of scope
+
+- Mark's signature (Mark fills §Signature after review)
+- Live validity trial execution or scoring
+- iter-58 closeout doc (Architect after Part B PASS)
+- RQ2 seeds / criterion
+- Platform code changes beyond allowlist + tests
 
 ### Verification
 
 ```bash
-# No new tests required for Part A — doc-only
-# Sanity: pre-reg file exists and references provenance manifest + scoring v2
-test -f docs/research/PREREG_SSTRF_RQ1_V2.md
+cd backend && uv run pytest tests/test_senna_iter58_freeze.py -q
 ```
 
 ### Commit
 
-`senna-iter-58` Part A (pre-reg v2 draft).
-
----
-
-## Queued — `senna-iter-58` Part B (seeds + freeze manifest)
-
-**Do not start until Part A is committed and Architect seeds Part B.**
-
-| Deliverable | Purpose |
-|-------------|---------|
-| `docs/diagnostics/ARC12_STUDY_SEEDS.json` | Ten study seeds, fixed; **must not** include 42, 43, 44 or any seed listed in Arc 9–12 diagnostic JSON under `docs/diagnostics/` |
-| `docs/diagnostics/ARC12_PLATFORM_FREEZE.json` | Platform commit, fixture provenance ref, scoring doc ref, seeds ref, `frozen_at` ISO timestamp |
-| Update `PREREG_SSTRF_RQ1_V2.md` | Replace seeds placeholder with manifest path + seed list |
-| `backend/tests/test_senna_iter58_freeze.py` | Assert seeds ∉ exclusion set; freeze JSON schema fields present |
-| Housekeeping | `ARC12_PLATFORM_MEASURES_STATEMENT.md` §6 — Part B complete; §1 external-judge row → harness on `main` |
-
-**Seed selection rule (document in JSON):** e.g. first ten integers ≥500 not in exclusion set, or SHA256-derived — must be deterministic and auditable. Label trials `trial-A` … `trial-J` in manifest.
-
-**After Mark signs:** freeze is binding; no platform changes until study completes or pre-reg is formally amended.
+`senna-iter-58` Part B (study seeds + freeze manifest).
 
 ---
 
 ## Completed (do not redo)
 
-- `senna-iter-54`–`57` (incl. scoring harness `177306a`, Architect PASS)
+- `senna-iter-54`–`57`
+- `senna-iter-58` Part A (`e3e74b9`, Architect PASS)
