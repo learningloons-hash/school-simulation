@@ -1,3 +1,24 @@
 # Handoff to Architect
 
-**Status:** Arc 12 **CLOSED** — pre-reg signed 2026-08-25. Validity trials may proceed when seeded.
+**Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
+
+**Status:** Awaiting Builder — `sstrf-validity-v2` Part A not started.
+
+---
+
+## Builder report
+
+| Field | Value |
+|-------|--------|
+| **Task** | — |
+| **Branch** | — |
+| **Commit** | — |
+| **Verification** | — |
+
+### Delivered
+
+*(Builder fills when Part A complete)*
+
+### Notes for Architect
+
+*(Builder fills)*
