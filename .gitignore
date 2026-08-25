@@ -44,6 +44,7 @@ Proposal.*
 simulation-study/
 docs/research/
 !docs/research/SSTRF_RATER_CALIBRATION_SET.md
+!docs/research/PREREG_SSTRF_RQ1_V2.md
 articles/
 scripts/sstrf_*.py
 !scripts/sstrf_scoring_*.py
