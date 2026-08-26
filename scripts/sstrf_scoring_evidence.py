@@ -21,6 +21,11 @@ SCORING_MANIFEST = SCORING_DIR / "phase_v_scoring_manifest.json"
 CALIBRATION_SET = ROOT / "docs/research/SSTRF_RATER_CALIBRATION_SET.md"
 DEFAULT_SQLITE = ROOT / "backend/data/sstrf_phase_v.sqlite"
 FALLBACK_SQLITE = ROOT / "backend/data/sstrf_calibration.sqlite"
+VALIDITY_V2_MANIFEST_PATH = ROOT / "docs/diagnostics/sstrf_validity_v2_manifest.json"
+VALIDITY_V2_SCORING_DIR = ROOT / "docs/research/runs/ciepss_school_b/validity_v2/scoring"
+VALIDITY_V2_SCORING_MANIFEST = VALIDITY_V2_SCORING_DIR / "validity_v2_scoring_manifest.json"
+VALIDITY_V2_TRIAL_LABEL_MAP = VALIDITY_V2_SCORING_DIR / "trial_label_map.json"
+DEFAULT_VALIDITY_SQLITE = ROOT / "backend/data/mirofish.sqlite"
 
 FORBIDDEN_RATER_KEYS = frozenset(
     {
@@ -383,3 +388,124 @@ def assert_calibration_set_signed() -> None:
 def assert_no_secret(payload: Any, secret: str) -> None:
     if secret and secret in json.dumps(payload, ensure_ascii=False):
         raise RuntimeError("secret material detected in output payload; refusing to save")
+
+
+def load_validity_v2_manifest(path: Path | None = None) -> dict[str, Any]:
+    manifest_path = path or VALIDITY_V2_MANIFEST_PATH
+    return json.loads(manifest_path.read_text(encoding="utf-8"))
+
+
+def validity_v2_completed_trials(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    trials = manifest.get("trials") or []
+    out = [
+        t
+        for t in trials
+        if str(t.get("status") or "") == "completed"
+        and t.get("simulation_id")
+        and (t.get("elicitation") or {}).get("manifest_path")
+    ]
+    if not out:
+        raise RuntimeError("validity manifest has no completed trials with elicitation paths")
+    return out
+
+
+def build_validity_v2_trial_mapping(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Fixed trial-A…J labels from Part B manifest (no shuffle)."""
+    mapping: dict[str, dict[str, Any]] = {}
+    for trial in validity_v2_completed_trials(manifest):
+        label = str(trial["trial_label"])
+        mapping[label] = {
+            "seed": int(trial["random_seed"]),
+            "simulation_id": str(trial["simulation_id"]),
+        }
+    return mapping
+
+
+def _load_elicitation_manifest_from_path(rel_path: str) -> dict[str, Any]:
+    path = Path(rel_path)
+    if not path.is_absolute():
+        path = ROOT / rel_path
+    if not path.is_file():
+        raise FileNotFoundError(f"elicitation manifest not found: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def trial_record_from_validity_label(label: str, manifest: dict[str, Any]) -> TrialRecord:
+    for trial in manifest.get("trials") or []:
+        if str(trial.get("trial_label") or "") != label:
+            continue
+        elicitation_block = trial.get("elicitation") or {}
+        rel = str(elicitation_block.get("manifest_path") or "").strip()
+        if not rel:
+            raise KeyError(f"{label} missing elicitation.manifest_path")
+        elicitation_manifest = _load_elicitation_manifest_from_path(rel)
+        if not elicitation_manifest.get("agents"):
+            raise KeyError(f"{label} elicitation manifest has no agents")
+        return TrialRecord(
+            trial_label=label,
+            seed=int(trial["random_seed"]),
+            simulation_id=str(trial["simulation_id"]),
+            elicitation_manifest=elicitation_manifest,
+        )
+    raise KeyError(f"no validity trial for label {label!r}")
+
+
+def build_tier2_drift_packets_validity(
+    trial_labels: list[str],
+    *,
+    manifest: dict[str, Any],
+) -> dict[str, Any]:
+    packets: dict[str, Any] = {}
+    for label in sorted(trial_labels):
+        record = trial_record_from_validity_label(label, manifest)
+        packets[label] = build_tier2_elicitation_packet(record)
+    return {
+        "design": "tier2_elicitation_only_v2",
+        "evidence_scope": "elicitation_only",
+        "sampled_trials": sorted(trial_labels),
+        "packets": packets,
+    }
+
+
+async def build_stage1_escalation_packets_validity(
+    disputed_cells: list[dict[str, str]],
+    *,
+    manifest: dict[str, Any],
+    sqlite_path: Path,
+    get_bundle=None,
+) -> dict[str, Any]:
+    if not disputed_cells:
+        return {
+            "design": "stage1_escalation_v2",
+            "evidence_scope": "elicitation_plus_transcript",
+            "disputed_cells": [],
+            "packets": {},
+        }
+    trials_needed = sorted({str(c["trial_label"]) for c in disputed_cells})
+    packets: dict[str, Any] = {}
+    for label in trials_needed:
+        record = trial_record_from_validity_label(label, manifest)
+        evidence = await assemble_trial_evidence(
+            record=record,
+            sqlite_path=sqlite_path,
+            get_bundle=get_bundle,
+        )
+        propositions = sorted(
+            {
+                str(c["proposition"])
+                for c in disputed_cells
+                if str(c["trial_label"]) == label
+            },
+        )
+        packets[label] = {
+            "trial_label": label,
+            "propositions_to_rescore": propositions,
+            "elicitation": evidence.elicitation,
+            "transcript": evidence.transcript,
+        }
+    return {
+        "design": "stage1_escalation_v2",
+        "evidence_scope": "elicitation_plus_transcript",
+        "disputed_cells": disputed_cells,
+        "packets": packets,
+    }
