@@ -2,7 +2,7 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for review — `sstrf-validity-v2` Part A complete.
+**Status:** Ready for review — `sstrf-validity-v2` Part C complete.
 
 ---
 
@@ -10,36 +10,29 @@
 
 | Field | Value |
 |-------|--------|
-| **Task** | `sstrf-validity-v2` Part A — simulation harness (dry-run + CI) |
+| **Task** | `sstrf-validity-v2` Part C — post-trial elicitation |
 | **Branch** | `main` |
-| **Commit** | `c35beca` — `sstrf-validity-v2 Part A (simulation harness)` |
-| **Verification** | `cd backend && uv run pytest tests/test_sstrf_validity_v2_harness.py -q` → **6 passed** |
+| **Commit** | `be8b1b1` |
+| **Verification** | `cd backend && uv run pytest tests/test_sstrf_validity_v2_elicitation.py tests/test_sstrf_validity_v2_harness.py -q` → **10 passed** |
 
 ### Delivered
 
-1. **`scripts/run_sstrf_validity_trials.py`** — validity-trial runner extending rehearsal pattern:
-   - Loads seeds from `ARC12_STUDY_SEEDS.json` (trial-A…J → 500–509)
-   - Asserts signed freeze + fixture provenance match before live runs (`--execute`)
-   - Pre-flight: scenario seeded, study repo or inline network CSV
-   - QA gate: 0 LLM errors, 0 context-length failures (reused arc12 helpers)
-   - `--dry-run` (default): validate + write manifest with `status: planned`
-   - `--execute`: queue all ten trials (Part B)
-   - Output: `docs/diagnostics/sstrf_validity_v2_manifest.json`
-   - Validity-trial banner + ANTHROPIC_API_KEY pitfall documented
+1. **`scripts/sstrf_elicitation_instruments.py`** — CIEPSS Appendix B/C instruments + contamination guard (ported from study repo)
+2. **`scripts/sstrf_elicitation_transcript.py`** — full transcript context builder (network-bounded visibility; reads `turn_order_policy` from `interaction_policy`)
+3. **`scripts/run_sstrf_validity_elicitation.py`** — batch runner over validity manifest; `--dry-run` / `--execute`
+4. **`backend/src/mirofish_backend/diagnostics/sstrf_validity_v2_elicitation.py`** — paths, manifest attach helpers
+5. **`backend/tests/test_sstrf_validity_v2_elicitation.py`** — 4 CI tests
 
-2. **`backend/src/mirofish_backend/diagnostics/sstrf_validity_v2.py`** — shared types:
-   - `ValidityTrialProfile`, `PREREG_FROZEN_CONFIG`, manifest builders
-   - `build_validity_run_plan`, freeze/provenance assertions
+### Live execution (Part C ops)
 
-3. **`backend/tests/test_sstrf_validity_v2_harness.py`** — 6 CI tests:
-   - 10-trial plan from seeds
-   - Frozen config matches pre-reg §4
-   - Freeze signed + provenance match
-   - Dry-run manifest write
-   - Stub LLM single-trial `completed`
+- **10/10 trials** elicited (8 agents each = 80 Anthropic calls)
+- Output: `docs/research/runs/ciepss_school_b/validity_v2/elicitation/{trial-A…J}/`
+- Validity manifest updated with per-trial `elicitation.manifest_path` + `elicitation_harness` block
+- Model: pinned `claude-haiku-4-5-20251001` (warns if `.env` differs)
+- Wall clock ~21 min
 
 ### Notes for Architect
 
-- CI stub run uses `fsbb_comparator` (3 agents, 2 rounds) for speed; production profile remains `ciepss_school_b` / 8 / 20 per freeze.
-- Manifest is written on dry-run (default when neither flag passed); live Part B uses `--execute`.
-- No live Anthropic spend in Part A.
+- Elicitation JSON lives under gitignored `docs/research/` — only harness code + updated `docs/diagnostics/sstrf_validity_v2_manifest.json` committed.
+- Uses `load_scenario_for_run` (not registry) for seeded `ciepss_school_b`.
+- Part D: wire `sstrf_rq1_scoring.py` to validity manifest + elicitation paths.

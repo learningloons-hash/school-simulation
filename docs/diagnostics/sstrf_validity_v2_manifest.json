@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "harness": "sstrf-validity-v2",
+  "pre_reg_path": "docs/research/PREREG_SSTRF_RQ1_V2.md",
+  "freeze_path": "docs/diagnostics/ARC12_PLATFORM_FREEZE.json",
+  "platform_code_commit": "da906c3efee7e0e769c388e3dc09986eae6f93c3",
+  "profile": {
+    "scenario_id": "ciepss_school_b",
+    "agent_limit": 8,
+    "total_rounds": 20,
+    "model_profile_id": "anthropic_default",
+    "model_id": "claude-haiku-4-5-20251001",
+    "visibility_policy": "network_bounded",
+    "sampling_strategy": "full_census",
+    "turn_order_policy": "hierarchical",
+    "network_csv_rel_path": "docs/research/fixtures/ciepss_school_b_network.csv",
+    "rag_enabled": false,
+    "convergence_threshold": null,
+    "mechanism_flags": {
+      "likert_self_report_enabled": false,
+      "importance_scoring_enabled": false,
+      "weighted_retrieval_enabled": false,
+      "reflection_enabled": false
+    }
+  },
+  "command": "../scripts/run_sstrf_validity_trials.py --execute --study-repo-path /Users/home/cursor-projects/project-1/senna-sstrf-study --llm-provider anthropic",
+  "drafted_at": "2026-08-26T01:22:59.471749+00:00",
+  "mode": "execute",
+  "trials": [
+    {
+      "trial_label": "trial-A",
+      "random_seed": 500,
+      "simulation_id": "a092d61c1ea94b09b4e9c2ce087a8375",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 149.713,
+        "total_input_tokens": 847680,
+        "total_output_tokens": 39378,
+        "estimated_cost_usd": 1.04457
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-A/a092d61c1ea94b09b4e9c2ce087a8375_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T01:50:48.443650+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-B",
+      "random_seed": 501,
+      "simulation_id": "0b3769cd5c7a4a0995899719b3643406",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 145.743,
+        "total_input_tokens": 830070,
+        "total_output_tokens": 38387,
+        "estimated_cost_usd": 1.022005
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-B/0b3769cd5c7a4a0995899719b3643406_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T01:52:52.980915+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-C",
+      "random_seed": 502,
+      "simulation_id": "b0f354c95b7d4996a423d1f005297269",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 153.637,
+        "total_input_tokens": 862878,
+        "total_output_tokens": 38869,
+        "estimated_cost_usd": 1.057223
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-C/b0f354c95b7d4996a423d1f005297269_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T01:55:04.086397+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-D",
+      "random_seed": 503,
+      "simulation_id": "409cfc50640e4a53bb8f70d90e421027",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 153.143,
+        "total_input_tokens": 899171,
+        "total_output_tokens": 40172,
+        "estimated_cost_usd": 1.100031
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-D/409cfc50640e4a53bb8f70d90e421027_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T01:57:17.735919+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-E",
+      "random_seed": 504,
+      "simulation_id": "901b89b284e84e7d82aa13b721a8b179",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 156.665,
+        "total_input_tokens": 877681,
+        "total_output_tokens": 41186,
+        "estimated_cost_usd": 1.083611
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-E/901b89b284e84e7d82aa13b721a8b179_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T01:59:18.349553+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-F",
+      "random_seed": 505,
+      "simulation_id": "5cc597d94cd54ddcaaa45d13e496fe08",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 153.609,
+        "total_input_tokens": 894096,
+        "total_output_tokens": 41325,
+        "estimated_cost_usd": 1.100721
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-F/5cc597d94cd54ddcaaa45d13e496fe08_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T02:01:25.782773+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-G",
+      "random_seed": 506,
+      "simulation_id": "25165fd246ae4a3daa22fc2489d27af4",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 156.12,
+        "total_input_tokens": 878447,
+        "total_output_tokens": 40862,
+        "estimated_cost_usd": 1.082757
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-G/25165fd246ae4a3daa22fc2489d27af4_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T02:03:39.440261+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-H",
+      "random_seed": 507,
+      "simulation_id": "d3860855185b4830bf9d93354ff670c1",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 155.638,
+        "total_input_tokens": 835489,
+        "total_output_tokens": 39160,
+        "estimated_cost_usd": 1.031289
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-H/d3860855185b4830bf9d93354ff670c1_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T02:05:44.068795+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-I",
+      "random_seed": 508,
+      "simulation_id": "15c2998fc81d4a218cf432aeafa269a3",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 146.67,
+        "total_input_tokens": 846744,
+        "total_output_tokens": 39302,
+        "estimated_cost_usd": 1.043254
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-I/15c2998fc81d4a218cf432aeafa269a3_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T02:07:56.325000+00:00"
+      }
+    },
+    {
+      "trial_label": "trial-J",
+      "random_seed": 509,
+      "simulation_id": "db2dd8c87ed94eefa8e81e77a2f64ce5",
+      "status": "completed",
+      "total_rounds": 20,
+      "economics_summary": {
+        "wall_clock_seconds": 150.658,
+        "total_input_tokens": 840554,
+        "total_output_tokens": 39615,
+        "estimated_cost_usd": 1.038629
+      },
+      "elicitation": {
+        "manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/elicitation/trial-J/db2dd8c87ed94eefa8e81e77a2f64ce5_manifest.json",
+        "agent_count": 8,
+        "execute": true,
+        "model_id": "claude-haiku-4-5-20251001",
+        "timestamp": "2026-08-26T02:09:46.806796+00:00"
+      }
+    }
+  ],
+  "elicitation_harness": {
+    "harness": "sstrf-validity-v2-elicitation",
+    "mode": "execute",
+    "output_root": "docs/research/runs/ciepss_school_b/validity_v2/elicitation",
+    "scenario_id": "ciepss_school_b",
+    "pinned_model": "claude-haiku-4-5-20251001",
+    "command": "../scripts/run_sstrf_validity_elicitation.py --execute",
+    "drafted_at": "2026-08-26T02:09:46.807605+00:00"
+  }
+}
