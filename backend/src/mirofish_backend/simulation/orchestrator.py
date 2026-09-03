@@ -1271,6 +1271,7 @@ async def run_simulation_task(
                         beliefs=agent.persona.beliefs,
                         state=state_dict,
                         prompt_version=prompt_version,
+                        organisational_context=scenario.context,
                     )
                 else:
                     system_prompt = build_system_prompt(
@@ -1288,6 +1289,7 @@ async def run_simulation_task(
                         identity=agent.context.identity,
                         attitudes=agent.context.attitudes,
                         personal_history=agent.context.personal_history,
+                        organisational_context=scenario.context,
                     )
                 user_prompt = build_user_prompt(
                     round_number=round_number,

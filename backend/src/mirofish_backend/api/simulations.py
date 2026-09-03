@@ -1078,6 +1078,7 @@ async def queue_simulation_run(
         "scenario_groups": [
             {"group_id": g.group_id, "name": g.name, "description": g.description} for g in scenario_cfg.groups
         ],
+        "scenario_context": dict(scenario_cfg.context),
         "scale_warning": _req.agent_limit > 20,
         "roster_csv_applied": roster_parse is not None,
         "roster_csv_row_count": len(roster_parse.by_slot) if roster_parse else 0,

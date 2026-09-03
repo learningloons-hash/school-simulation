@@ -61,6 +61,8 @@ class ScenarioConfig:
     # senna-iter-40: optional round-end Likert anchors (six labels per indicator).
     likert_self_report_enabled: bool = False
     likert_anchor_labels: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    # scenario-context-field: optional organisational/ecological background (YAML `context:`).
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 _DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -232,6 +234,15 @@ def _groups_from_scenario(raw: Any) -> tuple[GroupDef, ...]:
     return tuple(out)
 
 
+def _context_from_scenario(raw: dict[str, Any]) -> dict[str, Any]:
+    if "context" not in raw:
+        return {}
+    ctx = raw["context"]
+    if not isinstance(ctx, dict):
+        raise ValueError("scenario.context must be a mapping when present")
+    return {str(k): v for k, v in ctx.items()}
+
+
 def _scenario_from_mapping(raw: dict[str, Any]) -> ScenarioConfig:
     pe_raw = raw.get("policy_events") or {}
     policy_events: dict[int, str] = {int(k): str(v) for k, v in pe_raw.items()}
@@ -247,6 +258,7 @@ def _scenario_from_mapping(raw: dict[str, Any]) -> ScenarioConfig:
     interaction_overlay = str(raw.get("interaction_overlay") or "none").strip().lower()
     likert_enabled = bool(raw.get("likert_self_report_enabled", False))
     likert_anchors = _parse_likert_anchor_labels(raw.get("likert_anchor_labels"))
+    context = _context_from_scenario(raw)
     return ScenarioConfig(
         scenario_id=str(raw["scenario_id"]),
         name=str(raw["name"]),
@@ -258,6 +270,7 @@ def _scenario_from_mapping(raw: dict[str, Any]) -> ScenarioConfig:
         interaction_overlay=interaction_overlay,
         likert_self_report_enabled=likert_enabled,
         likert_anchor_labels=likert_anchors,
+        context=context,
     )
 
 

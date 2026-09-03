@@ -2,54 +2,67 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for review — `sstrf-validity-v2` Part D harness complete; live judge runs pending Mark/CLI.
+**Status:** Ready for review — `scenario-context-field` Part A.
 
 ---
 
 ## Builder report
 
-| Field | Value |
-|-------|--------|
-| **Task** | `sstrf-validity-v2` Part D — scoring wired to validity manifest |
-| **Branch** | `main` |
-| **Commit** | `17c15a2` |
-| **Verification** | `cd backend && uv run pytest tests/test_sstrf_validity_v2_scoring.py tests/test_sstrf_rq1_scoring.py -q` → **60 passed** |
+### Summary
 
-### Delivered
+Implemented optional scenario-level `context:` YAML → `ScenarioConfig.context` → organisational setting block in tier-1/tier-2 LLM system prompts + `config_snapshot.scenario_context`. No `EXPORT_VERSION` bump.
 
-1. **`scripts/run_sstrf_validity_scoring.py`** — validity-v2 scoring pipeline:
-   - `--run-calibration --execute-judge-calls` (gpt-4o gate)
-   - `--score-all-trials --execute-judge-calls`
-   - `--prepare-adjudication` → tier2 drift packets for Mark
-   - `--import-human-scores` → `--finalize` → `validity_v2_scoring_manifest.json`
-2. **`sstrf_scoring_evidence.py`** — validity manifest loaders, fixed trial-A…J mapping, tier2/stage1 validity builders
-3. **`backend/src/mirofish_backend/diagnostics/sstrf_validity_v2_scoring.py`** — attach scoring block to validity manifest on finalize
-4. **`backend/tests/test_sstrf_validity_v2_scoring.py`** — 4 CI tests (mapping, elicitation load, dry-run, instruments)
+### Files changed
 
-### Live ops (Mark/CLI — not run autonomously)
+| File | Change |
+|------|--------|
+| `backend/src/mirofish_backend/scenarios/registry.py` | `ScenarioConfig.context`; `_context_from_scenario()` with load-time `ValueError` |
+| `backend/src/mirofish_backend/llm/prompt_templates.py` | `ORGANISATIONAL_CONTEXT_TITLE`, `_organisational_context_block()`, kwarg on both prompt builders |
+| `backend/src/mirofish_backend/simulation/orchestrator.py` | `organisational_context=scenario.context` in tier-1 and tier-2 branches |
+| `backend/src/mirofish_backend/api/simulations.py` | `"scenario_context": dict(scenario_cfg.context)` in `config_snapshot` |
+| `backend/tests/test_scenario_context.py` | **New** — acceptance tests A–E |
 
-From `mirofish-mvp/backend`:
+### Decisions implemented
 
-```bash
-# 1. Calibration gate (OpenAI gpt-4o)
-uv run python ../scripts/run_sstrf_validity_scoring.py --run-calibration --execute-judge-calls
+| # | Decision | Done |
+|---|----------|------|
+| 1 | Block after Prompt version, before persona; exact framing title via `_profile_lines()` | ✅ |
+| 2 | Reuse `_profile_lines()` — no duplicate bullet renderer | ✅ |
+| 3 | Tier 1 ✅ Tier 2 ✅ Tier 3 ❌ (heuristic only) | ✅ |
+| 4 | No `EXPORT_VERSION` bump; additive `scenario_context` key | ✅ |
 
-# 2. Score all 10 trials (2 judge passes each)
-uv run python ../scripts/run_sstrf_validity_scoring.py --score-all-trials --execute-judge-calls
+### Acceptance tests
 
-# 3. Prepare adjudication + tier2 drift packets
-uv run python ../scripts/run_sstrf_validity_scoring.py --prepare-adjudication
+| Test | Result |
+|------|--------|
+| **A** Sentinel `SENNA_CTX_SENTINEL_7f3a9c` in every captured system prompt (stub orchestrator, mixed tiers) | ✅ |
+| **B** Empty/absent context → byte-identical golden prompts (tier 1 & 2) | ✅ |
+| **C** `config_snapshot["scenario_context"]` matches scenario dict | ✅ |
+| **D** Malformed `context` → `ValueError("scenario.context must be a mapping when present")` | ✅ |
+| **E** Framing title + order before persona section | ✅ |
+| **F** Builtin scenarios load with `context == {}` | ✅ |
 
-# 4. After Mark drift-check: import scores then finalize
-uv run python ../scripts/run_sstrf_validity_scoring.py --import-human-scores /path/to/mark_scores.json
-uv run python ../scripts/run_sstrf_validity_scoring.py --finalize
+### Verification
+
+```text
+cd backend && uv run pytest tests/test_scenario_context.py tests/test_prompt_messages.py tests/test_iteration23.py -q
+→ 17 passed
 ```
 
-Outputs under `docs/research/runs/ciepss_school_b/validity_v2/scoring/`.
+### Out of scope (untouched)
 
-### Notes for Architect
+`PersonaTemplate`, `policy_events`, RAG/corpus, `ciepss_school_b.yaml`, SSTRF fixtures.
 
-- Validity trial labels are **fixed** (trial-A…J) — no Phase V shuffle.
-- SQLite default: `backend/data/mirofish.sqlite` (Part B runs).
-- `--finalize` updates `docs/diagnostics/sstrf_validity_v2_manifest.json` with `scoring_harness` block.
-- Drift-check import is **Mark-only** per pre-reg — builder cannot finalize without it.
+### Part B unblock
+
+Fixture authors may now add `context:` YAML; runs will inject context once Part A is merged. Sentinel test guards silent no-op regression.
+
+### Commit
+
+`scenario-context-field` Part A (ScenarioConfig.context + prompt injection).
+
+### Notes for architect
+
+- Empty context omits the block entirely (no extra blank lines vs pre-change prompts).
+- `_context_from_scenario` normalises keys to `str`; values pass through as loaded from YAML.
+- Config snapshot test uses `tmp_path` + `init_db` because `queue_simulation_run` touches `user_scenarios` when `scenario_source == "user"`.

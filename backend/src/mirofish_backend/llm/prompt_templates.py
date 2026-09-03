@@ -1,5 +1,10 @@
 from typing import Any, cast
 
+ORGANISATIONAL_CONTEXT_TITLE = (
+    "Organisational setting (shared background — circumstances everyone in this scenario "
+    "has long operated within; not a policy event or instruction)"
+)
+
 
 def _profile_lines(title: str, profile: dict[str, Any]) -> str:
     if not profile:
@@ -8,6 +13,12 @@ def _profile_lines(title: str, profile: dict[str, Any]) -> str:
     for k, v in sorted(profile.items(), key=lambda kv: str(kv[0])):
         lines.append(f"- {k}: {v}")
     return "\n".join(lines) + "\n\n"
+
+
+def _organisational_context_block(context: dict[str, Any] | None) -> str:
+    if not context:
+        return ""
+    return _profile_lines(ORGANISATIONAL_CONTEXT_TITLE, context)
 
 
 def build_system_prompt(
@@ -26,12 +37,14 @@ def build_system_prompt(
     identity: dict[str, Any] | None = None,
     attitudes: dict[str, Any] | None = None,
     personal_history: dict[str, Any] | None = None,
+    organisational_context: dict[str, Any] | None = None,
 ) -> str:
     psych = _profile_lines("Psychological profile (simulation)", psychological_profile or {})
     impl = _profile_lines("Implementation profile (simulation)", implementation_profile or {})
     id_block = _profile_lines("Identity (structured attributes)", identity or {})
     att_block = _profile_lines("Attitudes / stance (structured)", attitudes or {})
     hist_block = _profile_lines("Personal history (structured)", personal_history or {})
+    ctx_block = _organisational_context_block(organisational_context)
     group_line = (
         f"- Group / cohort affiliations (in-character): {', '.join(group_affiliations)}\n"
         if group_affiliations
@@ -40,6 +53,7 @@ def build_system_prompt(
     return (
         f"You are {name}, acting as a {role} in scenario '{scenario_id}'.\n"
         f"Prompt version: {prompt_version}.\n\n"
+        f"{ctx_block}"
         "Persona identity and stance:\n"
         f"- Style cues: {style_cues}\n"
         f"- Beliefs: {beliefs}\n"
@@ -68,11 +82,14 @@ def simplified_persona_prompt(
     beliefs: dict[str, Any],
     state: dict[str, Any],
     prompt_version: str,
+    organisational_context: dict[str, Any] | None = None,
 ) -> str:
     """Iteration 23 Tier-2 system prompt: role + stance + state only (no deep persona blocks)."""
+    ctx_block = _organisational_context_block(organisational_context)
     return (
         f"You are {name}, acting as a {role} in scenario '{scenario_id}'.\n"
         f"Prompt version: {prompt_version}.\n"
+        f"{ctx_block}"
         "Fidelity: Tier 2 (simplified persona — structural participation; omit deep biography).\n\n"
         "Position and stance:\n"
         f"- Style cues: {style_cues}\n"
