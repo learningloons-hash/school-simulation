@@ -143,6 +143,7 @@ The real `ciepss_school_b.yaml` is private, study-repo-only content. Public-repo
 python3 scripts/seed_scenario_from_study_repo.py \
   --study-repo-path <path to senna-sstrf-study checkout> \
   --yaml-rel-path <confirmed in §1.1> \
+  --scenario-id ciepss_school_b \
   --corpus-rel-dir <confirmed in §1.1, if applicable>
 ```
 

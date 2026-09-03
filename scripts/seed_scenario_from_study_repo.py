@@ -275,7 +275,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Seed a user_scenarios row from a study-repo checkout.")
     p.add_argument("--study-repo-path", required=True, help="Local path to senna-sstrf-study checkout")
     p.add_argument("--yaml-rel-path", required=True, help="Scenario YAML path relative to study repo root")
-    p.add_argument("--scenario-id", default="ciepss_school_b", help="Scenario id to register (default: ciepss_school_b)")
+    p.add_argument("--scenario-id", required=True, help="Scenario id to register (required — no default, so a forgotten flag fails loudly instead of silently reusing another scenario's id)")
     p.add_argument("--corpus-rel-dir", default="", help="Corpus directory relative to study repo (when rag_enabled)")
     p.add_argument("--sqlite-path", default="", help="SQLite path (default: settings)")
     p.add_argument("--force", action="store_true", help="Skip overwrite confirmation when scenario exists")

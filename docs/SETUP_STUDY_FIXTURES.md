@@ -27,7 +27,8 @@ From the platform repo root:
 ```bash
 python3 scripts/seed_scenario_from_study_repo.py \
   --study-repo-path /path/to/senna-sstrf-study \
-  --yaml-rel-path backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml
+  --yaml-rel-path backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml \
+  --scenario-id ciepss_school_b
 ```
 
 Optional flags:
