@@ -57,6 +57,8 @@ from mirofish_backend.diagnostics.sstrf_validity_v2_scoring import (
     attach_scoring_to_validity_manifest,
     save_validity_manifest_with_scoring,
 )
+from run_arc11_ablation import load_dotenv_if_present  # noqa: E402
+
 from mirofish_backend.llm.model_profiles import OPENAI_DEFAULT_ID
 
 from sstrf_scoring_judge import (
@@ -68,7 +70,10 @@ from sstrf_scoring_judge import (
     shuffle_orders,
     build_judge_user_prompt,
     JUDGE_PRIMARY_MODEL,
+    PROPOSITIONS_VERBATIM,
+    SCALE_VERBATIM,
 )
+from sstrf_scoring_cells import all_trial_cell_ids, proposition_for_cell
 
 CALIBRATION_GATE_RESULT = VALIDITY_V2_SCORING_DIR / "calibration_gate_result.json"
 HUMAN_REVIEW_QUEUE = VALIDITY_V2_SCORING_DIR / "human_review_queue.json"
@@ -77,7 +82,35 @@ JUDGE_SCORING_SUMMARY = VALIDITY_V2_SCORING_DIR / "validity_v2_judge_scoring_sum
 TIER1_PLAUSIBILITY_SUMMARY = VALIDITY_V2_SCORING_DIR / "tier1_plausibility_summary.json"
 TIER2_DRIFT_PACKETS = VALIDITY_V2_SCORING_DIR / "tier2_drift_packets.json"
 STAGE1_ESCALATION_PACKETS = VALIDITY_V2_SCORING_DIR / "stage1_escalation_packets.json"
+HUMAN_SCORING_WORKSHEET = VALIDITY_V2_SCORING_DIR / "human_scoring_worksheet.json"
+HUMAN_PACKETS_DIR = VALIDITY_V2_SCORING_DIR / "human_packets"
 CALIBRATION_PASS_THRESHOLD = 12
+_DEFAULT_ENV_FILE = _REPO_ROOT / "backend" / ".env"
+
+
+def _load_backend_env() -> None:
+    load_dotenv_if_present(_DEFAULT_ENV_FILE)
+
+
+def assert_judge_api_keys_available() -> None:
+    """Judge chain is OpenAI gpt-4o primary — not Anthropic."""
+    openai_key = (os.environ.get("OPENAI_API_KEY") or "").strip()
+    if openai_key:
+        return
+    if "OPENAI_API_KEY" in os.environ:
+        raise RuntimeError(
+            "OPENAI_API_KEY is exported in the shell but empty — it shadows backend/.env.\n"
+            "  Run: unset OPENAI_API_KEY\n"
+            "  Then confirm backend/.env has OPENAI_API_KEY=sk-...",
+        )
+    openrouter_key = (os.environ.get("OPENROUTER_API_KEY") or "").strip()
+    if openrouter_key:
+        return
+    raise RuntimeError(
+        "No judge API key found. Scoring uses gpt-4o (OpenAI), not Anthropic.\n"
+        "  Set OPENAI_API_KEY in backend/.env (this script loads that file automatically),\n"
+        "  or export OPENAI_API_KEY / OPENROUTER_API_KEY before --execute-judge-calls.",
+    )
 
 
 def _is_primary_openai_judge(spec) -> bool:
@@ -187,6 +220,8 @@ async def cmd_dry_run(args: argparse.Namespace) -> int:
 
 async def cmd_run_calibration(args: argparse.Namespace) -> int:
     assert_calibration_set_signed()
+    if args.execute_judge_calls:
+        assert_judge_api_keys_available()
     chain = resolve_judge_chain()
     results: dict[str, Any] = {
         "run_at": _utc_now(),
@@ -270,6 +305,8 @@ async def cmd_run_calibration(args: argparse.Namespace) -> int:
 
 async def cmd_score_all_trials(args: argparse.Namespace) -> int:
     assert_calibration_set_signed()
+    if args.execute_judge_calls:
+        assert_judge_api_keys_available()
     assert_calibration_gate_passed()
     manifest = load_validity_v2_manifest(Path(args.manifest) if args.manifest else None)
     mapping = _load_mapping(manifest, write_label_map=True)
@@ -365,11 +402,126 @@ async def cmd_score_all_trials(args: argparse.Namespace) -> int:
     return 0
 
 
+def _human_only_state() -> dict[str, Any]:
+    state = _load_scoring_state()
+    if state.get("mode") != "human_only":
+        raise RuntimeError(
+            "Not in human-only mode — run --prepare-human-scoring first "
+            "(after calibration gate failure or by explicit choice).",
+        )
+    return state
+
+
+def _init_human_trial_shells(mapping: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {
+        label: {"adjudicated": {}, "human_notes": {}}
+        for label in sorted(mapping)
+    }
+
+
+async def cmd_prepare_human_scoring(args: argparse.Namespace) -> int:
+    """Export rater packets + empty worksheet for Mark (GM-F §5 human escalation)."""
+    manifest = load_validity_v2_manifest(Path(args.manifest) if args.manifest else None)
+    mapping = build_validity_v2_trial_mapping(manifest)
+    VALIDITY_V2_SCORING_DIR.mkdir(parents=True, exist_ok=True)
+    HUMAN_PACKETS_DIR.mkdir(parents=True, exist_ok=True)
+
+    calibration_note: dict[str, Any] = {"passed": None}
+    if CALIBRATION_GATE_RESULT.is_file():
+        gate = json.loads(CALIBRATION_GATE_RESULT.read_text(encoding="utf-8"))
+        calibration_note = {
+            "passed": bool(gate.get("passed")),
+            "pass_1_correct": gate.get("pass_1_correct"),
+            "pass_2_correct": gate.get("pass_2_correct"),
+            "judge_model_id": gate.get("judge_model_id"),
+        }
+
+    trial_rows: list[dict[str, Any]] = []
+    for label in sorted(mapping):
+        record = trial_record_from_validity_label(label, manifest)
+        evidence = await assemble_trial_evidence(
+            record=record,
+            sqlite_path=Path(args.sqlite),
+            get_bundle=None,
+        )
+        payload = build_rater_payload(evidence)
+        packet_path = HUMAN_PACKETS_DIR / f"{label}.json"
+        packet_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        trial_rows.append(
+            {
+                "trial_label": label,
+                "random_seed": int(mapping[label]["seed"]),
+                "simulation_id": str(mapping[label]["simulation_id"]),
+                "packet_path": str(packet_path.relative_to(_REPO_ROOT)),
+                "cells": [
+                    {
+                        "cell_id": cell_id,
+                        "proposition": proposition_for_cell(cell_id),
+                        "score": None,
+                    }
+                    for cell_id in all_trial_cell_ids()
+                ],
+            },
+        )
+
+    worksheet = {
+        "schema_version": 1,
+        "mode": "human_only",
+        "reason": "Automated judge calibration did not pass — Mark scores all cells (GM-F §5).",
+        "calibration_gate": calibration_note,
+        "rubric": {
+            "propositions": PROPOSITIONS_VERBATIM,
+            "scale": SCALE_VERBATIM,
+            "spec": "docs/research/SSTRF_RQ1_SCORING_SYSTEM_V2.md",
+        },
+        "valid_scores": [-1, 0, 1, 2],
+        "trials": trial_rows,
+        "import_format": {
+            "scores": [
+                {
+                    "trial_label": "trial-A",
+                    "cell_id": "P1:vice_principal_001",
+                    "score": 2,
+                    "note": "optional",
+                },
+            ],
+        },
+    }
+    HUMAN_SCORING_WORKSHEET.write_text(json.dumps(worksheet, indent=2) + "\n", encoding="utf-8")
+
+    state = {
+        "mode": "human_only",
+        "prepared_at": _utc_now(),
+        "worksheet_path": str(HUMAN_SCORING_WORKSHEET),
+        "trials": _init_human_trial_shells(mapping),
+    }
+    _save_scoring_state(state)
+    print(f"human scoring worksheet: {HUMAN_SCORING_WORKSHEET}")
+    print(f"rater packets: {HUMAN_PACKETS_DIR}/ (one JSON per trial)")
+    print(f"cells to score: {len(trial_rows) * len(all_trial_cell_ids())}")
+    print(
+        "Fill scores in a JSON file matching import_format, then:\n"
+        "  --import-human-scores /path/to/mark_scores.json\n"
+        "  --finalize-human",
+    )
+    return 0
+
+
 def cmd_import_human_scores(args: argparse.Namespace) -> int:
     path = Path(args.import_human_scores)
     imported = json.loads(path.read_text(encoding="utf-8"))
     state = _load_scoring_state()
+    if not state.get("trials"):
+        manifest = load_validity_v2_manifest(Path(args.manifest) if args.manifest else None)
+        mapping = build_validity_v2_trial_mapping(manifest)
+        state["trials"] = _init_human_trial_shells(mapping)
+        state.setdefault("mode", "human_only")
     apply_human_scores(state["trials"], imported)
+    if state.get("mode") == "human_only":
+        state["human_scores_imported_at"] = _utc_now()
+        _save_scoring_state(state)
+        print(f"imported human scores from {path}")
+        return 0
     drift_scores = list(imported.get("drift_scores") or [])
     state["imported_drift_scores"] = drift_scores
     if drift_scores:
@@ -575,6 +727,95 @@ def cmd_finalize(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_finalize_human(args: argparse.Namespace) -> int:
+    """Finalize study when Mark scored all cells (no automated judge passes)."""
+    state = _human_only_state()
+    if not state.get("human_scores_imported_at"):
+        raise RuntimeError("Run --import-human-scores before --finalize-human")
+    manifest_path = Path(args.manifest) if args.manifest else VALIDITY_V2_MANIFEST_PATH
+    validity_manifest = load_validity_v2_manifest(manifest_path)
+    mapping = build_validity_v2_trial_mapping(validity_manifest)
+
+    trials_out: list[dict[str, Any]] = []
+    for label in sorted(mapping):
+        trial = state["trials"].get(label) or {}
+        adjudicated = {
+            cell_id: int(trial["adjudicated"][cell_id])
+            for cell_id in all_trial_cell_ids()
+            if cell_id in (trial.get("adjudicated") or {})
+        }
+        missing = [c for c in all_trial_cell_ids() if c not in adjudicated]
+        if missing:
+            raise RuntimeError(
+                f"{label} missing {len(missing)} human scores — "
+                f"need all {len(all_trial_cell_ids())} cells",
+            )
+        trials_out.append(
+            {
+                "trial_label": label,
+                "pass_1": None,
+                "pass_2": None,
+                "adjudicated": adjudicated,
+                "adjudication_rules": {cell_id: "human_only" for cell_id in adjudicated},
+                "human_notes": trial.get("human_notes") or {},
+                "trial_pass": trial_passes(adjudicated),
+                "judge_model_id": None,
+                "rater": "Mark",
+            },
+        )
+
+    calibration_gate: dict[str, Any] = {"passed": False, "human_escalation": True}
+    if CALIBRATION_GATE_RESULT.is_file():
+        raw = json.loads(CALIBRATION_GATE_RESULT.read_text(encoding="utf-8"))
+        calibration_gate.update(
+            {
+                "passed": bool(raw.get("passed")),
+                "pass_1_correct": raw.get("pass_1_correct"),
+                "pass_2_correct": raw.get("pass_2_correct"),
+                "attempted_judge_model_id": raw.get("judge_model_id"),
+            },
+        )
+
+    manifest_out = {
+        "schema_version": 1,
+        "harness": "sstrf-validity-v2",
+        "scoring_mode": "human_only",
+        "scored_at": _utc_now(),
+        "calibration_gate": calibration_gate,
+        "judge_models_used": [],
+        "drift_check": {
+            "skipped": True,
+            "reason": "sole human rater — no automated judge to drift-check against",
+        },
+        "study_summary": finalize_study_summary(trials=trials_out),
+        "trials": trials_out,
+        "human_adjudication_count": len(trials_out) * len(all_trial_cell_ids()),
+        "disclosure": "All results reported regardless of outcome per pre-reg §9",
+    }
+    VALIDITY_V2_SCORING_DIR.mkdir(parents=True, exist_ok=True)
+    VALIDITY_V2_SCORING_MANIFEST.write_text(json.dumps(manifest_out, indent=2) + "\n", encoding="utf-8")
+
+    attach_scoring_to_validity_manifest(
+        manifest=validity_manifest,
+        scoring_manifest_path=VALIDITY_V2_SCORING_MANIFEST,
+        mode="finalize_human",
+        command=" ".join(sys.argv),
+        root=_REPO_ROOT,
+    )
+    save_validity_manifest_with_scoring(
+        manifest=validity_manifest,
+        path=manifest_path,
+        root=_REPO_ROOT,
+    )
+    print(
+        f"manifest written study_pass={manifest_out['study_summary']['study_pass']} "
+        f"trials_passed={manifest_out['study_summary']['trials_passed']}/"
+        f"{manifest_out['study_summary']['trials_total']}",
+    )
+    print(f"scoring manifest: {VALIDITY_V2_SCORING_MANIFEST}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="SSTRF validity-v2 scoring pipeline (Part D)")
     p.add_argument("--dry-run", action="store_true")
@@ -582,7 +823,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--score-all-trials", action="store_true")
     p.add_argument("--import-human-scores", metavar="PATH")
     p.add_argument("--prepare-adjudication", action="store_true")
+    p.add_argument("--prepare-human-scoring", action="store_true")
     p.add_argument("--finalize", action="store_true")
+    p.add_argument("--finalize-human", action="store_true")
     p.add_argument("--execute-judge-calls", action="store_true")
     p.add_argument("--trial-label", default=None)
     p.add_argument("--manifest", default=str(VALIDITY_V2_MANIFEST_PATH))
@@ -598,6 +841,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    _load_backend_env()
     args = build_parser().parse_args(argv)
     if args.dry_run:
         return asyncio.run(cmd_dry_run(args))
@@ -609,8 +853,12 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_import_human_scores(args)
     if args.prepare_adjudication:
         return asyncio.run(cmd_prepare_adjudication(args))
+    if args.prepare_human_scoring:
+        return asyncio.run(cmd_prepare_human_scoring(args))
     if args.finalize:
         return cmd_finalize(args)
+    if args.finalize_human:
+        return cmd_finalize_human(args)
     build_parser().print_help()
     return 2
 

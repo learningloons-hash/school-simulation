@@ -236,5 +236,12 @@
     "pinned_model": "claude-haiku-4-5-20251001",
     "command": "../scripts/run_sstrf_validity_elicitation.py --execute",
     "drafted_at": "2026-08-26T02:09:46.807605+00:00"
+  },
+  "scoring_harness": {
+    "harness": "sstrf-validity-v2-scoring",
+    "mode": "finalize_human",
+    "scoring_manifest_path": "docs/research/runs/ciepss_school_b/validity_v2/scoring/validity_v2_scoring_manifest.json",
+    "command": "scripts/run_sstrf_validity_scoring.py --finalize-human",
+    "drafted_at": "2026-09-01T05:27:45.135066+00:00"
   }
 }
