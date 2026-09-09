@@ -65,21 +65,41 @@ the study completes or this pre-registration is formally amended.
 
 ---
 
-## 3. Fixture provenance (study repo — not the product DB)
+## 3. Research artefact provenance (verifier pointers)
 
-Fixture material is versioned in the **private study repository**, not on the public product
-repo. The product repo holds a provenance pointer only.
+**Location correction (2026-09-09):** Methodological study artefacts below are committed in the
+**public product repository** (`school-simulation`). They are no longer gitignored-only on
+that repo. **Case fixture material** (CIEPSS scenario YAML, influence network CSV, elicitation
+transcripts, source PDFs) remains in the **private study repository** only.
 
-**Source manifest:** [`docs/diagnostics/ciepss_school_b_provenance.json`](../diagnostics/ciepss_school_b_provenance.json)
+### 3a. Public methodological artefacts (`school-simulation`)
+
+Repository: `https://github.com/learningloons-hash/school-simulation.git`
+
+| Artefact | Commit (reachable on `main`) | Path |
+|---|---|---|
+| **Pre-registration (signed)** | `1b5ca4c2f290359cf4841164583302e45d256b4f` | `docs/research/PREREG_SSTRF_RQ1_V2.md` |
+| **Scoring system v2** | `177306a75725e1fb168fc173cf104d289c3726ae` | `docs/research/SSTRF_RQ1_SCORING_SYSTEM_V2.md` |
+| **Rater calibration set** | `177306a75725e1fb168fc173cf104d289c3726ae` | `docs/research/SSTRF_RATER_CALIBRATION_SET.md` |
+| **Platform freeze manifest** | `66ea88e` (see `ARC12_PLATFORM_FREEZE.json` for signed record) | `docs/diagnostics/ARC12_PLATFORM_FREEZE.json` |
+| **Validity-v2 trial manifest** | `750509f` | `docs/diagnostics/sstrf_validity_v2_manifest.json` |
+| **Validity-v2 scoring manifest (confirmatory result)** | `e5aa26bb558401ac606c0d6b16786dd4d3e9bae2` | `docs/research/runs/ciepss_school_b/validity_v2/scoring/validity_v2_scoring_manifest.json` |
+
+The signed STATUS block at the top of this document is unchanged. Criterion, thresholds, and
+signature date (`2026-08-25`) are not amended by this pointer correction.
+
+### 3b. Private case fixture material (`senna-sstrf-study`)
+
+**Source manifest (pointer):** [`docs/diagnostics/ciepss_school_b_provenance.json`](../diagnostics/ciepss_school_b_provenance.json)
 
 | Field | Value |
 |---|---|
 | **Study repo** | `https://github.com/learningloons-hash/senna-sstrf-study.git` |
-| **Fixture commit** | `47013659309c5ac047dbc53dcea3fd1441d74042` |
-| **Scenario YAML** (at fixture commit) | `backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml` |
-| **Influence network CSV** (at fixture commit) | `docs/research/fixtures/ciepss_school_b_network.csv` |
-| **Seeded at** | 2026-08-24T05:54:30+00:00 |
-| **Dirty** | false |
+| **Fixture commit** | `47013659309c5ac047dbc53dcea3fd1441d74042` (update after study-repo sync) |
+| **Scenario YAML** | `backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml` |
+| **Influence network CSV** | `docs/research/fixtures/ciepss_school_b_network.csv` |
+| **Elicitation transcripts (validity v2)** | `docs/research/runs/ciepss_school_b/validity_v2/elicitation/` (study repo only) |
+| **Result narrative (companion)** | `docs/research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md` (study repo only) |
 
 Ops loads scenario and network CSV from the pinned study-repo commit for every validity trial.
 The simulation `config_snapshot` must record `network_csv_applied: true` and network
