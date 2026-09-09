@@ -1,0 +1,127 @@
+# SQ Reading Culture Programme — adverse-context differentiation fixture (Part B, 2026-09-09)
+# (a) Persona "# source:" comments refer to the CIEPSS report and describe the ACTORS, not this programme.
+# (b) Programme from Shuqun Primary Reading Culture Programme page, retrieved 2026-09-01.
+# (c) Source names EL and MT departments as joint owners; this roster has no MT role — known gap, not filled by invention.
+# (d) context: adverse organisational setting — same policy_events and roster as sq_reading_culture; context only differs.
+# NOTE: study-repo adverse YAML had a round-5 policy shock; removed here for context-only differentiation (GM-F Part B).
+scenario_id: sq_reading_culture_adverse
+name: SQ Reading Culture Programme — Adverse Context (Workflow Test)
+interaction_overlay: school_trinidad
+context:
+  # source: GM-F scenario-context-field Part A/B — adverse ecological contrast (not CIEPSS site claims)
+  school_profile: "High-needs primary; stretched resources and frequent timetable trade-offs between competing priorities."
+  leadership_stability: "Three principals in six years; senior leadership turnover has disrupted continuity."
+  initiative_history: "Two prior whole-school initiatives were launched and abandoned; staff are wary of new programme layering."
+  staff_capacity: "Departments report limited spare capacity for additional coordination beyond existing commitments."
+policy_events:
+  # source: Shuqun Primary page — whole-school reading culture approach
+  1: "The school launches a whole-school approach to develop proficient readers by building passion for reading and teaching students how to read."
+  # source: Shuqun Primary page — Reading Period
+  2: "One period per week is set aside for reading; students engage in book exploration and extension activities during leisure reading time."
+  # source: Shuqun Primary page — Reading Period activities
+  3: "Book talks, storytelling sessions, and incentives for good readers are introduced to encourage more reading."
+  # source: Shuqun Primary page — Reading Activity Programme
+  4: "The EL and MT departments launch a joint Reading Activity Programme to promote reading of both EL and MT books with a combined rewards and recognition system."
+  # source: Shuqun Primary page — Reading Activity Booklets
+  5: "Reading Activity Booklets are issued for Lower Primary (P1–2), Middle Primary (P3–4), and Upper Primary (P5–6), each with reading activities to complete over the year."
+  # source: Shuqun Primary page — Read@School / NLB
+  6: "The Read@School project with the National Library Board continues, with assembly programmes such as Book Buzz to promote age-appropriate books."
+  # source: Shuqun Primary page — Read@School storytelling
+  7: "NLB-supported storytelling and book-promotion activities are scheduled across levels."
+  # source: Shuqun Primary page — Reading Events / Parent-Child Reading
+  8: "Parent-Child Reading sessions are organised for parents and students."
+  # source: Shuqun Primary page — 2017 expansion
+  9: "Parent-Child Reading is expanded to P1–4 parents and students on the largest scale offered to date."
+  # source: Shuqun Primary page — programme consolidation
+  10: "Staff review uptake of reading periods, booklet completion, NLB activities, and parent participation; adjustments are planned for the next cycle."
+personas:
+  # source: CIEPSS Table 2, p.9
+  - persona_id: vice_principal_001
+    role: vice_principal
+    name: Vice-Principal (Miss C)
+    role_level: 1
+    initial_state: &neutral_calibration_prior
+      # Neutral numeric values are calibration priors, not CIEPSS measurements.
+      support_level: 0.5
+      resistance_level: 0.5
+      workload_stress: 0.5
+      belief_posture: neutral
+    style_cues: ""
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history: {}
+  # source: CIEPSS Table 2, p.9
+  - persona_id: hod_english_001
+    role: hod_english
+    name: English Head of Department (Miss L)
+    role_level: 2
+    initial_state: *neutral_calibration_prior
+    style_cues: ""
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history: {}
+  # source: CIEPSS Table 2, p.9
+  - persona_id: senior_teacher_001
+    role: senior_teacher
+    name: Senior Teacher (Miss T)
+    role_level: 2
+    initial_state: *neutral_calibration_prior
+    style_cues: ""
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history: {}
+  # source: CIEPSS Table 2, p.9
+  - persona_id: teacher_001
+    role: p2_form_teacher
+    name: P2 Form Teacher (Miss M)
+    role_level: 3
+    initial_state: *neutral_calibration_prior
+    style_cues: ""
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history: {}
+  # source: CIEPSS Table 2, p.9 (parent focus group, n=4)
+  - persona_id: parent_001
+    role: parent
+    name: Parent 1
+    role_level: 4
+    initial_state: *neutral_calibration_prior
+    style_cues: ""
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history: {}
+  - persona_id: parent_002
+    role: parent
+    name: Parent 2
+    role_level: 4
+    initial_state: *neutral_calibration_prior
+    style_cues: ""
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history: {}
+  - persona_id: parent_003
+    role: parent
+    name: Parent 3
+    role_level: 4
+    initial_state: *neutral_calibration_prior
+    style_cues: ""
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history: {}
+  - persona_id: parent_004
+    role: parent
+    name: Parent 4
+    role_level: 4
+    initial_state: *neutral_calibration_prior
+    style_cues: ""
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history: {}

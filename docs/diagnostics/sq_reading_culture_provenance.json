@@ -1,0 +1,10 @@
+{
+  "scenario_id": "sq_reading_culture",
+  "source_repo": "https://github.com/learningloons-hash/senna-sstrf-study.git",
+  "source_commit": "47013659309c5ac047dbc53dcea3fd1441d74042",
+  "yaml_rel_path": "backend/src/mirofish_backend/scenarios/data/sq_reading_culture.yaml",
+  "corpus_rel_dir": null,
+  "seeded_at": "2026-09-09T00:35:00+00:00",
+  "dirty": true,
+  "notes": "Personas and policy_events from study-repo YAML (untracked at 47013659). context: block authored in-product for Part B differentiation; not in study commit."
+}

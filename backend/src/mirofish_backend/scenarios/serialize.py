@@ -48,4 +48,6 @@ def scenario_config_to_document(cfg: ScenarioConfig) -> dict[str, Any]:
         out["rag_corpus_paths"] = list(cfg.rag_corpus_paths)
     if cfg.interaction_overlay and cfg.interaction_overlay != "none":
         out["interaction_overlay"] = cfg.interaction_overlay
+    if cfg.context:
+        out["context"] = dict(cfg.context)
     return out

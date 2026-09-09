@@ -2,7 +2,7 @@
 
 **Ritual:** Builder fills this file when work is **complete** (tests pass, committed). Architect reviews against [`handoff-to-builder.md`](./handoff-to-builder.md) and posts verdict in chat.
 
-**Status:** Ready for review — `scenario-context-field` Part A.
+**Status:** Ready for review — `scenario-context-field` Part B.
 
 ---
 
@@ -10,59 +10,49 @@
 
 ### Summary
 
-Implemented optional scenario-level `context:` YAML → `ScenarioConfig.context` → organisational setting block in tier-1/tier-2 LLM system prompts + `config_snapshot.scenario_context`. No `EXPORT_VERSION` bump.
+Committed paired `sq_reading_culture` fixtures with non-empty `context:` blocks for baseline vs adverse organisational differentiation. Same roster and `policy_events`; only `scenario_id`, `name`, and `context` differ.
 
 ### Files changed
 
 | File | Change |
 |------|--------|
-| `backend/src/mirofish_backend/scenarios/registry.py` | `ScenarioConfig.context`; `_context_from_scenario()` with load-time `ValueError` |
-| `backend/src/mirofish_backend/llm/prompt_templates.py` | `ORGANISATIONAL_CONTEXT_TITLE`, `_organisational_context_block()`, kwarg on both prompt builders |
-| `backend/src/mirofish_backend/simulation/orchestrator.py` | `organisational_context=scenario.context` in tier-1 and tier-2 branches |
-| `backend/src/mirofish_backend/api/simulations.py` | `"scenario_context": dict(scenario_cfg.context)` in `config_snapshot` |
-| `backend/tests/test_scenario_context.py` | **New** — acceptance tests A–E |
+| `backend/src/mirofish_backend/scenarios/data/sq_reading_culture.yaml` | **New** — baseline context + CIEPSS roster + Shuqun policy_events |
+| `backend/src/mirofish_backend/scenarios/data/sq_reading_culture_adverse.yaml` | **New** — adverse context; identical events/roster |
+| `backend/src/mirofish_backend/scenarios/serialize.py` | Round-trip `context` when non-empty |
+| `backend/tests/test_sq_reading_culture_fixtures.py` | **New** — load, diff, identity, round-trip tests |
+| `docs/diagnostics/sq_reading_culture_provenance.json` | Committed with notes |
+| `docs/diagnostics/sq_reading_culture_adverse_provenance.json` | Committed with notes |
 
-### Decisions implemented
+### Source / provenance
 
-| # | Decision | Done |
-|---|----------|------|
-| 1 | Block after Prompt version, before persona; exact framing title via `_profile_lines()` | ✅ |
-| 2 | Reuse `_profile_lines()` — no duplicate bullet renderer | ✅ |
-| 3 | Tier 1 ✅ Tier 2 ✅ Tier 3 ❌ (heuristic only) | ✅ |
-| 4 | No `EXPORT_VERSION` bump; additive `scenario_context` key | ✅ |
-
-### Acceptance tests
-
-| Test | Result |
-|------|--------|
-| **A** Sentinel `SENNA_CTX_SENTINEL_7f3a9c` in every captured system prompt (stub orchestrator, mixed tiers) | ✅ |
-| **B** Empty/absent context → byte-identical golden prompts (tier 1 & 2) | ✅ |
-| **C** `config_snapshot["scenario_context"]` matches scenario dict | ✅ |
-| **D** Malformed `context` → `ValueError("scenario.context must be a mapping when present")` | ✅ |
-| **E** Framing title + order before persona section | ✅ |
-| **F** Builtin scenarios load with `context == {}` | ✅ |
+- Personas + `policy_events` from study-repo YAML at `47013659309c5ac047dbc53dcea3fd1441d74042` (untracked in study checkout).
+- **`context:` blocks authored in-product** — study YAML had no context field.
+- **Adverse study YAML had round-5 policy shock** — removed so differentiation is context-only per Part B spec.
 
 ### Verification
 
 ```text
-cd backend && uv run pytest tests/test_scenario_context.py tests/test_prompt_messages.py tests/test_iteration23.py -q
-→ 17 passed
+cd backend && uv run pytest tests/test_scenario_context.py tests/test_sq_reading_culture_fixtures.py -q
+→ 14 passed
+
+cd backend && uv run python -c "..."  # assert contexts differ, 8 personas
+→ ok 8 personas
 ```
 
-### Out of scope (untouched)
+Part A sentinel test still passes (included in `test_scenario_context.py` run).
 
-`PersonaTemplate`, `policy_events`, RAG/corpus, `ciepss_school_b.yaml`, SSTRF fixtures.
+### Gaps for Architect / GM
 
-### Part B unblock
-
-Fixture authors may now add `context:` YAML; runs will inject context once Part A is merged. Sentinel test guards silent no-op regression.
+| Gap | Note |
+|-----|------|
+| Provenance `dirty: true` | Study repo working tree had untracked YAML; product adds in-product `context` |
+| Context traceability | Ecological contrast strings follow GM-F Part A/B design — not CIEPSS site facts |
+| MT HOD role | Known gap from Shuqun source (c); not filled |
 
 ### Commit
 
-`scenario-context-field` Part A (ScenarioConfig.context + prompt injection).
+`c88fc11` — `scenario-context-field` Part B (sq_reading_culture fixtures + provenance).
 
-### Notes for architect
+### Out of scope (untouched)
 
-- Empty context omits the block entirely (no extra blank lines vs pre-change prompts).
-- `_context_from_scenario` normalises keys to `str`; values pass through as loaded from YAML.
-- Config snapshot test uses `tmp_path` + `init_db` because `queue_simulation_run` touches `user_scenarios` when `scenario_source == "user"`.
+Live runs (Part C), `ciepss_school_b.yaml`, SSTRF fixtures, prompt injection code.

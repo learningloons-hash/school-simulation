@@ -1,0 +1,10 @@
+{
+  "scenario_id": "sq_reading_culture_adverse",
+  "source_repo": "https://github.com/learningloons-hash/senna-sstrf-study.git",
+  "source_commit": "47013659309c5ac047dbc53dcea3fd1441d74042",
+  "yaml_rel_path": "backend/src/mirofish_backend/scenarios/data/sq_reading_culture_adverse.yaml",
+  "corpus_rel_dir": null,
+  "seeded_at": "2026-09-09T00:35:00+00:00",
+  "dirty": true,
+  "notes": "Same roster/policy_events as sq_reading_culture. Study-repo adverse YAML had round-5 policy shock; removed for context-only differentiation. context: authored in-product."
+}
