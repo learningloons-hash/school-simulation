@@ -51,7 +51,7 @@ Part A sentinel test still passes (included in `test_scenario_context.py` run).
 
 ### Commit
 
-`c88fc11` — `scenario-context-field` Part B (sq_reading_culture fixtures + provenance).
+`c238fa9` — `scenario-context-field` Part B (sq_reading_culture fixtures + provenance).
 
 ### Out of scope (untouched)
 
