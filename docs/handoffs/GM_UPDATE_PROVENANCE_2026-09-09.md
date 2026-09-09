@@ -11,7 +11,7 @@
 | # | Item | Ruling |
 |---|------|--------|
 | **1** | Calibration set public | **Approve.** Attributed paraphrases from freely-available NIE CIEPSS report, used methodologically. `SSTRF_RATER_CALIBRATION_SET.md` cites source page numbers; calibration **items** are paraphrased/invented passages (not verbatim report quotes). Ordinary scholarly practice for reproducibility. |
-| **2** | sq_reading fixtures public | **Approve** on substance (pseudonyms Miss C/Miss L from published report). **Contradiction resolved:** authoritative copies are on **`school-simulation`** at `backend/src/mirofish_backend/scenarios/data/sq_reading_culture*.yaml` (from `c238fa9` + shock variants in provenance ruling commit). `senna-sstrf-study` holds **non-authoritative mirrors** only (`437d72b`). Provenance JSON files updated accordingly. |
+| **2** | sq_reading fixtures public | **Approve** on substance (pseudonyms Miss C/Miss L from published report). **Contradiction resolved:** authoritative copies are on **`school-simulation`** at `backend/src/mirofish_backend/scenarios/data/sq_reading_culture*.yaml` (from `c238fa9` + shock variants @ `befeaad`). `senna-sstrf-study` holds **non-authoritative mirrors** only (`437d72b`). Provenance JSON files updated accordingly. |
 | **3** | Scoring manifest public | **Confirm.** It is the result; publishing it is the point. |
 | **4** | RESULT narrative | **Publish on public repo.** A public 0/10 without explanation reads worse than either extreme. `SSTRF_RQ1_RESULT_V2.md` force-added alongside scoring manifest. Sensitive content is LLM-generated simulation output (quoted elicitation excerpts), not real persons. |
 | **5** | Elicitation transcripts private | **Confirm.** Eighty LLM-output files; no reason to publish. Remain on `senna-sstrf-study` @ `437d72b`. |
@@ -49,7 +49,7 @@ Verifiers: use `docs/diagnostics/sq_reading_culture*_provenance.json` → `autho
 | `docs/research/SSTRF_RQ1_SCORING_SYSTEM_V2.md` | Scoring system |
 | `docs/research/SSTRF_RATER_CALIBRATION_SET.md` | Calibration set (paraphrases + citations) |
 | `docs/research/runs/.../validity_v2_scoring_manifest.json` | Scores (`e5aa26b`) |
-| `docs/research/runs/.../SSTRF_RQ1_RESULT_V2.md` | Result narrative (provenance ruling commit) |
+| `docs/research/runs/.../SSTRF_RQ1_RESULT_V2.md` | Result narrative (`befeaad`) |
 | `backend/.../sq_reading_culture*.yaml` (4 files) | Utility fixtures — **authoritative** |
 | `docs/diagnostics/*` (ARC manifests, trial manifest, provenance pointers) | Platform + study metadata |
 
@@ -100,8 +100,8 @@ Verifiers: use `docs/diagnostics/sq_reading_culture*_provenance.json` → `autho
 | Scoring system | `school-simulation` | `177306a` | `docs/research/SSTRF_RQ1_SCORING_SYSTEM_V2.md` |
 | Calibration set | `school-simulation` | `177306a` | `docs/research/SSTRF_RATER_CALIBRATION_SET.md` |
 | Scoring manifest (0/10) | `school-simulation` | `e5aa26b` | `.../validity_v2_scoring_manifest.json` |
-| **Result narrative** | `school-simulation` | provenance ruling commit | `.../SSTRF_RQ1_RESULT_V2.md` |
-| sq_reading fixtures (×4) | `school-simulation` | `c238fa9` + provenance ruling commit | `backend/.../sq_reading_culture*.yaml` |
+| **Result narrative** | `school-simulation` | `befeaad` | `.../SSTRF_RQ1_RESULT_V2.md` |
+| sq_reading fixtures (×4) | `school-simulation` | `c238fa9` + `befeaad` | `backend/.../sq_reading_culture*.yaml` |
 | CIEPSS fixture | `senna-sstrf-study` | `47013659` | `backend/.../ciepss_school_b.yaml` |
 | Elicitation transcripts | `senna-sstrf-study` | `437d72b` | `.../validity_v2/elicitation/` |
 

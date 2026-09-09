@@ -84,7 +84,7 @@ Repository: `https://github.com/learningloons-hash/school-simulation.git`
 | **Platform freeze manifest** | `66ea88e` (see `ARC12_PLATFORM_FREEZE.json` for signed record) | `docs/diagnostics/ARC12_PLATFORM_FREEZE.json` |
 | **Validity-v2 trial manifest** | `750509f` | `docs/diagnostics/sstrf_validity_v2_manifest.json` |
 | **Validity-v2 scoring manifest (scores)** | `e5aa26bb558401ac606c0d6b16786dd4d3e9bae2` | `docs/research/runs/ciepss_school_b/validity_v2/scoring/validity_v2_scoring_manifest.json` |
-| **Validity-v2 result narrative** | *(see provenance ruling commit)* | `docs/research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md` |
+| **Validity-v2 result narrative** | `befeaad` | `docs/research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md` |
 
 **Utility fixtures (`sq_reading_culture*`):** authoritative copies live in this repository at
 `backend/src/mirofish_backend/scenarios/data/`. The private study repository may hold
