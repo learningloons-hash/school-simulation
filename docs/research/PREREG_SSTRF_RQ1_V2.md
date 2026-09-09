@@ -83,7 +83,12 @@ Repository: `https://github.com/learningloons-hash/school-simulation.git`
 | **Rater calibration set** | `177306a75725e1fb168fc173cf104d289c3726ae` | `docs/research/SSTRF_RATER_CALIBRATION_SET.md` |
 | **Platform freeze manifest** | `66ea88e` (see `ARC12_PLATFORM_FREEZE.json` for signed record) | `docs/diagnostics/ARC12_PLATFORM_FREEZE.json` |
 | **Validity-v2 trial manifest** | `750509f` | `docs/diagnostics/sstrf_validity_v2_manifest.json` |
-| **Validity-v2 scoring manifest (confirmatory result)** | `e5aa26bb558401ac606c0d6b16786dd4d3e9bae2` | `docs/research/runs/ciepss_school_b/validity_v2/scoring/validity_v2_scoring_manifest.json` |
+| **Validity-v2 scoring manifest (scores)** | `e5aa26bb558401ac606c0d6b16786dd4d3e9bae2` | `docs/research/runs/ciepss_school_b/validity_v2/scoring/validity_v2_scoring_manifest.json` |
+| **Validity-v2 result narrative** | *(see provenance ruling commit)* | `docs/research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md` |
+
+**Utility fixtures (`sq_reading_culture*`):** authoritative copies live in this repository at
+`backend/src/mirofish_backend/scenarios/data/`. The private study repository may hold
+non-authoritative mirrors for ops convenience; verifiers should use `school-simulation` only.
 
 The signed STATUS block at the top of this document is unchanged. Criterion, thresholds, and
 signature date (`2026-08-25`) are not amended by this pointer correction.
@@ -95,11 +100,11 @@ signature date (`2026-08-25`) are not amended by this pointer correction.
 | Field | Value |
 |---|---|
 | **Study repo** | `https://github.com/learningloons-hash/senna-sstrf-study.git` |
-| **Fixture commit** | `47013659309c5ac047dbc53dcea3fd1441d74042` (update after study-repo sync) |
+| **Fixture commit** | `47013659309c5ac047dbc53dcea3fd1441d74042` (YAML/CSV content); elicitation @ `437d72b` |
 | **Scenario YAML** | `backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml` |
 | **Influence network CSV** | `docs/research/fixtures/ciepss_school_b_network.csv` |
 | **Elicitation transcripts (validity v2)** | `docs/research/runs/ciepss_school_b/validity_v2/elicitation/` (study repo only) |
-| **Result narrative (companion)** | `docs/research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md` (study repo only) |
+| **Result narrative (mirror)** | `docs/research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md` (non-authoritative; public copy in §3a) |
 
 Ops loads scenario and network CSV from the pinned study-repo commit for every validity trial.
 The simulation `config_snapshot` must record `network_csv_applied: true` and network

@@ -1,10 +1,11 @@
 {
   "scenario_id": "sq_reading_culture_adverse",
-  "source_repo": "https://github.com/learningloons-hash/senna-sstrf-study.git",
-  "source_commit": "47013659309c5ac047dbc53dcea3fd1441d74042",
+  "authoritative_repo": "https://github.com/learningloons-hash/school-simulation.git",
   "yaml_rel_path": "backend/src/mirofish_backend/scenarios/data/sq_reading_culture_adverse.yaml",
+  "study_repo_mirror": "https://github.com/learningloons-hash/senna-sstrf-study.git",
+  "study_repo_mirror_commit": "437d72b635ce7f7c482cd431dab2ecdc416849e7",
+  "study_repo_mirror_note": "Non-authoritative copy for ops; verifiers use school-simulation only.",
   "corpus_rel_dir": null,
   "seeded_at": "2026-09-09T00:35:00+00:00",
-  "dirty": true,
-  "notes": "Same roster/policy_events as sq_reading_culture. Study-repo adverse YAML had round-5 policy shock; removed for context-only differentiation. context: authored in-product."
+  "notes": "Adverse context variant; same roster/events as sq_reading_culture. Authoritative commit is on school-simulation main after c238fa9."
 }

@@ -1,11 +1,11 @@
 {
-  "scenario_id": "sq_reading_culture",
+  "scenario_id": "sq_reading_culture_shock",
   "authoritative_repo": "https://github.com/learningloons-hash/school-simulation.git",
-  "yaml_rel_path": "backend/src/mirofish_backend/scenarios/data/sq_reading_culture.yaml",
+  "yaml_rel_path": "backend/src/mirofish_backend/scenarios/data/sq_reading_culture_shock.yaml",
   "study_repo_mirror": "https://github.com/learningloons-hash/senna-sstrf-study.git",
   "study_repo_mirror_commit": "437d72b635ce7f7c482cd431dab2ecdc416849e7",
   "study_repo_mirror_note": "Non-authoritative copy for ops; verifiers use school-simulation only.",
   "corpus_rel_dir": null,
-  "seeded_at": "2026-09-09T00:35:00+00:00",
-  "notes": "Personas from CIEPSS Table 2 (pseudonyms); policy_events from public Shuqun page. context: block authored in-product (Part B). Authoritative commit is on school-simulation main after c238fa9."
+  "round_5_shock_source": "senna-sstrf-study sq_reading_culture_adverse.yaml @ 47013659 (verbatim)",
+  "notes": "Positive-context arm + round-5 policy shock. Delta vs sq_reading_culture: round-5 event only (+ scenario_id/name)."
 }

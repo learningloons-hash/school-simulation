@@ -46,6 +46,8 @@ docs/research/
 !docs/research/SSTRF_RATER_CALIBRATION_SET.md
 !docs/research/PREREG_SSTRF_RQ1_V2.md
 !docs/research/SSTRF_RQ1_SCORING_SYSTEM_V2.md
+!docs/research/runs/ciepss_school_b/validity_v2/scoring/validity_v2_scoring_manifest.json
+!docs/research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md
 articles/
 scripts/sstrf_*.py
 !scripts/sstrf_scoring_*.py
@@ -61,6 +63,8 @@ backend/tests/test_sstrf_*.py
 !backend/tests/test_sstrf_validity_v2_elicitation.py
 !backend/tests/test_sstrf_validity_v2_scoring.py
 backend/tests/test_claude_client.py
+!backend/src/mirofish_backend/scenarios/data/
+!backend/src/mirofish_backend/scenarios/data/sq_reading_culture*.yaml
 backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml
 docs/handoffs/HANDOFF_SSTRF_*
 docs/handoffs/BRIEF_SENNA_MEMORIES_MVP.md
