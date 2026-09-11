@@ -4,47 +4,49 @@
 
 ---
 
-## Active task — backfill 2026-09-10 Part C run to senna-sstrf-study (Mark, 2026-09-11)
+## Active task — commit full export data (both runs) to senna-sstrf-study (GM-F, 2026-09-11 — supersedes local-only decision)
 
-**Context:** the persona-rich mirror (previous Active task) is done — reported by Cursor as
-committed to `senna-sstrf-study` at `f5e77ec` (push range `437d72b` → `f5e77ec`), via direct
-commit to the separate checkout at `/Users/home/cursor-projects/project-1/senna-sstrf-study`,
-same mechanism used for the 2026-09-01 and 2026-09-03-tempsweep syncs. **Not** via
-`sstrf-local` in this repo. Ops could not independently verify this push (no reachable
-`senna-sstrf-study` checkout or GitHub network access from the Ops session) — take the report
-at face value pending anyone with access double-checking `git log` on that checkout.
+**GM-F overruled the earlier "leave it local" call.** The headline persona-differentiation
+finding (R10 support stdev 0.19 rich vs 0.06 neutral) is a computed statistic pulled from
+`agent_state_snapshots.csv` inside the export zips. If the zips live only on one Mac mini,
+nobody can check the number — the exact problem closed for the pre-registration, one layer
+down. Raw + redacted exports for **both** runs now go to `senna-sstrf-study`, alongside the
+ops bundle. Findings/platform stay public; research data stays private — same split already
+in force, just applied completely this time. Total size across both runs is ~4.6MB (checked:
+1.2M + 648K + 1.1M + 1.7M) — the size objection doesn't hold. Nothing in them is sensitive:
+invented personas, a public programme description, LLM-generated text.
 
-That same report surfaced a gap: **`docs/research/runs/sq_reading_culture/2026-09-10/`
-(the Part C run) has no record in `senna-sstrf-study` at all**, before or after the
-2026-09-11 commit — it only ever existed in the gitignored mirofish-mvp working tree. Mark
-has decided (2026-09-11) to backfill it, using the same file selection as the persona-rich
-commit — the ops-bundle documents only, not the bulk redacted/raw zips or the run log (Mark
-confirmed 2026-09-11: `analyst_package/`, `exports/`, and `run.log` stay local-only for both
-runs, consistent with the tempsweep precedent).
+**Ops has already added SHA-256 hashes** of every export and analyst-package zip into both
+manifests (`persona_rich_manifest.json`, `partc_manifest.json`), under new keys
+`export_sha256` and `analyst_package_sha256` (filename → hex digest), per GM-F: "anyone
+verifying it needs to confirm they're looking at the same bytes we were." Spot-checked one
+hash against `sha256sum` directly — matches. **Do not regenerate the manifests or re-zip
+anything** — commit the files as they are on disk now; the hashes describe those exact bytes.
 
-**Files to commit** (all under `docs/research/runs/sq_reading_culture/2026-09-10/`):
+**Commit everything under both run directories** (all of
+`docs/research/runs/sq_reading_culture/2026-09-11-persona-rich/` and
+`docs/research/runs/sq_reading_culture/2026-09-10/`), i.e. the ops-bundle documents already
+identified plus, for each run:
 
-| File | Purpose |
-|------|---------|
-| `PARTC_EXECUTION_STATUS.md` | Execution status record |
-| `PARTC_MECHANICS_REPORT.md` | Mechanics report |
-| `analyst_label_key.json` | Runner-held RUN-A…L → simulation/cell/seed key |
-| `analyst_output/ANALYSIS_BLIND_12RUNS.md` | Blind content analysis |
-| `analyst_redaction_check.json` | Automated redaction scan result |
-| `partc_manifest.json` | Run manifest |
+| Directory | Files |
+|-----------|-------|
+| `analyst_package/` | 12 zips (RUN-A…L), persona-rich and Part C each |
+| `exports/` | 6 zips (persona-rich), 17 zips (Part C) |
 
-**Explicitly excluded** (stay local-only, do not commit): `analyst_package/*.zip` (12 files),
-`exports/*.zip` (16 files), `run.log`.
+`run.log` in each run directory is **still excluded** (execution log, not needed to
+reproduce the statistic, not mentioned in GM-F's ruling) — flag if that should change too.
 
 **Task:**
 
-1. Commit the six files above to `senna-sstrf-study`, same mechanism as the persona-rich
-   commit (direct commit to the separate local checkout, not `sstrf-local`).
+1. Commit the full contents of both run directories (ops bundle + `analyst_package/` +
+   `exports/`, manifests already updated with hashes) to `senna-sstrf-study`, same mechanism
+   as the prior sync (direct commit to the separate local checkout, not `sstrf-local`).
 2. Push.
 3. Do **not** touch `school-simulation`/`main` — this material stays off the public repo per
-   `docs/handoffs/GM_UPDATE_PROVENANCE_2026-09-09.md`'s classification, same as before.
-4. Report back the local commit hash and what it became on the study remote, same
-   verifier-table style as the last two reports.
+   `docs/handoffs/GM_UPDATE_PROVENANCE_2026-09-09.md`'s classification, unchanged.
+4. Report back local commit hash + what it became on the study remote, same verifier-table
+   style as before, and confirm zip count committed per run directory (18 for persona-rich,
+   29 for Part C, plus the ops-bundle documents).
 
 ---
 
