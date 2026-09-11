@@ -4,45 +4,47 @@
 
 ---
 
-## Active task — mirror persona-rich run artefacts to senna-sstrf-study (GM-F 2026-09-11 ruling filed)
+## Active task — backfill 2026-09-10 Part C run to senna-sstrf-study (Mark, 2026-09-11)
 
-**Spec:** GM-F ruled persona differentiation **PASS** on the 2026-09-11 sq_reading_culture
-persona-rich run (R10 support stdev 0.19 rich vs 0.06 neutral, range 0.62 vs 0.20 — see
-`docs/research/runs/sq_reading_culture/2026-09-11-persona-rich/GM_RULING_PERSONA_DIFFERENTIATION.md`).
-Ops already committed the safe/public fixes to `school-simulation`/`main` at `514860e`: the
-`SIMULATION_RUN_WORKFLOW.md` Step 8 redaction + persona-blinding rules, and both harness
-scripts (`run_sq_reading_persona_rich.py`, `run_sq_reading_partc.py`) — including a fix to the
-packaging bug that had been blanking real `support_level`/`resistance_level`/`workload_stress`
-cells (a blanket configured-value scrub was matching real measurement values, not a missing
-redaction pattern). **Do not redo that part.**
+**Context:** the persona-rich mirror (previous Active task) is done — reported by Cursor as
+committed to `senna-sstrf-study` at `f5e77ec` (push range `437d72b` → `f5e77ec`), via direct
+commit to the separate checkout at `/Users/home/cursor-projects/project-1/senna-sstrf-study`,
+same mechanism used for the 2026-09-01 and 2026-09-03-tempsweep syncs. **Not** via
+`sstrf-local` in this repo. Ops could not independently verify this push (no reachable
+`senna-sstrf-study` checkout or GitHub network access from the Ops session) — take the report
+at face value pending anyone with access double-checking `git log` on that checkout.
 
-**What's left — private/study-repo material only**, per
-`docs/handoffs/GM_UPDATE_PROVENANCE_2026-09-09.md` ("sq_reading run artefacts... — Ops
-history" is private, mirrored to `senna-sstrf-study`, not authoritative on
-`school-simulation`). These files are written to disk under
-`docs/research/runs/sq_reading_culture/2026-09-11-persona-rich/` but not committed anywhere:
+That same report surfaced a gap: **`docs/research/runs/sq_reading_culture/2026-09-10/`
+(the Part C run) has no record in `senna-sstrf-study` at all**, before or after the
+2026-09-11 commit — it only ever existed in the gitignored mirofish-mvp working tree. Mark
+has decided (2026-09-11) to backfill it, using the same file selection as the persona-rich
+commit — the ops-bundle documents only, not the bulk redacted/raw zips or the run log (Mark
+confirmed 2026-09-11: `analyst_package/`, `exports/`, and `run.log` stay local-only for both
+runs, consistent with the tempsweep precedent).
+
+**Files to commit** (all under `docs/research/runs/sq_reading_culture/2026-09-10/`):
 
 | File | Purpose |
 |------|---------|
-| `GM_RULING_PERSONA_DIFFERENTIATION.md` | The filed GM ruling |
-| `analyst_output/ANALYSIS_BLIND_12RUNS.md` | Blind content analysis |
+| `PARTC_EXECUTION_STATUS.md` | Execution status record |
+| `PARTC_MECHANICS_REPORT.md` | Mechanics report |
 | `analyst_label_key.json` | Runner-held RUN-A…L → simulation/cell/seed key |
-| `PERSONA_RICH_MECHANICS_REPORT.md` | Mechanics report |
-| `persona_rich_manifest.json` | Run manifest |
+| `analyst_output/ANALYSIS_BLIND_12RUNS.md` | Blind content analysis |
 | `analyst_redaction_check.json` | Automated redaction scan result |
+| `partc_manifest.json` | Run manifest |
+
+**Explicitly excluded** (stay local-only, do not commit): `analyst_package/*.zip` (12 files),
+`exports/*.zip` (16 files), `run.log`.
 
 **Task:**
 
-1. Commit these files using whatever mechanism currently gets sq_reading / validity-v2
-   material into `senna-sstrf-study` — check how the 2026-09-10 Part C run's equivalent
-   directory (`docs/research/runs/sq_reading_culture/2026-09-10/`) got there. **Do not assume
-   the `sstrf-local` branch is the active mechanism** — its tip is a stale August commit
-   (`4701365`, senna-iter-44) unrelated to this material; confirm before using it.
-2. Push to `senna-sstrf-study`.
-3. Do **not** touch `school-simulation`/`main`'s `.gitignore` or force-add these files there —
-   they stay off the public repo per the classification above.
-4. Report back the local commit hash and what it became on the study remote, in the same
-   style as `docs/handoffs/GM_UPDATE_PROVENANCE_2026-09-09.md`'s verifier table.
+1. Commit the six files above to `senna-sstrf-study`, same mechanism as the persona-rich
+   commit (direct commit to the separate local checkout, not `sstrf-local`).
+2. Push.
+3. Do **not** touch `school-simulation`/`main` — this material stays off the public repo per
+   `docs/handoffs/GM_UPDATE_PROVENANCE_2026-09-09.md`'s classification, same as before.
+4. Report back the local commit hash and what it became on the study remote, same
+   verifier-table style as the last two reports.
 
 ---
 
@@ -53,6 +55,10 @@ history" is private, mirrored to `senna-sstrf-study`, not authoritative on
   `test_sq_reading_culture_rich_fixtures.py` (Builder); live 6-run execute + blind 12-run
   analyst package (Ops/Runner); **GM ruled PASS** 2026-09-11. Gap flagged: `belief_posture`
   not in GM persona spec — omitted (orchestrator defaults to neutral).
+- **Mirror persona-rich run artefacts to senna-sstrf-study** — reported complete by Cursor,
+  `f5e77ec` (push range `437d72b` → `f5e77ec`); 6 files (GM ruling, mechanics report,
+  manifest, label key, redaction check, blind analysis). `analyst_package/`, `exports/`,
+  `run.log` left local-only per Mark's 2026-09-11 decision.
 
 - Arc 12 (`senna-iter-54`–`58`, pre-reg signed)
 - `sstrf-validity-v2` Parts A–D harness (`ddcd417`…`f02adef`); live sims + elicitation complete; scoring escalated to human-only
