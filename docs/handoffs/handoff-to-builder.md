@@ -4,53 +4,27 @@
 
 ---
 
-## Active task — commit full export data (both runs) to senna-sstrf-study (GM-F, 2026-09-11 — supersedes local-only decision)
-
-**GM-F overruled the earlier "leave it local" call.** The headline persona-differentiation
-finding (R10 support stdev 0.19 rich vs 0.06 neutral) is a computed statistic pulled from
-`agent_state_snapshots.csv` inside the export zips. If the zips live only on one Mac mini,
-nobody can check the number — the exact problem closed for the pre-registration, one layer
-down. Raw + redacted exports for **both** runs now go to `senna-sstrf-study`, alongside the
-ops bundle. Findings/platform stay public; research data stays private — same split already
-in force, just applied completely this time. Total size across both runs is ~4.6MB (checked:
-1.2M + 648K + 1.1M + 1.7M) — the size objection doesn't hold. Nothing in them is sensitive:
-invented personas, a public programme description, LLM-generated text.
-
-**Ops has already added SHA-256 hashes** of every export and analyst-package zip into both
-manifests (`persona_rich_manifest.json`, `partc_manifest.json`), under new keys
-`export_sha256` and `analyst_package_sha256` (filename → hex digest), per GM-F: "anyone
-verifying it needs to confirm they're looking at the same bytes we were." Spot-checked one
-hash against `sha256sum` directly — matches. **Do not regenerate the manifests or re-zip
-anything** — commit the files as they are on disk now; the hashes describe those exact bytes.
-
-**Commit everything under both run directories** (all of
-`docs/research/runs/sq_reading_culture/2026-09-11-persona-rich/` and
-`docs/research/runs/sq_reading_culture/2026-09-10/`), i.e. the ops-bundle documents already
-identified plus, for each run:
-
-| Directory | Files |
-|-----------|-------|
-| `analyst_package/` | 12 zips (RUN-A…L), persona-rich and Part C each |
-| `exports/` | 6 zips (persona-rich), 17 zips (Part C) |
-
-`run.log` in each run directory is **still excluded** (execution log, not needed to
-reproduce the statistic, not mentioned in GM-F's ruling) — flag if that should change too.
-
-**Task:**
-
-1. Commit the full contents of both run directories (ops bundle + `analyst_package/` +
-   `exports/`, manifests already updated with hashes) to `senna-sstrf-study`, same mechanism
-   as the prior sync (direct commit to the separate local checkout, not `sstrf-local`).
-2. Push.
-3. Do **not** touch `school-simulation`/`main` — this material stays off the public repo per
-   `docs/handoffs/GM_UPDATE_PROVENANCE_2026-09-09.md`'s classification, unchanged.
-4. Report back local commit hash + what it became on the study remote, same verifier-table
-   style as before, and confirm zip count committed per run directory (18 for persona-rich,
-   29 for Part C, plus the ops-bundle documents).
+## Active task — *(none — awaiting Architect seed for next workstream)*
 
 ---
 
 ## Completed (do not redo)
+
+- **Full export data + SHA-256 hashes → senna-sstrf-study (GM-F, 2026-09-11)** — reported
+  complete by Cursor: `92a16c6` (push range `f5e77ec` → `92a16c6`), 54 files. Both run
+  directories (`2026-09-10` Part C: 29 zips + 6 ops docs; `2026-09-11-persona-rich`: 18 zips
+  + manifest hash update) fully committed — ops bundle, `analyst_package/`, `exports/`, both
+  manifests carrying `export_sha256` / `analyst_package_sha256`. `run.log` excluded in both,
+  as scoped. `school-simulation` untouched. Ops could not independently verify (no reachable
+  `senna-sstrf-study` checkout or working GitHub auth from the Ops session — `git fetch study`
+  now fails on missing credentials rather than the earlier 403, still no path through).
+  **Flagged by Cursor, not yet actioned:** the zips needed `git add -f` — `senna-sstrf-study`'s
+  own `.gitignore` still blocks `docs/research/runs/**/*.zip` by default, so every future
+  commit under these paths needs the same force-add until/unless gitignore exceptions are
+  added there. Worth a small follow-up if this pattern continues (mirofish-mvp hit the same
+  shape of problem with `validity_v2_scoring_manifest.json` — deep-nested negation patterns
+  don't reliably re-include a file once a parent directory is `.gitignore`d, so the practical
+  fix is a scoped `!path` exception per committed path, not a blanket unignore).
 
 - **Persona differentiation build + live run (GM-F 2026-09-11)** — `sq_reading_culture_rich.yaml`
   + `sq_reading_culture_adverse_rich.yaml`, `scripts/run_sq_reading_persona_rich.py`,
