@@ -27,10 +27,13 @@ from mirofish_backend.diagnostics.sstrf_validity_v2 import (  # noqa: E402
     assert_fixture_provenance_matches,
     assert_freeze_signed,
     build_validity_run_plan,
+    default_manifest_path,
+    is_production_validity_manifest,
     load_fixture_provenance,
     load_platform_freeze,
     load_study_seeds,
     profile_snapshot,
+    resolve_validity_manifest_write_path,
 )
 from mirofish_backend.scenarios.registry import get_scenario  # noqa: E402
 from mirofish_backend.simulation.network import parse_network_csv  # noqa: E402
@@ -91,6 +94,30 @@ def test_assert_fixture_provenance_matches_repo_files() -> None:
     assert_fixture_provenance_matches(freeze=freeze, provenance=provenance)
 
 
+def test_resolve_validity_manifest_write_path_dry_run_skips_by_default() -> None:
+    assert resolve_validity_manifest_write_path(mode="dry_run", manifest_out=None, root=_REPO) is None
+
+
+def test_resolve_validity_manifest_write_path_dry_run_refuses_production(tmp_path: Path) -> None:
+    production = default_manifest_path(root=_REPO)
+    with pytest.raises(RuntimeError, match="refuses to write the production validity manifest"):
+        resolve_validity_manifest_write_path(mode="dry_run", manifest_out=production, root=_REPO)
+    scratch = tmp_path / "scratch_manifest.json"
+    assert resolve_validity_manifest_write_path(mode="dry_run", manifest_out=scratch, root=_REPO) == scratch
+
+
+def test_resolve_validity_manifest_write_path_execute_defaults_to_production() -> None:
+    production = default_manifest_path(root=_REPO)
+    assert (
+        resolve_validity_manifest_write_path(mode="execute", manifest_out=None, root=_REPO) == production
+    )
+
+
+def test_is_production_validity_manifest() -> None:
+    production = default_manifest_path(root=_REPO)
+    assert is_production_validity_manifest(production, root=_REPO) is True
+
+
 @pytest.mark.asyncio
 async def test_dry_run_writes_manifest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     cfg = get_scenario("fsbb_comparator")
@@ -141,6 +168,50 @@ async def test_dry_run_writes_manifest(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert on_disk["harness"] == "sstrf-validity-v2"
     assert on_disk["trials"][0]["trial_label"] == "trial-A"
     assert on_disk["trials"][0]["random_seed"] == 500
+
+
+@pytest.mark.asyncio
+async def test_dry_run_leaves_production_manifest_untouched(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    production_manifest = default_manifest_path(root=_REPO)
+    if not production_manifest.is_file():
+        pytest.skip("production validity manifest not present")
+    before = production_manifest.read_bytes()
+
+    cfg = get_scenario("fsbb_comparator")
+    extended_cfg = replace(cfg, personas=list(cfg.personas) * 3)
+    network_csv = FIXTURE_NETWORK.read_text(encoding="utf-8")
+
+    async def _fake_user_scenario_exists(_sqlite_path: str, *, scenario_id: str) -> bool:
+        return scenario_id == "ciepss_school_b"
+
+    async def _fake_load_scenario_for_run(_sqlite_path: str, scenario_id: str):
+        return extended_cfg, "registry"
+
+    monkeypatch.setattr(validity_script, "user_scenario_exists", _fake_user_scenario_exists)
+    monkeypatch.setattr(validity_script, "load_scenario_for_run", _fake_load_scenario_for_run)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = os.path.join(tmp, "validity.sqlite")
+        await init_db(db_path)
+        monkeypatch.setenv("SQLITE_PATH", db_path)
+
+        args = validity_script.build_parser().parse_args(
+            [
+                "--dry-run",
+                "--network-csv-text",
+                network_csv,
+                "--sqlite-path",
+                db_path,
+            ],
+        )
+        payload = await validity_script._main_async(args)
+
+    assert payload["mode"] == "dry_run"
+    assert payload["artifacts"] == {}
+    assert production_manifest.read_bytes() == before
 
 
 @pytest.mark.asyncio

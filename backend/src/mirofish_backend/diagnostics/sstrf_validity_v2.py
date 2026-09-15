@@ -259,6 +259,42 @@ def write_manifest(*, path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def is_production_validity_manifest(path: Path, *, root: Path | None = None) -> bool:
+    """True when ``path`` resolves to the committed validity-trial manifest."""
+    production = default_manifest_path(root=root)
+    try:
+        return path.resolve() == production.resolve()
+    except OSError:
+        return False
+
+
+def resolve_validity_manifest_write_path(
+    *,
+    mode: str,
+    manifest_out: Path | None,
+    root: Path | None = None,
+) -> Path | None:
+    """
+    Study-artefact rule: dry-run never writes the production manifest by default.
+
+    - ``dry_run`` + no ``manifest_out`` → skip write (``None``).
+    - ``dry_run`` + production ``manifest_out`` → refuse (explicit path still blocked).
+    - ``dry_run`` + scratch ``manifest_out`` → write there (tests / local preview).
+    - ``execute`` + no ``manifest_out`` → production manifest (live harness default).
+    """
+    production = default_manifest_path(root=root)
+    if mode == "dry_run":
+        if manifest_out is None:
+            return None
+        if is_production_validity_manifest(manifest_out, root=root):
+            raise RuntimeError(
+                f"--dry-run refuses to write the production validity manifest ({production}). "
+                "Omit --manifest-out to skip writing, or pass a scratch path."
+            )
+        return manifest_out
+    return manifest_out or production
+
+
 __all__ = [
     "HARNESS_ID",
     "DEFAULT_NETWORK_CSV_REL",
@@ -275,11 +311,13 @@ __all__ = [
     "check_transcript_qa",
     "default_manifest_path",
     "extract_economics_summary",
+    "is_production_validity_manifest",
     "load_documented_network_csv",
     "load_fixture_provenance",
     "load_platform_freeze",
     "load_study_seeds",
     "profile_snapshot",
     "repo_root",
+    "resolve_validity_manifest_write_path",
     "write_manifest",
 ]

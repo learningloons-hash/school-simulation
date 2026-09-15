@@ -67,6 +67,7 @@ from mirofish_backend.diagnostics.sstrf_validity_v2 import (  # noqa: E402
     load_platform_freeze,
     load_study_seeds,
     profile_snapshot,
+    resolve_validity_manifest_write_path,
     write_manifest,
 )
 from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID  # noqa: E402
@@ -194,7 +195,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--seeds-path", type=Path, default=default_seeds_path(root=_REPO_ROOT))
     p.add_argument("--freeze-path", type=Path, default=default_freeze_path(root=_REPO_ROOT))
     p.add_argument("--provenance-path", type=Path, default=default_provenance_path(root=_REPO_ROOT))
-    p.add_argument("--manifest-out", type=Path, default=default_manifest_path(root=_REPO_ROOT))
+    p.add_argument(
+        "--manifest-out",
+        type=Path,
+        default=None,
+        help="Manifest write path. Dry-run skips writing unless this is set to a non-production "
+        "scratch path. Execute defaults to docs/diagnostics/sstrf_validity_v2_manifest.json.",
+    )
     p.add_argument("--study-repo-path", default="", help="Path to senna-sstrf-study checkout")
     p.add_argument(
         "--network-csv-rel-path",
@@ -324,8 +331,16 @@ async def _main_async(args: argparse.Namespace) -> dict:
         if args.freeze_path.is_relative_to(_REPO_ROOT)
         else str(args.freeze_path),
     )
-    write_manifest(path=args.manifest_out, payload=payload)
-    payload["artifacts"] = {"manifest": str(args.manifest_out)}
+    manifest_path = resolve_validity_manifest_write_path(
+        mode=mode,
+        manifest_out=args.manifest_out,
+        root=_REPO_ROOT,
+    )
+    if manifest_path is not None:
+        write_manifest(path=manifest_path, payload=payload)
+        payload["artifacts"] = {"manifest": str(manifest_path)}
+    else:
+        payload["artifacts"] = {}
     payload["profile_snapshot"] = profile_snapshot(profile)
     return payload
 

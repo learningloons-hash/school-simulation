@@ -30,6 +30,7 @@ from run_arc11_ablation import load_dotenv_if_present  # noqa: E402
 
 from mirofish_backend.config import get_settings  # noqa: E402
 from mirofish_backend.db.repo import get_simulation_export_bundle  # noqa: E402
+from mirofish_backend.diagnostics.sstrf_validity_v2 import is_production_validity_manifest  # noqa: E402
 from mirofish_backend.diagnostics.sstrf_validity_v2_elicitation import (  # noqa: E402
     VALIDITY_PINNED_MODEL,
     attach_elicitation_to_trial,
@@ -403,13 +404,17 @@ async def _main_async(args: argparse.Namespace) -> dict[str, Any]:
         output_root=default_elicitation_root(root=_REPO_ROOT),
         root=_REPO_ROOT,
     )
-    save_validity_manifest(manifest=validity_manifest, path=args.manifest, root=_REPO_ROOT)
+    manifest_written = False
+    if mode == "execute" or not is_production_validity_manifest(args.manifest, root=_REPO_ROOT):
+        save_validity_manifest(manifest=validity_manifest, path=args.manifest, root=_REPO_ROOT)
+        manifest_written = True
     return {
         "status": "ok",
         "mode": mode,
         "trial_count": len(summaries),
         "trials": summaries,
         "manifest": str(args.manifest),
+        "manifest_written": manifest_written,
     }
 
 

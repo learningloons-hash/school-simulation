@@ -114,9 +114,47 @@ async def test_batch_dry_run_updates_validity_manifest(tmp_path: Path, monkeypat
     payload = await elic_script._main_async(args)
     assert payload["status"] == "ok"
     assert payload["trial_count"] == 1
+    assert payload["manifest_written"] is True
 
     updated = json.loads(manifest_copy.read_text(encoding="utf-8"))
     trial_a = next(t for t in updated["trials"] if t["trial_label"] == "trial-A")
     assert "elicitation" in trial_a
     assert trial_a["elicitation"]["agent_count"] == len(CIEPSS_EXPECTED_PERSONA_IDS)
     assert updated.get("elicitation_harness", {}).get("mode") == "dry_run"
+
+
+@pytest.mark.asyncio
+async def test_batch_dry_run_leaves_production_manifest_untouched(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    if not _MANIFEST.is_file():
+        pytest.skip("validity manifest not present (Part B not run locally)")
+    before = _MANIFEST.read_bytes()
+    out_root = tmp_path / "elicitation"
+    settings = get_settings()
+
+    monkeypatch.setattr(
+        elic_script,
+        "default_elicitation_root",
+        lambda *, root=None: out_root,
+    )
+    monkeypatch.setattr(
+        elic_script,
+        "trial_elicitation_dir",
+        lambda *, trial_label, root=None: out_root / trial_label,
+    )
+
+    args = elic_script.build_parser().parse_args(
+        [
+            "--dry-run",
+            "--sqlite-path",
+            settings.sqlite_path,
+            "--trial-label",
+            "trial-A",
+        ],
+    )
+    payload = await elic_script._main_async(args)
+    assert payload["status"] == "ok"
+    assert payload["manifest_written"] is False
+    assert _MANIFEST.read_bytes() == before
