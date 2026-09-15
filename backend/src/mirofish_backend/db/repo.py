@@ -1198,7 +1198,7 @@ async def insert_round_outcome(
     *,
     simulation_id: str,
     round_number: int,
-    adoption_momentum: float,
+    adoption_momentum: float | None,
     conflict_events: int,
     consistency_index: float,
 ) -> str:
@@ -1326,7 +1326,7 @@ async def _get_outcome_indicators(
     return [
         {
             "round_number": int(r[0]),
-            "adoption_momentum": float(r[1]),
+            "adoption_momentum": float(r[1]) if r[1] is not None else None,
             "conflict_events": int(r[2]),
             "consistency_index": float(r[3]),
         }
@@ -1672,7 +1672,7 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
                     "id": o[0],
                     "simulation_id": o[1],
                     "round_number": o[2],
-                    "adoption_momentum": float(o[3]),
+                    "adoption_momentum": float(o[3]) if o[3] is not None else None,
                     "conflict_events": int(o[4]),
                     "consistency_index": float(o[5]),
                     "created_at": o[6],
@@ -2083,7 +2083,7 @@ async def get_merged_round_metrics(
     for row in orows:
         rn = int(row[0])
         bucket = by_round.setdefault(rn, {})
-        bucket["adoption_momentum"] = float(row[1])
+        bucket["adoption_momentum"] = float(row[1]) if row[1] is not None else None
         bucket["conflict_events"] = int(row[2])
         bucket["consistency_index"] = float(row[3])
     return by_round

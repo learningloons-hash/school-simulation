@@ -100,7 +100,7 @@ async def init_db(sqlite_path: str) -> None:
               id TEXT PRIMARY KEY,
               simulation_id TEXT NOT NULL REFERENCES simulation_runs(id),
               round_number INTEGER NOT NULL,
-              adoption_momentum REAL NOT NULL,
+              adoption_momentum REAL,
               conflict_events INTEGER NOT NULL,
               consistency_index REAL NOT NULL,
               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -327,8 +327,43 @@ async def init_db(sqlite_path: str) -> None:
         await _ensure_column(db, "user_scenarios", "source_commit", "TEXT")
         await _ensure_column(db, "user_scenarios", "seeded_at", "TIMESTAMP")
 
+        await _migrate_round_outcomes_nullable_adoption_momentum(db)
+
         await db.commit()
         logger.info("SQLite schema initialized")
+
+
+async def _migrate_round_outcomes_nullable_adoption_momentum(db: aiosqlite.Connection) -> None:
+    """Allow NULL adoption_momentum on round 1 (first-difference needs a prior round)."""
+    cursor = await db.execute("PRAGMA table_info(round_outcomes);")
+    columns = await cursor.fetchall()
+    adoption_col = next((c for c in columns if c[1] == "adoption_momentum"), None)
+    if adoption_col is None or adoption_col[3] == 0:
+        return
+    await db.execute(
+        """
+        CREATE TABLE round_outcomes_new (
+          id TEXT PRIMARY KEY,
+          simulation_id TEXT NOT NULL REFERENCES simulation_runs(id),
+          round_number INTEGER NOT NULL,
+          adoption_momentum REAL,
+          conflict_events INTEGER NOT NULL,
+          consistency_index REAL NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+    )
+    await db.execute(
+        """
+        INSERT INTO round_outcomes_new (
+          id, simulation_id, round_number, adoption_momentum, conflict_events, consistency_index, created_at
+        )
+        SELECT id, simulation_id, round_number, adoption_momentum, conflict_events, consistency_index, created_at
+        FROM round_outcomes;
+        """
+    )
+    await db.execute("DROP TABLE round_outcomes;")
+    await db.execute("ALTER TABLE round_outcomes_new RENAME TO round_outcomes;")
 
 
 async def _ensure_column(db: aiosqlite.Connection, table_name: str, column_name: str, ddl: str) -> None:

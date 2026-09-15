@@ -188,6 +188,9 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
         o_headers = list(outcomes[0].keys())
         o_rows = [[x.get(h) for h in o_headers] for x in outcomes]
     else:
+        # adoption_momentum: first difference of implementation_readiness vs prior round,
+        # clamped to [0,1] as (delta + 0.5). 0.5 = flat; above = rising; below = falling.
+        # Not a level. Round 1 is null (no prior round), same convention as convergence_delta.
         o_headers = ["id", "simulation_id", "round_number", "adoption_momentum", "conflict_events", "consistency_index", "created_at"]
         o_rows = []
 

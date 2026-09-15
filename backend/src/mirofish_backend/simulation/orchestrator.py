@@ -1599,7 +1599,11 @@ async def run_simulation_task(
 
         implementation_readiness = _clamp(avg_support - (0.5 * avg_resistance) + (0.3 * (1.0 - avg_workload)))
         alignment_index = _clamp(1.0 - spread_support)
-        adoption_momentum = _clamp((implementation_readiness - previous_readiness) + 0.5)
+        adoption_momentum: float | None
+        if round_number == 1:
+            adoption_momentum = None
+        else:
+            adoption_momentum = _clamp((implementation_readiness - previous_readiness) + 0.5)
         consistency_index = _clamp(alignment_index * (1.0 - (0.5 * avg_workload)))
         previous_readiness = implementation_readiness
 

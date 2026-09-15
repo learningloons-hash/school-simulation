@@ -121,7 +121,7 @@ export type SimulationStatus = {
   }>;
   outcome_indicators: Array<{
     round_number: number;
-    adoption_momentum: number;
+    adoption_momentum: number | null;
     conflict_events: number;
     consistency_index: number;
   }>;
@@ -203,7 +203,7 @@ export type ExperimentComparisonRound = {
     {
       implementation_readiness?: number;
       alignment_index?: number;
-      adoption_momentum?: number;
+      adoption_momentum?: number | null;
       conflict_events?: number;
       consistency_index?: number;
       convergence_delta?: number;

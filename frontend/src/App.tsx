@@ -1179,7 +1179,7 @@ export default function App() {
                       <tr key={o.round_number} style={{ borderBottom: "1px solid #F0EEE8" }}>
                         <td style={{ padding: "8px 12px", color: "#1A1A1A" }}>{o.round_number}</td>
                         <td style={{ padding: "8px 12px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
-                          {o.adoption_momentum.toFixed(2)}
+                          {o.adoption_momentum == null ? "—" : o.adoption_momentum.toFixed(2)}
                         </td>
                         <td style={{ padding: "8px 12px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
                           {o.conflict_events}

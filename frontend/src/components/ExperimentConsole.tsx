@@ -72,7 +72,7 @@ type Props = {
   scenarioChoices: ScenarioCatalogItem[];
 };
 
-function fmtMetric(v: number | undefined): string {
+function fmtMetric(v: number | null | undefined): string {
   if (typeof v !== "number" || Number.isNaN(v)) return "—";
   return v.toFixed(2);
 }
@@ -616,7 +616,7 @@ export function ExperimentConsole({ scenarioChoices }: Props) {
               <div style={{ fontSize: 13 }}>Status: {shortStatusLabel(compareA.status)}</div>
               {(compareA.outcome_indicators ?? []).map((o) => (
                 <div key={`a-${o.round_number}`} style={{ fontSize: 12, marginTop: 6 }}>
-                  Round {o.round_number}: Adoption {o.adoption_momentum.toFixed(2)} · Disagreements {o.conflict_events} ·
+                  Round {o.round_number}: Adoption {fmtMetric(o.adoption_momentum)} · Disagreements {o.conflict_events} ·
                   Consistency {o.consistency_index.toFixed(2)}
                 </div>
               ))}
@@ -626,7 +626,7 @@ export function ExperimentConsole({ scenarioChoices }: Props) {
               <div style={{ fontSize: 13 }}>Status: {shortStatusLabel(compareB.status)}</div>
               {(compareB.outcome_indicators ?? []).map((o) => (
                 <div key={`b-${o.round_number}`} style={{ fontSize: 12, marginTop: 6 }}>
-                  Round {o.round_number}: Adoption {o.adoption_momentum.toFixed(2)} · Disagreements {o.conflict_events} ·
+                  Round {o.round_number}: Adoption {fmtMetric(o.adoption_momentum)} · Disagreements {o.conflict_events} ·
                   Consistency {o.consistency_index.toFixed(2)}
                 </div>
               ))}

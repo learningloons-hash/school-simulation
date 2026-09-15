@@ -44,7 +44,9 @@ function convergenceDeltaSeries(timeline: Timeline): number[] {
 }
 
 function adoptionSeries(outcomes: Outcomes): number[] {
-  return (outcomes ?? []).map((o) => o.adoption_momentum);
+  return (outcomes ?? [])
+    .map((o) => o.adoption_momentum)
+    .filter((v): v is number => typeof v === "number");
 }
 
 function agentIdsFromTimeline(timeline: Timeline): string[] {
@@ -214,7 +216,7 @@ export function LiveRunDashboard({
                     <tr key={o.round_number} style={{ borderBottom: "1px solid #eee" }}>
                       <td style={{ padding: "6px 8px" }}>{o.round_number}</td>
                       <td style={{ padding: "6px 8px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
-                        {o.adoption_momentum.toFixed(3)}
+                        {o.adoption_momentum == null ? "—" : o.adoption_momentum.toFixed(3)}
                       </td>
                       <td style={{ padding: "6px 8px", color: "#1A1A1A", fontFamily: FONT.mono, fontSize: 13 }}>
                         {o.conflict_events}
