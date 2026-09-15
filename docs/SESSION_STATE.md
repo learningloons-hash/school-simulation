@@ -10,7 +10,7 @@ Update it at the end of each iteration gate.
 - Project: `mirofish-mvp` (product name: **Senna**); public repo `school-simulation`.
 - **Platform arcs (1–12): CLOSED.** Arc scope and gate table: [`CLAUDE.md`](../CLAUDE.md) — authoritative; do not duplicate here.
 - **Research utility track: ACTIVE** (2026-09-15). Mechanics-only harness work on `sq_reading_culture` (Part C, persona-rich, tempsweep); CIEPSS validity re-run blocked on new pre-registration. Neutral-prior discipline holds for `ciepss_school_b`; differentiated personas are utility-only.
-- **Study repo anchors (`senna-sstrf-study` `main`):** gitignore fix + manifest validator **`46c57c2`**; persona-rich + Part C export bundles **`92a16c6`**; ops bundle **`f5e77ec`**; legacy zip backfill **`37529eb`** (2026-09-01 / tempsweep / analyst-package).
+- **Study repo anchors (`senna-sstrf-study` `main`):** gitignore fix + manifest validator **`46c57c2`**; persona-rich + Part C export bundles **`92a16c6`**; ops bundle **`f5e77ec`**; legacy zip backfill flat paths **`f9ecc7f`** (supersedes nested-path **`37529eb`**).
 - **Public repo handoffs:** Architect PASS on study gitignore **`f647caa`**; validity harness dry-run guard **`dfc0bb1`**; persona-rich fixtures **`e242142`**; CIEPSS dissociation narrative **`d2110e1`**.
 - Last update date: **2026-09-15** (GM-F Ops ruling execution).
 - Last verified: adoption_momentum round-1 null slice + validity harness tests (see Gate Evidence).
