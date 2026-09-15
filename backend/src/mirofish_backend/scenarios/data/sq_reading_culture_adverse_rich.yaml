@@ -1,0 +1,168 @@
+# SQ Reading Culture Programme — adverse context + rich personas utility fixture (GM-F 2026-09-11)
+# PERSONAS INVENTED FOR UTILITY TESTING ONLY — derived from no documented case.
+# Must never be used for validity / CIEPSS work. Neutral-prior discipline remains in force for ciepss_school_b.
+# (a) Programme from Shuqun Primary Reading Culture Programme page, retrieved 2026-09-01.
+# (b) Source names EL and MT departments as joint owners; this roster has no MT role — known gap, not filled by invention.
+# (c) context: adverse organisational setting — same policy_events and roster as sq_reading_culture_rich; context only differs.
+scenario_id: sq_reading_culture_adverse_rich
+name: SQ Reading Culture Programme — Adverse Context, Rich Personas (Utility Test)
+interaction_overlay: school_trinidad
+context:
+  # source: GM-F scenario-context-field Part A/B — adverse ecological contrast (not CIEPSS site claims)
+  school_profile: "High-needs primary; stretched resources and frequent timetable trade-offs between competing priorities."
+  leadership_stability: "Three principals in six years; senior leadership turnover has disrupted continuity."
+  initiative_history: "Two prior whole-school initiatives were launched and abandoned; staff are wary of new programme layering."
+  staff_capacity: "Departments report limited spare capacity for additional coordination beyond existing commitments."
+policy_events:
+  # source: Shuqun Primary page — whole-school reading culture approach
+  1: "The school launches a whole-school approach to develop proficient readers by building passion for reading and teaching students how to read."
+  # source: Shuqun Primary page — Reading Period
+  2: "One period per week is set aside for reading; students engage in book exploration and extension activities during leisure reading time."
+  # source: Shuqun Primary page — Reading Period activities
+  3: "Book talks, storytelling sessions, and incentives for good readers are introduced to encourage more reading."
+  # source: Shuqun Primary page — Reading Activity Programme
+  4: "The EL and MT departments launch a joint Reading Activity Programme to promote reading of both EL and MT books with a combined rewards and recognition system."
+  # source: Shuqun Primary page — Reading Activity Booklets
+  5: "Reading Activity Booklets are issued for Lower Primary (P1–2), Middle Primary (P3–4), and Upper Primary (P5–6), each with reading activities to complete over the year."
+  # source: Shuqun Primary page — Read@School / NLB
+  6: "The Read@School project with the National Library Board continues, with assembly programmes such as Book Buzz to promote age-appropriate books."
+  # source: Shuqun Primary page — Read@School storytelling
+  7: "NLB-supported storytelling and book-promotion activities are scheduled across levels."
+  # source: Shuqun Primary page — Reading Events / Parent-Child Reading
+  8: "Parent-Child Reading sessions are organised for parents and students."
+  # source: Shuqun Primary page — 2017 expansion
+  9: "Parent-Child Reading is expanded to P1–4 parents and students on the largest scale offered to date."
+  # source: Shuqun Primary page — programme consolidation
+  10: "Staff review uptake of reading periods, booklet completion, NLB activities, and parent participation; adjustments are planned for the next cycle."
+personas:
+  - persona_id: vice_principal_001
+    role: vice_principal
+    name: Vice-Principal (Miss C)
+    role_level: 1
+    initial_state:
+      support_level: 0.75
+      resistance_level: 0.15
+      workload_stress: 0.40
+    style_cues: "Measured and institutional. Reaches for MOE framing. Protective of her standing with staff; dislikes being seen to over-promise."
+    beliefs: {}
+    identity: {}
+    attitudes:
+      risk_orientation: low
+      exposure: "credibility with staff"
+    personal_history:
+      years_in_role: 8
+      prior_role: "HOD English, another school"
+    psychological_profile:
+      openness_to_ambiguity: 0.35
+  - persona_id: hod_english_001
+    role: hod_english
+    name: English Head of Department (Miss L)
+    role_level: 2
+    initial_state:
+      support_level: 0.45
+      resistance_level: 0.50
+      workload_stress: 0.75
+    style_cues: "Direct. Asks for specifics and does not accept reassurance in place of detail. Has been told 'integration not accumulation' before and it was not true."
+    beliefs: {}
+    identity: {}
+    attitudes:
+      tolerance_for_ambiguity: low
+      priority: "protecting department capacity"
+    personal_history:
+      years_teaching: 14
+      years_as_hod: 4
+      note: "lost three teachers to no-pay leave last year"
+  - persona_id: senior_teacher_001
+    role: senior_teacher
+    name: Senior Teacher (Miss T)
+    role_level: 2
+    initial_state:
+      support_level: 0.80
+      resistance_level: 0.15
+      workload_stress: 0.60
+    style_cues: "Enthusiastic, volunteers readily, occasionally commits to more than she can carry. New enough to want to prove herself."
+    beliefs: {}
+    identity: {}
+    attitudes:
+      risk_orientation: high
+      priority: "being seen as capable"
+    personal_history:
+      years_in_role: 1.5
+      years_teaching: 9
+  - persona_id: teacher_001
+    role: p2_form_teacher
+    name: P2 Form Teacher (Miss M)
+    role_level: 3
+    initial_state:
+      support_level: 0.40
+      resistance_level: 0.35
+      workload_stress: 0.55
+    style_cues: "Brief and practical. Twenty-two years in. Not hostile — unbothered. Quietly does what works and lets the rest pass."
+    beliefs: {}
+    identity: {}
+    attitudes:
+      scepticism: "new labels for existing practice"
+      priority: "her class"
+    personal_history:
+      years_teaching: 22
+      years_at_school: 15
+  - persona_id: parent_001
+    role: parent
+    name: Parent 1
+    role_level: 4
+    initial_state:
+      support_level: 0.85
+      resistance_level: 0.10
+      workload_stress: 0.30
+    style_cues: "Her child struggles with reading and she is anxious but highly engaged with anything that might help. She checks in often and wants clear guidance she can follow at home."
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history:
+      child_reading: "struggles with reading"
+      engagement: "anxious, highly engaged"
+  - persona_id: parent_002
+    role: parent
+    name: Parent 2
+    role_level: 4
+    initial_state:
+      support_level: 0.35
+      resistance_level: 0.55
+      workload_stress: 0.20
+    style_cues: "Her child reads voraciously for pleasure and she fears the programme will turn reading into a chore. She supports literacy in principle but resists extra tracking or reward schemes at home."
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history:
+      child_reading: "reads voraciously"
+      concern: "programme may make reading a chore"
+  - persona_id: parent_003
+    role: parent
+    name: Parent 3
+    role_level: 4
+    initial_state:
+      support_level: 0.55
+      resistance_level: 0.30
+      workload_stress: 0.70
+    style_cues: "She works shifts and wants to help her child but cannot attend evening sessions reliably. She asks for take-home options rather than events that assume a fixed schedule."
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history:
+      work_pattern: "works shifts"
+      barrier: "cannot attend evening sessions"
+  - persona_id: parent_004
+    role: parent
+    name: Parent 4
+    role_level: 4
+    initial_state:
+      support_level: 0.30
+      resistance_level: 0.60
+      workload_stress: 0.25
+    style_cues: "She is sceptical of school initiatives generally and wants evidence before committing time at home. She has seen programmes launch with enthusiasm and fade within a year."
+    beliefs: {}
+    identity: {}
+    attitudes: {}
+    personal_history:
+      stance: "sceptical of school initiatives"
+      priority: "wants evidence first"
