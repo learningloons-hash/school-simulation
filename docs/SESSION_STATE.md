@@ -7,15 +7,13 @@ Update it at the end of each iteration gate.
 
 ## Current Status
 
-- Project: `mirofish-mvp` (product name: **Senna**)
-- **Senna Arc 8 CLOSED — GM PASS** (2026-05-19) — gates **`senna-iter-35`–`39`** + economics follow-up. **Arc 7 GM PASS**. **Arc 6 CLOSED**.
-- Senna Arc 1: [`senna-iter-1-closeout.md`](iterations/senna-iter-1-closeout.md) … [`senna-iter-5-closeout.md`](iterations/senna-iter-5-closeout.md). Arc 2: [`senna-iter-6-closeout.md`](iterations/senna-iter-6-closeout.md) … [`senna-iter-10-closeout.md`](iterations/senna-iter-10-closeout.md). Arc 3: [`senna-iter-11-closeout.md`](iterations/senna-iter-11-closeout.md) … [`senna-iter-15-closeout.md`](iterations/senna-iter-15-closeout.md). Arc 4: [`senna-iter-16-closeout.md`](iterations/senna-iter-16-closeout.md) … [`senna-iter-20-closeout.md`](iterations/senna-iter-20-closeout.md). Arc 5: [`senna-iter-21-closeout.md`](iterations/senna-iter-21-closeout.md) … [`senna-iter-25-closeout.md`](iterations/senna-iter-25-closeout.md). Arc 6: [`senna-iter-26-closeout.md`](iterations/senna-iter-26-closeout.md) … [`senna-iter-29-closeout.md`](iterations/senna-iter-29-closeout.md). Arc 7: [`senna-iter-30-closeout.md`](iterations/senna-iter-30-closeout.md) … [`senna-iter-34-closeout.md`](iterations/senna-iter-34-closeout.md). Arc 8: [`senna-iter-35-closeout.md`](iterations/senna-iter-35-closeout.md) … [`senna-iter-39-closeout.md`](iterations/senna-iter-39-closeout.md). Specs: [`HANDOFF_SENNA_ARC1.md`](handoffs/HANDOFF_SENNA_ARC1.md) … [`HANDOFF_SENNA_ARC8.md`](handoffs/HANDOFF_SENNA_ARC8.md).
-- Backend / thesis platform: **Iteration 29** (run economics) **shipped** with **architect PASS** and **review follow-ups applied**. See [`iteration-29-closeout.md`](iterations/iteration-29-closeout.md) and [`review-iteration-29.md`](reviews/review-iteration-29.md) § *Follow-up resolution*.
-- **Senna Arc 10 CLOSED** (2026-08-19) — memory diagnostics baseline; gates **`senna-iter-45`–`48`**. See [`senna-iter-48-closeout.md`](iterations/senna-iter-48-closeout.md) and [`docs/diagnostics/ARC10_BASELINE.md`](diagnostics/ARC10_BASELINE.md).
-- **Next (Senna):** Arc 11 memory architecture (spec TBD).
-- Last completed Senna work: **senna-iter-48** (2026-08-19) — Arc 10 combined baseline; **senna-iter-47** (2026-08-18) — architectural interview.
-- Last update date: **2026-08-19** — iter-48 closes Arc 10 on `main`.
-- Last verified: backend **`uv run pytest` 332 passed, 2 skipped** (includes `test_senna_iter48_arc10_baseline.py`).
+- Project: `mirofish-mvp` (product name: **Senna**); public repo `school-simulation`.
+- **Platform arcs (1–12): CLOSED.** Arc scope and gate table: [`CLAUDE.md`](../CLAUDE.md) — authoritative; do not duplicate here.
+- **Research utility track: ACTIVE** (2026-09-15). Mechanics-only harness work on `sq_reading_culture` (Part C, persona-rich, tempsweep); CIEPSS validity re-run blocked on new pre-registration. Neutral-prior discipline holds for `ciepss_school_b`; differentiated personas are utility-only.
+- **Study repo anchors (`senna-sstrf-study` `main`):** gitignore fix + manifest validator **`46c57c2`**; persona-rich + Part C export bundles **`92a16c6`**; ops bundle **`f5e77ec`**. Legacy zip backfill (2026-09-01 / tempsweep / analyst-package) pending commit in study repo.
+- **Public repo handoffs:** Architect PASS on study gitignore **`f647caa`**; validity harness dry-run guard **`dfc0bb1`**; persona-rich fixtures **`e242142`**; CIEPSS dissociation narrative **`d2110e1`**.
+- Last update date: **2026-09-15** (GM-F Ops ruling execution).
+- Last verified: adoption_momentum round-1 null slice + validity harness tests (see Gate Evidence).
 
 ## Environment and Access
 
@@ -460,28 +458,13 @@ Update it at the end of each iteration gate.
 - Manual: Optional roster CSV + template URL; confirm **`config_snapshot.scale_warning`** when **`agent_limit` > 20**; confirm `cohort_summary` present in export.json; **`GET /simulations/{id}/sampling-report`** for tier/posture view (completed/failed runs).
 - Sample QA run `ad901483b0a840689c71debb771cf0c1`: SQLite shows **8** turns (4 agents × 2 rounds), `simulation_mode` `full_round_robin`.
 
-## Next Iteration Focus (post–MVP arc)
+## Next Focus
 
-**Iteration 29** is **complete** (ship + architect review follow-ups, 2026-04-08). Convergence (**28**) + economics (**29**) are in production; **RQ2** cost columns live in **`comparison.csv`** and **`run.economics`**. **Next:** backlog or ad-hoc slices — **`HANDOFF_TO_BUILDER.md`** (strategic notes + historical starters), **`BRIEF_FOR_JOAN.md`** for UX/scale sequencing.
+**Platform:** No open product arcs. Ad-hoc fixes only (e.g. `adoption_momentum` round-1 null, validity harness dry-run guard).
 
-**Backlog:** multi-run parallelism across agent plan runs, SSE in browser, `aiosqlite` WAL + batch inserts — see [`HANDOFF_TO_BUILDER.md`](handoffs/HANDOFF_TO_BUILDER.md).
+**Research utility track:** `sq_reading_culture` Part C + persona-rich runs in study repo; CIEPSS dissociation framing in [`SSTRF_RQ1_RESULT_V2.md`](research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md) §4.1/§4.2. Builder handoff: [`HANDOFF_TO_BUILDER.md`](handoffs/HANDOFF_TO_BUILDER.md); workflow: [`SIMULATION_RUN_WORKFLOW.md`](handoffs/SIMULATION_RUN_WORKFLOW.md).
 
-**Primary handoff for the builder (“Joan”):** [`docs/handoffs/BRIEF_FOR_JOAN.md`](handoffs/BRIEF_FOR_JOAN.md) plus [`HANDOFF_TO_BUILDER.md`](handoffs/HANDOFF_TO_BUILDER.md) for numbered iteration starters.
-
-**Contracts / checklist:** [`docs/adr/ADR-001-iteration-10-11-contracts.md`](adr/ADR-001-iteration-10-11-contracts.md); **ADR-002** (visibility — implemented Iteration 25); [`docs/handoffs/HANDOFF_TO_ARCHITECT.md`](handoffs/HANDOFF_TO_ARCHITECT.md).
-
-**Builder seed:** This file + latest closeout ([`iteration-29-closeout.md`](iterations/iteration-29-closeout.md)) + [`HANDOFF_TO_BUILDER.md`](handoffs/HANDOFF_TO_BUILDER.md) / [`BRIEF_FOR_JOAN.md`](handoffs/BRIEF_FOR_JOAN.md) for the next slice (no pre-filled Iteration **30** starter yet).
-
-**Planned arc (9–12, adjustable):**
-
-- **9** — Rosters, **groups/factions**, bulk persona import; careful `agent_limit` policy. *(Done — see `iteration-9-closeout.md`.)*  
-- **10** — **Interaction model v2** + thin **AgentContext**. *(Done — `iteration-10-closeout.md`.)*  
-- **11** — Population pool + deterministic sampling + provenance. *(Done — `iteration-11-closeout.md`.)*  
-- **12** — Performance / parallelization sketch, stress tests, thesis fields (e.g. **effective_provider** per turn).
-
-**Still on backlog (any iteration):** hybrid policy extensions, persona schema versioning, Opus/review follow-ups — merge with Joan’s design note.
-
-*Starting a new Cursor chat post–Iteration 27: paste this file + `BRIEF_FOR_JOAN.md` + `iteration-27-closeout.md` + architect steering.*
+**Cold-start:** This file + [`CLAUDE.md`](../CLAUDE.md) (arc table) + study-repo commit anchors above.
 
 ## Multi-chat agent handoffs
 
