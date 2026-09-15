@@ -52,6 +52,35 @@ This is reported as a **limitation of the RQ1 instrument**, discovered by inspec
 
 Per `SSTRF_RQ1_SCORING_SYSTEM_V2.md` §3, the ten trials share one fixture, one case, one model, and one prompt structure, differing only by seed. **They are repeated samples of one generative process, not ten independent tests of a hypothesis**, and no p-value derived from a chance model applies here. The correct reading of "0/10" is: across ten stochastic replications of the same documented CIEPSS School B scenario, the simulation did not reproduce, at the pre-registered threshold, the specific finding that staff describe themselves as co-owners of policy (P3) or perceive the policy itself as rigid (P5) — while it did reliably reproduce staff absorbing and transmitting the policy's authority (P1, P2 both essentially max out across all ten trials).
 
+### 4.1 The dissociation, and why it is a finding rather than an excuse
+
+**Added 2026-09-11. The scored result in §1 is unchanged; this is interpretation.**
+
+Inspection of `ciepss_school_b.yaml` after scoring establishes that all eight personas shared a single YAML anchor (`&neutral_calibration_prior`) and carried forty empty field declarations: `style_cues: ""`, `beliefs: {}`, `identity: {}`, `attitudes: {}`, `personal_history: {}`. The actors differed only by `persona_id`, `role`, `name` and `role_level`.
+
+The configuration therefore supplied **structure** — role hierarchy, influence network, turn order — and supplied **no identity**. The results split along exactly that line:
+
+| Proposition | Type | Result |
+|---|---|---|
+| P1 — where authority for innovation sits | structural | maxed out, all ten trials |
+| P2 — the school level filters policy | structural | maxed out, all ten trials |
+| P3 — how teachers regard themselves | identity | floored; 0 of 4 staff scored 2 in 9 of 10 trials |
+| P5 — policy perceived as inflexible | perception | never scored 2 in 170 cells, either pass |
+
+**Structure in, structure out. No identity in, no identity out.**
+
+This is a clean input–output correspondence and it is evidence that the instrument reports what is present rather than what is expected. Consider the alternative: had eight personas with `identity: {}` and `beliefs: {}` reproduced P3 — agents reporting on how they regard themselves — that would have been alarming. It would mean the method generates plausible findings from nothing, and every positive result it ever produced would be suspect.
+
+**The null on P3 and P5 is therefore partial evidence that the method does not confabulate.** For a methodological proof-of-concept, that is worth more than a clean pass would have been.
+
+### 4.2 Standing caution
+
+The above is a post-hoc explanation that fits: mechanistically plausible, visible in the fixture, and arriving after the results. *"Our null had a fixable cause"* is the most seductive story available in research, and it becomes more seductive the more elegant it gets.
+
+**It remains a hypothesis until tested.** A re-run of the ten trials with differentiated personas, under a new pre-registration, converts it from story to evidence. That study must name its directional prediction for *every* proposition in advance, including the outcome that would falsify this reading — P1 and P2 dropping when personas are differentiated, which would indicate individuation interfering with structural reproduction, a different and more interesting problem than the one under test.
+
+It must also state that P1 and P2 are saturated and carry no headroom, so the study's entire power sits in P3 and P5. Naming that in advance is what prevents the analysis from later being accused of finding its effect in the only place it had room to find one.
+
 ---
 
 ## 5. Complementary qualitative synthesis (exploratory — not part of the confirmatory test)
