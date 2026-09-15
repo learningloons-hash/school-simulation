@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 
+import aiosqlite
 import pytest
 from fastapi.testclient import TestClient
 
@@ -156,3 +157,45 @@ def test_adoption_momentum_null_on_round_one(monkeypatch, tmp_path) -> None:
         assert isinstance(indicators[1].get("adoption_momentum"), float)
 
     asyncio.run(_run())
+
+
+@pytest.mark.asyncio
+async def test_migrate_round_outcomes_nullable_adoption_momentum(tmp_path) -> None:
+    """Legacy NOT NULL column is migrated to nullable without data loss."""
+    db_path = tmp_path / "legacy_round_outcomes.sqlite"
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            """
+            CREATE TABLE round_outcomes (
+              id TEXT PRIMARY KEY,
+              simulation_id TEXT NOT NULL,
+              round_number INTEGER NOT NULL,
+              adoption_momentum REAL NOT NULL,
+              conflict_events INTEGER NOT NULL,
+              consistency_index REAL NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+        await db.execute(
+            """
+            INSERT INTO round_outcomes (
+              id, simulation_id, round_number, adoption_momentum, conflict_events, consistency_index
+            ) VALUES ('o1', 's1', 1, 0.55, 2, 0.75);
+            """
+        )
+        await db.commit()
+
+    await init_db(str(db_path))
+
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute("PRAGMA table_info(round_outcomes);")
+        columns = await cursor.fetchall()
+        adoption_col = next(c for c in columns if c[1] == "adoption_momentum")
+        assert adoption_col[3] == 0
+        row = await db.execute(
+            "SELECT adoption_momentum, conflict_events FROM round_outcomes WHERE id = 'o1';"
+        )
+        adopted, conflicts = await row.fetchone()
+        assert adopted == 0.55
+        assert conflicts == 2
