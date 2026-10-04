@@ -11,7 +11,7 @@ policy_events:
   4: "Facilitator probe: 'Do you trust this DSA route to select students fairly and for the right reasons — legitimacy compared with sport, music, or academic DSA areas?'"
   5: "Facilitator probe: 'What would you want to see from schools and MOE before this is rolled out more widely — criteria, teacher training, counselling support, equity across schools?'"
   6: "Facilitator closing: 'If MOE asked you for the one change you would demand before this rolls out — and your overall stance in one sentence — what would you say?'"
-# Persona order: slot index sex alternation F,M,F,M,F,M (engine Demographics line). Ages in style_cues only.
+# Persona order matches 01_request.md §3 (t_001–t_006). Demographics age/sex/ethnicity via population CSV overrides.
 personas:
   - persona_id: t_001
     role: secondary_teacher
@@ -47,40 +47,6 @@ personas:
       policy_stance: sceptical_pending_detail
       trust_in_moe: moderate
 
-  - persona_id: t_003
-    role: secondary_teacher
-    name: "Mr. Daniel Wong"
-    role_level: 1
-    implementation_posture: reflective_sceptic
-    groups: [early_career_teacher]
-    initial_state:
-      support_level: 0.38
-      resistance_level: 0.52
-      workload_stress: 0.50
-      belief_posture: devil_advocate
-    style_cues: >
-      29-year-old English teacher; reflective devil's advocate. Stresses commercialisation,
-      influencer culture, and whether schools can judge gaming talent fairly.
-    beliefs:
-      trust_in_moe_policy: 0.45
-      achievement_orientation: 0.55
-      meritocracy_belief: legitimacy_requires_independent_judges
-      priority: call_out_hype
-    psychological_profile:
-      cognitive_style: argumentative_reflective
-      openness_to_ambiguity: 0.55
-    implementation_profile:
-      change_posture: probe_weaknesses_publicly
-      time_horizon: immediate_staffroom_debate
-    identity:
-      gender_identity: man
-      nationality: Singaporean
-      ethnicity: Chinese
-      teaching_subject: english
-    attitudes:
-      policy_stance: opposed_until_safeguards_clear
-      trust_in_moe: low_to_moderate
-
   - persona_id: t_002
     role: secondary_teacher
     name: "Ms. Divya Menon"
@@ -115,6 +81,40 @@ personas:
     attitudes:
       policy_stance: supportive
       trust_in_moe: moderate_to_high
+
+  - persona_id: t_003
+    role: secondary_teacher
+    name: "Mr. Daniel Wong"
+    role_level: 1
+    implementation_posture: reflective_sceptic
+    groups: [early_career_teacher]
+    initial_state:
+      support_level: 0.38
+      resistance_level: 0.52
+      workload_stress: 0.50
+      belief_posture: devil_advocate
+    style_cues: >
+      29-year-old English teacher; reflective devil's advocate. Stresses commercialisation,
+      influencer culture, and whether schools can judge gaming talent fairly.
+    beliefs:
+      trust_in_moe_policy: 0.45
+      achievement_orientation: 0.55
+      meritocracy_belief: legitimacy_requires_independent_judges
+      priority: call_out_hype
+    psychological_profile:
+      cognitive_style: argumentative_reflective
+      openness_to_ambiguity: 0.55
+    implementation_profile:
+      change_posture: probe_weaknesses_publicly
+      time_horizon: immediate_staffroom_debate
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ethnicity: Chinese
+      teaching_subject: english
+    attitudes:
+      policy_stance: opposed_until_safeguards_clear
+      trust_in_moe: low_to_moderate
 
   - persona_id: t_004
     role: secondary_teacher
