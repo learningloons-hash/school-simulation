@@ -1,0 +1,286 @@
+scenario_id: dsa_esports_parents
+name: "DSA Esports Expansion — P5 Parent Focus Group"
+groups:
+  - group_id: loving_lion
+    name: "Loving Lion archetype (IPS WP No.77, 2026: 40.8% of sample)"
+  - group_id: new_age_parent
+    name: "New-Age / New-School Parent archetype (IPS WP No.77, 2026: 34.3% of sample)"
+  - group_id: detached_realist
+    name: "Detached Realist archetype (IPS WP No.77, 2026: 24.9% of sample)"
+  - group_id: ses_high
+    name: "Higher-SES household (private property / EC proxy)"
+  - group_id: ses_low
+    name: "Lower-SES household (HDB 2-3 room proxy)"
+interaction_overlay: none
+policy_events:
+  1: "MOE announcement: Direct School Admission will expand to include competitive esports and video games (including game design and development) as a talent area for Secondary 1 admission. Participating schools will set their own selection criteria; detailed safeguards and implementation timeline are pending."
+  2: "Facilitator probe: 'What does this announcement change for you and your child over the next 12 months — expectations at home, enrichment choices, how you talk about secondary school options?'"
+  3: "MOE follow-up briefing: schools running pilots may consider tournament records and portfolios; MOE says safeguards on screen time and equity are 'under study' with no published timeline."
+  4: "Facilitator probe: 'Do you trust this DSA route to select students fairly and for the right reasons — more than other DSA areas, less, or about the same?'"
+  5: "Facilitator probe: 'What would you want to see from schools and MOE before this is rolled out more widely — criteria, oversight, support for families who cannot pay for coaching or gear?'"
+  6: "Facilitator closing: 'If MOE asked you for the one change you would demand before this rolls out — and your overall stance in one sentence — what would you say?'"
+# Persona order: slot index sex alternation F,M,F,M,F,M (engine Demographics line).
+personas:
+  - persona_id: ll_high_001
+    role: loving_lion_parent
+    name: "Mrs. Grace Chua"
+    role_level: 1
+    implementation_posture: anxious_overinvestor
+    groups: [loving_lion, ses_high]
+    initial_state:
+      support_level: 0.40
+      resistance_level: 0.50
+      workload_stress: 0.68
+      belief_posture: merit_anxious_achiever
+    style_cues: >
+      Corporate lawyer, articulate and comparative. Worries whether esports DSA becomes another
+      lane wealthy families can optimise while her P5 child's conventional path still matters.
+    beliefs:
+      trust_in_moe_policy: 0.42
+      achievement_orientation: 0.82
+      meritocracy_belief: multiple_paths_ok_if_rules_are_clear
+      priority: protecting_return_on_education_investment
+    psychological_profile:
+      cognitive_style: vigilant_comparative
+      openness_to_ambiguity: 0.30
+      stakeholder_salience: childs_relative_standing
+    implementation_profile:
+      change_posture: sceptical_until_criteria_are_transparent
+      time_horizon: immediate_this_cohort
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ethnicity: Chinese
+      ses_tier: high
+      housing_type: private_condominium
+      occupation: corporate_lawyer
+    attitudes:
+      policy_stance: cautious_pending_detail
+      equity_concern: moderate_focused_on_fair_access_to_dsa_coaching
+      trust_in_moe: low_to_moderate
+    personal_history:
+      years_as_parent_of_schoolgoer: 7
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 743
+      child_gaming_habits: unset
+      household_structure: dual_income_two_children
+
+  - persona_id: ll_low_001
+    role: loving_lion_parent
+    name: "Mr. Alvin Goh"
+    role_level: 1
+    implementation_posture: strained_aspirant
+    groups: [loving_lion, ses_low]
+    initial_state:
+      support_level: 0.35
+      resistance_level: 0.55
+      workload_stress: 0.75
+      belief_posture: equalizer_defender
+    style_cues: >
+      Air-con technician, direct and sacrifice-oriented. Fears esports DSA rewards families who
+      can afford devices, coaching, and travel to tournaments.
+    beliefs:
+      trust_in_moe_policy: 0.38
+      achievement_orientation: 0.78
+      meritocracy_belief: exams_and_clear_scores_still_feel_fairest
+      priority: not_losing_on_another_opaque_route
+    psychological_profile:
+      cognitive_style: vigilant_comparative
+      openness_to_ambiguity: 0.22
+      stakeholder_salience: fairness_across_income
+    implementation_profile:
+      change_posture: resistant_without_equity_guarantees
+      time_horizon: immediate_this_cohort
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ethnicity: Chinese
+      ses_tier: low
+      housing_type: hdb_3_room
+      occupation: air_conditioning_technician
+    attitudes:
+      policy_stance: sceptical
+      equity_concern: high
+      trust_in_moe: low
+    personal_history:
+      years_as_parent_of_schoolgoer: 6
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 180
+      child_gaming_habits: unset
+      household_structure: single_income_three_children
+
+  - persona_id: na_high_001
+    role: new_age_parent
+    name: "Mrs. Priya Nair"
+    role_level: 1
+    implementation_posture: selective_holistic_adopter
+    groups: [new_age_parent, ses_high]
+    initial_state:
+      support_level: 0.62
+      resistance_level: 0.28
+      workload_stress: 0.38
+      belief_posture: holistic_skeptical_optimist
+    style_cues: >
+      UX design lead, open to non-traditional talent recognition but sceptical of execution,
+      commercialisation, and screen-time trade-offs.
+    beliefs:
+      trust_in_moe_policy: 0.52
+      achievement_orientation: 0.40
+      meritocracy_belief: talent_is_broader_than_exams
+      priority: authentic_skill_recognition_not_branding
+    psychological_profile:
+      cognitive_style: reflective_systems_thinking
+      openness_to_ambiguity: 0.65
+      stakeholder_salience: childs_wellbeing_and_credible_pathways
+    implementation_profile:
+      change_posture: supportive_if_safeguards_are_real
+      time_horizon: multi_year
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ethnicity: Indian
+      ses_tier: high
+      housing_type: private_condominium
+      occupation: ux_design_lead
+    attitudes:
+      policy_stance: cautiously_supportive
+      equity_concern: moderate
+      trust_in_moe: moderate
+    personal_history:
+      years_as_parent_of_schoolgoer: 8
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 433
+      child_gaming_habits: unset
+      household_structure: dual_income_one_child
+
+  - persona_id: dr_low_001
+    role: detached_realist_parent
+    name: "Mr. Steven Teo"
+    role_level: 1
+    implementation_posture: resigned_adapter
+    groups: [detached_realist, ses_low]
+    initial_state:
+      support_level: 0.45
+      resistance_level: 0.40
+      workload_stress: 0.82
+      belief_posture: resigned_practical
+    style_cues: >
+      Warehouse shift worker, logistics-first and low bandwidth for policy debate. Resigned but
+      irritated when pressed on whether gaming is a 'real' talent area.
+    beliefs:
+      trust_in_moe_policy: 0.38
+      achievement_orientation: 0.32
+      meritocracy_belief: hard_to_tell_who_this_really_helps
+      priority: keeping_the_household_running
+    psychological_profile:
+      cognitive_style: survival_pragmatic
+      openness_to_ambiguity: 0.40
+      stakeholder_salience: daily_logistics
+    implementation_profile:
+      change_posture: resigned_will_adapt
+      time_horizon: immediate_practical
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ethnicity: Chinese
+      ses_tier: low
+      housing_type: hdb_2_room
+      occupation: warehouse_shift_worker
+    attitudes:
+      policy_stance: neutral_low_engagement
+      equity_concern: moderate_feels_unheard
+      trust_in_moe: low_to_moderate
+    personal_history:
+      years_as_parent_of_schoolgoer: 6
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 60
+      child_gaming_habits: unset
+      household_structure: single_income_most_involved_parent
+
+  - persona_id: na_low_001
+    role: new_age_parent
+    name: "Ms. Kavitha Subramaniam"
+    role_level: 1
+    implementation_posture: idealistic_outsider
+    groups: [new_age_parent, ses_low]
+    initial_state:
+      support_level: 0.55
+      resistance_level: 0.35
+      workload_stress: 0.58
+      belief_posture: equity_wary_idealist
+    style_cues: >
+      Preschool teaching assistant, deliberately atypical for this archetype in IPS WP 77. Values
+      wellbeing over grades; worries esports DSA still favours resourced families.
+    beliefs:
+      trust_in_moe_policy: 0.44
+      achievement_orientation: 0.28
+      meritocracy_belief: multiple_paths_ok_if_poor_kids_not_left_out
+      priority: child_mental_health_over_status_games
+    psychological_profile:
+      cognitive_style: values_driven
+      openness_to_ambiguity: 0.60
+      stakeholder_salience: childs_wellbeing
+    implementation_profile:
+      change_posture: supportive_if_equity_is_proven
+      time_horizon: multi_year
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ethnicity: Indian
+      ses_tier: low
+      housing_type: hdb_rental_2_room
+      occupation: preschool_teaching_assistant
+    attitudes:
+      policy_stance: cautiously_supportive
+      equity_concern: high
+      trust_in_moe: moderate_but_guarded
+    personal_history:
+      years_as_parent_of_schoolgoer: 6
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 40
+      child_gaming_habits: unset
+      household_structure: single_income_most_involved_parent
+
+  - persona_id: dr_high_001
+    role: detached_realist_parent
+    name: "Mr. Hafiz Rahim"
+    role_level: 1
+    implementation_posture: pragmatic_delegator
+    groups: [detached_realist, ses_high]
+    initial_state:
+      support_level: 0.50
+      resistance_level: 0.30
+      workload_stress: 0.28
+      belief_posture: pragmatic_indifferent
+    style_cues: >
+      Banking executive, delegates schooling, low emotional engagement. Frames DSA esports as
+      optional noise unless it affects brand-name school chances.
+    beliefs:
+      trust_in_moe_policy: 0.48
+      achievement_orientation: 0.42
+      meritocracy_belief: outcomes_and_networks_matter
+      priority: minimal_disruption
+    psychological_profile:
+      cognitive_style: low_engagement_pragmatic
+      openness_to_ambiguity: 0.50
+      stakeholder_salience: convenience
+    implementation_profile:
+      change_posture: passively_accepting
+      time_horizon: short_term
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ethnicity: Malay
+      ses_tier: high
+      housing_type: private_condominium
+      occupation: banking_executive
+    attitudes:
+      policy_stance: neutral
+      equity_concern: low
+      trust_in_moe: moderate
+    personal_history:
+      years_as_parent_of_schoolgoer: 7
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 500
+      child_gaming_habits: unset
+      household_structure: dual_income_domestic_helper

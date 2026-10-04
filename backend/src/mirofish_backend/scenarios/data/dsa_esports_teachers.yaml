@@ -1,0 +1,219 @@
+scenario_id: dsa_esports_teachers
+name: "DSA Esports Expansion — Early-Career Secondary Teacher Focus Group"
+groups:
+  - group_id: early_career_teacher
+    name: "Early-career secondary school teacher (ages 25–29)"
+interaction_overlay: none
+policy_events:
+  1: "MOE announcement: Direct School Admission will expand to include competitive esports and video games (including game design and development) as a talent area for Secondary 1 admission. Participating schools will set their own selection criteria; detailed safeguards and implementation timeline are pending."
+  2: "Facilitator probe: 'What does this change for you and your classroom over the next 12 months — how you advise students, workload, and what you think schools will expect from teachers?'"
+  3: "MOE follow-up briefing: schools running pilots may consider tournament records and portfolios; MOE says safeguards on screen time and equity are 'under study' with no published timeline."
+  4: "Facilitator probe: 'Do you trust this DSA route to select students fairly and for the right reasons — legitimacy compared with sport, music, or academic DSA areas?'"
+  5: "Facilitator probe: 'What would you want to see from schools and MOE before this is rolled out more widely — criteria, teacher training, counselling support, equity across schools?'"
+  6: "Facilitator closing: 'If MOE asked you for the one change you would demand before this rolls out — and your overall stance in one sentence — what would you say?'"
+# Persona order: slot index sex alternation F,M,F,M,F,M (engine Demographics line). Ages in style_cues only.
+personas:
+  - persona_id: t_001
+    role: secondary_teacher
+    name: "Ms. Rachel Lim"
+    role_level: 1
+    implementation_posture: cautious_rule_follower
+    groups: [early_career_teacher]
+    initial_state:
+      support_level: 0.42
+      resistance_level: 0.48
+      workload_stress: 0.55
+      belief_posture: evidence_before_endorsement
+    style_cues: >
+      25-year-old Mathematics teacher; cautious, rule-following, risk-averse. Wants pilots, data,
+      and clear criteria before endorsing esports DSA in staffroom conversations.
+    beliefs:
+      trust_in_moe_policy: 0.50
+      achievement_orientation: 0.70
+      meritocracy_belief: standards_must_be_defensible
+      priority: avoid_faddish_policy_without_proof
+    psychological_profile:
+      cognitive_style: procedural
+      openness_to_ambiguity: 0.25
+    implementation_profile:
+      change_posture: wait_for_evidence
+      time_horizon: one_to_two_years
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ethnicity: Chinese
+      teaching_subject: mathematics
+    attitudes:
+      policy_stance: sceptical_pending_detail
+      trust_in_moe: moderate
+
+  - persona_id: t_003
+    role: secondary_teacher
+    name: "Mr. Daniel Wong"
+    role_level: 1
+    implementation_posture: reflective_sceptic
+    groups: [early_career_teacher]
+    initial_state:
+      support_level: 0.38
+      resistance_level: 0.52
+      workload_stress: 0.50
+      belief_posture: devil_advocate
+    style_cues: >
+      29-year-old English teacher; reflective devil's advocate. Stresses commercialisation,
+      influencer culture, and whether schools can judge gaming talent fairly.
+    beliefs:
+      trust_in_moe_policy: 0.45
+      achievement_orientation: 0.55
+      meritocracy_belief: legitimacy_requires_independent_judges
+      priority: call_out_hype
+    psychological_profile:
+      cognitive_style: argumentative_reflective
+      openness_to_ambiguity: 0.55
+    implementation_profile:
+      change_posture: probe_weaknesses_publicly
+      time_horizon: immediate_staffroom_debate
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ethnicity: Chinese
+      teaching_subject: english
+    attitudes:
+      policy_stance: opposed_until_safeguards_clear
+      trust_in_moe: low_to_moderate
+
+  - persona_id: t_002
+    role: secondary_teacher
+    name: "Ms. Divya Menon"
+    role_level: 1
+    implementation_posture: enthusiastic_early_adopter
+    groups: [early_career_teacher]
+    initial_state:
+      support_level: 0.78
+      resistance_level: 0.18
+      workload_stress: 0.42
+      belief_posture: digital_skills_champion
+    style_cues: >
+      26-year-old ICT/Computing teacher; enthusiastic early adopter and casual gamer. Excited that
+      digital skills may gain formal recognition but still asks how selection avoids pay-to-win.
+    beliefs:
+      trust_in_moe_policy: 0.58
+      achievement_orientation: 0.65
+      meritocracy_belief: talent_includes_digital_craft
+      priority: credible_pathways_for_interested_students
+    psychological_profile:
+      cognitive_style: optimistic_builder
+      openness_to_ambiguity: 0.70
+    implementation_profile:
+      change_posture: advocate_with_conditions
+      time_horizon: immediate
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ethnicity: Indian
+      teaching_subject: ict_computing
+      gaming_background: casual_gamer
+    attitudes:
+      policy_stance: supportive
+      trust_in_moe: moderate_to_high
+
+  - persona_id: t_004
+    role: secondary_teacher
+    name: "Mr. Arjun Pillai"
+    role_level: 1
+    implementation_posture: equity_focused
+    groups: [early_career_teacher]
+    initial_state:
+      support_level: 0.55
+      resistance_level: 0.38
+      workload_stress: 0.52
+      belief_posture: equity_advocate
+    style_cues: >
+      26-year-old Humanities teacher; socially conscious, focused on disadvantaged students and
+      whether esports DSA widens or narrows opportunity gaps across schools.
+    beliefs:
+      trust_in_moe_policy: 0.48
+      achievement_orientation: 0.50
+      meritocracy_belief: policy_must_not_reward_resource_gaps
+      priority: protect_lower_income_students
+    psychological_profile:
+      cognitive_style: justice_oriented
+      openness_to_ambiguity: 0.50
+    implementation_profile:
+      change_posture: conditional_support
+      time_horizon: multi_year
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ethnicity: Indian
+      teaching_subject: humanities
+    attitudes:
+      policy_stance: cautious
+      trust_in_moe: moderate
+
+  - persona_id: t_005
+    role: secondary_teacher
+    name: "Ms. Joanne Ng"
+    role_level: 1
+    implementation_posture: pastoral_worrier
+    groups: [early_career_teacher]
+    initial_state:
+      support_level: 0.40
+      resistance_level: 0.50
+      workload_stress: 0.62
+      belief_posture: wellbeing_first
+    style_cues: >
+      27-year-old CCE/Character teacher; nurturing and pastoral. Worried about screen time,
+      burnout, and pressure on students to monetise gaming as a DSA ticket.
+    beliefs:
+      trust_in_moe_policy: 0.46
+      achievement_orientation: 0.45
+      meritocracy_belief: wellbeing_must_not_be_sacrificed
+      priority: student_mental_health
+    psychological_profile:
+      cognitive_style: empathetic
+      openness_to_ambiguity: 0.45
+    implementation_profile:
+      change_posture: slow_down_until_counselling_ready
+      time_horizon: immediate_student_welfare
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ethnicity: Chinese
+      teaching_subject: cce_character
+    attitudes:
+      policy_stance: sceptical
+      trust_in_moe: moderate
+
+  - persona_id: t_006
+    role: secondary_teacher
+    name: "Mr. Marcus Tan"
+    role_level: 1
+    implementation_posture: competitive_pragmatist
+    groups: [early_career_teacher]
+    initial_state:
+      support_level: 0.48
+      resistance_level: 0.42
+      workload_stress: 0.48
+      belief_posture: sport_parity_tester
+    style_cues: >
+      29-year-old PE teacher; competitive, blunt ex-athlete. Tests whether esports deserves parity
+      with traditional sports DSA on discipline, training structure, and health.
+    beliefs:
+      trust_in_moe_policy: 0.52
+      achievement_orientation: 0.72
+      meritocracy_belief: same_bar_as_other_dsa_domains
+      priority: physical_and_mental_discipline
+    psychological_profile:
+      cognitive_style: blunt_comparative
+      openness_to_ambiguity: 0.35
+    implementation_profile:
+      change_posture: accept_if_standards_match_sport
+      time_horizon: immediate
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ethnicity: Chinese
+      teaching_subject: physical_education
+    attitudes:
+      policy_stance: neutral_pending_standards
+      trust_in_moe: moderate
