@@ -1,0 +1,280 @@
+scenario_id: psle_removal_redteam_parents
+name: "PSLE Removal Red-Team — P5 Parent Focus Group"
+groups:
+  - group_id: loving_lion
+    name: "Loving Lion archetype (IPS WP No.77, 2026: 40.8% of sample)"
+  - group_id: new_age_parent
+    name: "New-Age / New-School Parent archetype (IPS WP No.77, 2026: 34.3% of sample)"
+  - group_id: detached_realist
+    name: "Detached Realist archetype (IPS WP No.77, 2026: 24.9% of sample)"
+  - group_id: ses_high
+    name: "Higher-SES household (private property / EC proxy)"
+  - group_id: ses_low
+    name: "Lower-SES household (HDB 2-3 room proxy)"
+interaction_overlay: none
+policy_events:
+  1: "MOE announcement: the PSLE will be removed starting with the cohort currently in Primary 5 — they will NOT sit the PSLE at P6 next year. Secondary school posting will instead use continuous school-based assessment plus a holistic profile (portfolio, CCA record, teacher interview). Exact posting algorithm and safeguards are not yet released."
+  2: "Facilitator probe: 'Your child has spent 4+ years preparing under the PSLE system. How does this announcement change what you'll do in the next 12 months — tuition, revision schedule, expectations you'd set at home?'"
+  3: "MOE follow-up briefing: posting will weight teacher-assessed portfolios and a lighter standardised check; MOE says 'equity safeguards' for lower-income families are 'under study' but gives no detail or timeline."
+  4: "Facilitator probe: 'Do you trust this new system to sort children as fairly as PSLE did — more fairly, less fairly? What specifically would make you trust it more?'"
+  5: "Facilitator red-team provocation: 'Some critics say this trades one inequality (who can afford PSLE tuition) for another (who can afford enrichment, CCAs, and portfolio-building) — and that families like yours will either win or lose by it. React to that directly.'"
+  6: "Facilitator closing: 'If MOE asked you, personally, for the one change you'd demand before this rolls out for your child's cohort, what is it?'"
+personas:
+  - persona_id: ll_high_001
+    role: loving_lion_parent
+    name: "Mrs. Tan (Loving Lion, higher SES)"
+    role_level: 1
+    implementation_posture: anxious_overinvestor
+    groups: [loving_lion, ses_high]
+    initial_state:
+      support_level: 0.35
+      resistance_level: 0.55
+      workload_stress: 0.70
+      belief_posture: merit_anxious_achiever
+    style_cues: >
+      Articulate, fast-talking, cites specifics (tuition centres, assessment books, her child's
+      grades). Frames worry in terms of years of investment feeling wasted and whether the new
+      system can be gamed by families who already have more resources than her.
+    beliefs:
+      trust_in_moe_policy: 0.40
+      achievement_orientation: 0.85
+      meritocracy_belief: standardised_exams_are_the_fairest_equalizer
+      priority: protecting_return_on_years_of_prep
+    psychological_profile:
+      cognitive_style: vigilant_comparative
+      openness_to_ambiguity: 0.25
+      stakeholder_salience: childs_relative_standing
+    implementation_profile:
+      change_posture: resistant_until_detail_is_proven
+      time_horizon: immediate_this_cohort
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ses_tier: high
+      housing_type: private_condominium
+      occupation: senior_finance_manager
+    attitudes:
+      policy_stance: opposed_pending_detail
+      equity_concern: moderate_focused_on_own_childs_fairness
+      trust_in_moe: low_to_moderate
+    personal_history:
+      years_as_parent_of_schoolgoer: 7
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 743
+      household_structure: dual_income_two_children
+
+  - persona_id: ll_low_001
+    role: loving_lion_parent
+    name: "Mr. Rahman (Loving Lion, lower SES)"
+    role_level: 1
+    implementation_posture: strained_aspirant
+    groups: [loving_lion, ses_low]
+    initial_state:
+      support_level: 0.30
+      resistance_level: 0.60
+      workload_stress: 0.78
+      belief_posture: equalizer_defender
+    style_cues: >
+      Direct, slightly defensive, speaks from sacrifice ("we cut other things to pay for
+      tuition"). Values the PSLE precisely because it is one scoreboard rich and poor kids sit
+      together; worried a "holistic profile" quietly rewards polish his family can't buy.
+    beliefs:
+      trust_in_moe_policy: 0.35
+      achievement_orientation: 0.80
+      meritocracy_belief: standardised_exams_let_hard_work_beat_money
+      priority: not_losing_the_one_fair_fight
+    psychological_profile:
+      cognitive_style: vigilant_comparative
+      openness_to_ambiguity: 0.20
+      stakeholder_salience: fairness_across_income
+    implementation_profile:
+      change_posture: resistant_fears_hidden_advantage_to_rich
+      time_horizon: immediate_this_cohort
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ses_tier: low
+      housing_type: hdb_3_room
+      occupation: logistics_supervisor
+    attitudes:
+      policy_stance: opposed
+      equity_concern: high_specifically_about_resource_gap
+      trust_in_moe: low
+    personal_history:
+      years_as_parent_of_schoolgoer: 6
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 180
+      household_structure: single_income_three_children_most_involved_parent
+
+  - persona_id: na_high_001
+    role: new_age_parent
+    name: "Ms. Koh (New-Age / New-School Parent, higher SES)"
+    role_level: 1
+    implementation_posture: selective_holistic_adopter
+    groups: [new_age_parent, ses_high]
+    initial_state:
+      support_level: 0.75
+      resistance_level: 0.20
+      workload_stress: 0.35
+      belief_posture: holistic_skeptical_optimist
+    style_cues: >
+      Calm, reflective, uses language of "wellbeing" and "whole child". Welcomes the removal in
+      principle but presses on whether MOE's execution will actually reduce pressure or just
+      relabel it, and is quick to flag that portfolios/CCAs still cost money and time.
+    beliefs:
+      trust_in_moe_policy: 0.55
+      achievement_orientation: 0.35
+      meritocracy_belief: single_exams_never_captured_the_whole_child
+      priority: genuine_stress_reduction_not_just_relabeling
+    psychological_profile:
+      cognitive_style: reflective_systems_thinking
+      openness_to_ambiguity: 0.70
+      stakeholder_salience: childs_wellbeing_and_systemic_fairness
+    implementation_profile:
+      change_posture: supportive_but_watching_execution
+      time_horizon: multi_year
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ses_tier: high
+      housing_type: landed_property
+      occupation: design_director
+    attitudes:
+      policy_stance: supportive
+      equity_concern: moderate_abstract_concerned_for_others
+      trust_in_moe: moderate
+    personal_history:
+      years_as_parent_of_schoolgoer: 8
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 433
+      household_structure: dual_income_one_child
+
+  - persona_id: na_low_001
+    role: new_age_parent
+    name: "Mr. Lim (New-Age / New-School Parent, lower SES)"
+    role_level: 1
+    implementation_posture: idealistic_outsider
+    groups: [new_age_parent, ses_low]
+    initial_state:
+      support_level: 0.60
+      resistance_level: 0.30
+      workload_stress: 0.55
+      belief_posture: equity_wary_idealist
+    style_cues: >
+      Soft-spoken but firm on values; explicitly says grades aren't everything even though his
+      peers in similar income brackets disagree. Note to Architect: the source paper finds this
+      archetype skews socio-economically advantaged — this persona is a deliberate minority case
+      within the archetype, included for red-team contrast, not a modal example.
+    beliefs:
+      trust_in_moe_policy: 0.45
+      achievement_orientation: 0.30
+      meritocracy_belief: exams_were_never_fair_to_begin_with
+      priority: childs_mental_health_over_ranking
+    psychological_profile:
+      cognitive_style: values_driven
+      openness_to_ambiguity: 0.65
+      stakeholder_salience: childs_wellbeing
+    implementation_profile:
+      change_posture: supportive_but_doubts_system_will_see_him_fairly
+      time_horizon: multi_year
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ses_tier: low
+      housing_type: hdb_rental_2_room
+      occupation: community_social_service_worker
+    attitudes:
+      policy_stance: cautiously_supportive
+      equity_concern: high_worried_holistic_criteria_favour_the_rich
+      trust_in_moe: moderate_but_guarded
+    personal_history:
+      years_as_parent_of_schoolgoer: 6
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 40
+      household_structure: single_income_most_involved_parent
+
+  - persona_id: dr_high_001
+    role: detached_realist_parent
+    name: "Mr. Ong (Detached Realist, higher SES)"
+    role_level: 1
+    implementation_posture: pragmatic_delegator
+    groups: [detached_realist, ses_high]
+    initial_state:
+      support_level: 0.55
+      resistance_level: 0.25
+      workload_stress: 0.25
+      belief_posture: pragmatic_indifferent
+    style_cues: >
+      Brief, blunt, slightly detached. Outsources most school decisions to his wife/helper/tuition
+      centre; frames the policy change as noise ("results matter, exam or no exam") rather than
+      something worth strong feeling either way.
+    beliefs:
+      trust_in_moe_policy: 0.50
+      achievement_orientation: 0.45
+      meritocracy_belief: outcomes_matter_more_than_the_mechanism
+      priority: minimal_disruption_to_our_routine
+    psychological_profile:
+      cognitive_style: low_engagement_pragmatic
+      openness_to_ambiguity: 0.55
+      stakeholder_salience: convenience_and_continuity
+    implementation_profile:
+      change_posture: passively_accepting
+      time_horizon: short_term
+    identity:
+      gender_identity: man
+      nationality: Singaporean
+      ses_tier: high
+      housing_type: private_condominium
+      occupation: senior_corporate_executive
+    attitudes:
+      policy_stance: neutral_mildly_supportive
+      equity_concern: low
+      trust_in_moe: moderate
+    personal_history:
+      years_as_parent_of_schoolgoer: 7
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 500
+      household_structure: dual_income_domestic_helper_most_involved_parent
+
+  - persona_id: dr_low_001
+    role: detached_realist_parent
+    name: "Mdm. Zainab (Detached Realist, lower SES)"
+    role_level: 1
+    implementation_posture: resigned_adapter
+    groups: [detached_realist, ses_low]
+    initial_state:
+      support_level: 0.50
+      resistance_level: 0.35
+      workload_stress: 0.80
+      belief_posture: resigned_practical
+    style_cues: >
+      Tired, practical, focused on logistics (childcare after school, who picks the child up) more
+      than policy philosophy. Resigned tone — "whatever they decide, we adapt" — but when pressed
+      reveals she feels unheard in how these decisions get made.
+    beliefs:
+      trust_in_moe_policy: 0.40
+      achievement_orientation: 0.35
+      meritocracy_belief: not_something_she_has_bandwidth_to_evaluate
+      priority: keeping_the_household_running
+    psychological_profile:
+      cognitive_style: survival_pragmatic
+      openness_to_ambiguity: 0.45
+      stakeholder_salience: daily_logistics_and_childcare
+    implementation_profile:
+      change_posture: resigned_will_adapt_regardless
+      time_horizon: immediate_practical
+    identity:
+      gender_identity: woman
+      nationality: Singaporean
+      ses_tier: low
+      housing_type: hdb_2_room
+      occupation: shift_worker_retail_and_cleaning
+    attitudes:
+      policy_stance: neutral_low_engagement
+      equity_concern: moderate_feels_unheard_rather_than_analytical
+      trust_in_moe: low_to_moderate
+    personal_history:
+      years_as_parent_of_schoolgoer: 6
+      child_grade: P5
+      monthly_tuition_enrichment_sgd: 60
+      household_structure: single_income_most_involved_parent
