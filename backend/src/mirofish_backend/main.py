@@ -22,9 +22,17 @@ logger = logging.getLogger("mirofish_backend")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from mirofish_backend.db.repo import fail_orphaned_running_simulations
+
     settings = get_settings()
     logger.info("Initializing database at %s", settings.sqlite_path)
     await init_db(settings.sqlite_path)
+    n = await fail_orphaned_running_simulations(
+        settings.sqlite_path,
+        failure_reason="server restarted during run",
+    )
+    if n:
+        logger.warning("Marked %s simulation(s) failed after server restart", n)
     yield
 
 
@@ -72,10 +80,13 @@ def run_dev() -> None:
     host = os.getenv("HOST", settings.host)
     port = int(os.getenv("PORT", str(settings.port)))
 
+    reload = os.getenv("SENNA_RELOAD", "0") == "1"
     uvicorn.run(
         "mirofish_backend.main:app",
         host=host,
         port=port,
-        reload=True,
+        reload=reload,
+        reload_dirs=["src"] if reload else None,
+        reload_excludes=[".venv/*", "data/*", "**/.venv/**", "**/data/**"] if reload else None,
     )
 

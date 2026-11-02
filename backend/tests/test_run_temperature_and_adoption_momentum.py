@@ -62,6 +62,8 @@ def _wait_completed(client: TestClient, sim_id: str) -> dict:
 def test_llm_temperature_defaults_to_settings(client_skip_sim, monkeypatch) -> None:
     client, _db = client_skip_sim
     monkeypatch.setenv("LLM_TEMPERATURE", "0.25")
+    monkeypatch.setenv("LLM_PROVIDER", "lmstudio")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
     r = client.post(
         "/simulations/run",
@@ -81,6 +83,8 @@ def test_llm_temperature_defaults_to_settings(client_skip_sim, monkeypatch) -> N
 def test_llm_temperature_request_override(client_skip_sim, monkeypatch) -> None:
     client, _db = client_skip_sim
     monkeypatch.setenv("LLM_TEMPERATURE", "0.25")
+    monkeypatch.setenv("LLM_PROVIDER", "lmstudio")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
     r = client.post(
         "/simulations/run",

@@ -329,6 +329,12 @@ class SimulationRunRequest(BaseModel):
     )
     random_seed: int = Field(default=42)
     max_tokens: int | None = Field(default=None, ge=64, le=8192)
+    llm_temperature: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=2.0,
+        description="Optional per-run sampling temperature (LM Studio / OpenAI paths). Ignored for Anthropic API calls.",
+    )
     llm_provider: str | None = Field(
         default=None,
         description="lmstudio | anthropic | hybrid; defaults from server settings",
@@ -1045,6 +1051,10 @@ async def queue_simulation_run(
     )
     run_warnings.extend(preflight_est.warnings)
 
+    run_llm_temperature = (
+        float(_req.llm_temperature) if _req.llm_temperature is not None else settings.llm_temperature
+    )
+
     config_snapshot = {
         "scenario_id": _req.scenario_id,
         "scenario_source": scenario_source,
@@ -1060,7 +1070,8 @@ async def queue_simulation_run(
         "lmstudio_model": lmstudio_model_run,
         "anthropic_model": anthropic_model_run,
         "lmstudio_base_url": lmstudio_base_url_run,
-        "llm_temperature": settings.llm_temperature,
+        "llm_temperature": None if llm_provider == "anthropic" else run_llm_temperature,
+        "anthropic_temperature_omitted": llm_provider == "anthropic",
         "llm_max_tokens": llm_max_tokens,
         "working_memory_last_k": settings.working_memory_last_k,
         "peer_context_max_chars": settings.peer_context_max_chars,
@@ -1216,7 +1227,7 @@ async def queue_simulation_run(
             model_used=model_used,
             lmstudio_model=lmstudio_model_run,
             lmstudio_base_url=lmstudio_base_url_run,
-            llm_temperature=settings.llm_temperature,
+            llm_temperature=run_llm_temperature,
             llm_max_tokens=llm_max_tokens,
             working_memory_last_k=settings.working_memory_last_k,
             llm_provider=llm_provider,

@@ -127,6 +127,9 @@ class _TurnOutcome(NamedTuple):
     conflict: bool
     input_tokens: int | None
     output_tokens: int | None
+    llm_attempted: bool = False
+    llm_failed: bool = False
+    llm_error_message: str | None = None
 
 
 @dataclass(frozen=True)
@@ -746,6 +749,9 @@ async def run_simulation_task(
     patience = max(1, int(convergence_patience)) if convergence_threshold is not None else 0
     run_in_acc = 0
     run_out_acc = 0
+    llm_attempt_count = 0
+    llm_error_count = 0
+    first_llm_error: str | None = None
     importance_audit: dict[str, int] = {}
     importance_in_acc = 0
     importance_out_acc = 0
@@ -1327,6 +1333,8 @@ async def run_simulation_task(
                 )
                 in_tok: int | None = None
                 out_tok: int | None = None
+                turn_llm_attempted = False
+                turn_llm_failed = False
                 try:
                     completion = await llm_complete(
                         provider=effective,
@@ -1342,9 +1350,12 @@ async def run_simulation_task(
                         anthropic_model=anthropic_model,
                         openai_compatible_api_key=openai_compatible_api_key,
                     )
+                    turn_llm_attempted = True
                     raw_response = completion.text
                     in_tok, out_tok = completion.input_tokens, completion.output_tokens
                 except Exception as llm_err:
+                    turn_llm_attempted = True
+                    turn_llm_failed = True
                     raw_response = f"[LLM error] {type(llm_err).__name__}: {llm_err}"
 
                 updated_state, conflict_flag, state_update_source = _apply_state_from_response(
@@ -1426,7 +1437,14 @@ async def run_simulation_task(
                         lmstudio_base_url=lmstudio_base_url,
                         embedding_model=mem_embed_model,
                     )
-                return _TurnOutcome(conflict_flag, in_tok, out_tok)
+                return _TurnOutcome(
+                    conflict_flag,
+                    in_tok,
+                    out_tok,
+                    llm_attempted=turn_llm_attempted,
+                    llm_failed=turn_llm_failed,
+                    llm_error_message=raw_response if turn_llm_failed else None,
+                )
 
         # Dispatch all turns for this round concurrently; collect results for round metrics.
         # return_exceptions=True isolates per-turn failures — one bad turn does not abort the round.
@@ -1453,6 +1471,12 @@ async def run_simulation_task(
             else:
                 turn_res: _TurnOutcome = result
                 round_conflict_events += int(turn_res.conflict)
+                if turn_res.llm_attempted:
+                    llm_attempt_count += 1
+                    if turn_res.llm_failed:
+                        llm_error_count += 1
+                        if first_llm_error is None and turn_res.llm_error_message:
+                            first_llm_error = turn_res.llm_error_message
                 if turn_res.input_tokens is not None:
                     run_in_acc += turn_res.input_tokens
                 if turn_res.output_tokens is not None:
@@ -1801,6 +1825,23 @@ async def run_simulation_task(
         total_input_tokens=run_in_acc + importance_in_acc + reflection_in_acc,
         total_output_tokens=run_out_acc + importance_out_acc + reflection_out_acc,
     )
+    if llm_attempt_count > 0 and llm_error_count >= llm_attempt_count:
+        reason = (first_llm_error or "all LLM turns failed")[:2000]
+        await set_simulation_status(
+            sqlite_path,
+            simulation_id=simulation_id,
+            status="failed",
+            current_round=total_rounds,
+            failure_reason=reason,
+        )
+        if round_summary_enabled:
+            await close_transcript(
+                transcript_dir,
+                simulation_id=simulation_id,
+                completed_rounds=total_rounds,
+                status="failed",
+            )
+        return
     await set_simulation_status(
         sqlite_path,
         simulation_id=simulation_id,

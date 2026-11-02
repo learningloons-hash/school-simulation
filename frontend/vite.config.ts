@@ -34,6 +34,10 @@ export default defineConfig(({ mode }) => {
           target: `http://127.0.0.1:${backendPort}`,
           changeOrigin: true,
         },
+        "/experiments": {
+          target: `http://127.0.0.1:${backendPort}`,
+          changeOrigin: true,
+        },
       },
     },
   };

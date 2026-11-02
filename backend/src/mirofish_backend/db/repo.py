@@ -114,6 +114,27 @@ async def set_simulation_status(
         await db.commit()
 
 
+async def fail_orphaned_running_simulations(
+    sqlite_path: str,
+    *,
+    failure_reason: str,
+) -> int:
+    """Mark runs left ``running`` after a process crash/reload as failed."""
+    async with aiosqlite.connect(sqlite_path) as db:
+        cursor = await db.execute(
+            """
+            UPDATE simulation_runs
+            SET status = 'failed',
+                completed_at = CURRENT_TIMESTAMP,
+                failure_reason = ?
+            WHERE status = 'running';
+            """,
+            (failure_reason,),
+        )
+        await db.commit()
+        return cursor.rowcount or 0
+
+
 async def update_simulation_token_totals(
     sqlite_path: str,
     *,

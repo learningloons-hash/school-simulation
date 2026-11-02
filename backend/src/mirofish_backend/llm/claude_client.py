@@ -14,12 +14,14 @@ async def chat_completion_anthropic(
     model: str,
     system_prompt: str,
     user_prompt: str,
-    temperature: float,
+    temperature: float | None,
     max_tokens: int,
     timeout_s: float = 120.0,
 ) -> tuple[str, int | None, int | None]:
     """
     Minimal Anthropic Messages API client (system + single user turn).
+
+    ``temperature`` is ignored (omitted from the request): current Claude models reject it.
     """
     headers = {
         "x-api-key": api_key,
@@ -29,13 +31,14 @@ async def chat_completion_anthropic(
     payload: dict[str, Any] = {
         "model": model,
         "max_tokens": max_tokens,
-        "temperature": temperature,
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_prompt}],
     }
     async with httpx.AsyncClient(timeout=timeout_s) as client:
         resp = await client.post(ANTHROPIC_MESSAGES_URL, headers=headers, json=payload)
-        resp.raise_for_status()
+        if resp.status_code >= 400:
+            body = (resp.text or "").strip()[:500]
+            raise RuntimeError(f"Anthropic API {resp.status_code}: {body or '(empty body)'}")
         data = resp.json()
     parts = data.get("content") or []
     texts: list[str] = []

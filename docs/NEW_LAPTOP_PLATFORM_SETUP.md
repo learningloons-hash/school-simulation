@@ -1,152 +1,122 @@
 # New laptop: Senna platform setup (for LLM agents)
 
-Instructions for an assistant (e.g. Claude) helping install **Senna** from this repo on a fresh machine. Intended for **new data / new projects**, separate from legacy study runs in `senna-sstrf-study`.
+Instructions for an assistant helping install **Senna** on a fresh machine. For **new data / new projects**, separate from legacy study runs in `senna-sstrf-study`.
 
-**Product:** Senna · **Repo:** [school-simulation](https://github.com/learningloons-hash/school-simulation) (clone folder is often `mirofish-mvp` or `school-simulation`).
+**Repo:** [school-simulation](https://github.com/learningloons-hash/school-simulation)
 
 ---
 
-## Agent role
+## Quick start
 
-Install and run the simulation platform from the **public** GitHub repo. Do **not** assume access to the private repo `senna-sstrf-study` unless the user clones it and has GitHub access.
+### Windows (PowerShell)
+
+```powershell
+git clone https://github.com/learningloons-hash/school-simulation.git
+cd school-simulation\backend
+copy .env.example .env
+# Edit .env: ANTHROPIC_API_KEY, LLM_PROVIDER=anthropic, SQLITE_PATH=./data/my_project.sqlite
+uv python install 3.12
+uv sync --python 3.12
+cd ..\frontend
+npm install
+```
+
+Two terminals (from `backend/` after editing `.env`):
+
+```powershell
+# Terminal 1 — no reload (reload kills runs)
+uv run uvicorn mirofish_backend.main:app --host 0.0.0.0 --port 8100
+
+# Terminal 2
+cd ..\frontend
+npm run dev
+```
+
+Open **http://127.0.0.1:3100**. Smoke test: **psle_reform_mvp**, 2 rounds, 2 agents → status **completed** and transcript has **no** `[LLM error]` lines.
+
+### macOS / Linux
+
+Same flow with `cp` instead of `copy`, `export VAR=value` instead of `$env:VAR`.
+
+Optional one-shot scripts: see `scripts/windows/` when present (`setup.ps1`, `start.ps1`).
 
 ---
 
 ## Hard rules
 
-- **Never** read, print, or commit `.env` files or API keys.
-- **Never** hardcode tokens in source.
-- Use **Python 3.11 or 3.12 only** (`requires-python = >=3.11,<3.13` in `backend/pyproject.toml`). Do not use Python 3.13+ for the backend venv.
-- Backend settings come from **environment variables** (`backend/src/mirofish_backend/config.py` does not auto-load `.env`). After copying `backend/.env.example`, **export** variables in the shell (or use direnv / similar) before starting the backend.
-- Use a **dedicated SQLite file** for the new project: `SQLITE_PATH=./data/<new_project_name>.sqlite` (create `backend/data/` if needed).
+- **Never** read, print, or commit `.env` or API keys.
+- **Python 3.11 or 3.12** only (`backend/.python-version` pins **3.12** for `uv`).
+- **`backend/.env`** is loaded automatically when the file exists; shell exports override it.
+- Use a **dedicated** `SQLITE_PATH` per project (e.g. `./data/new_project.sqlite`).
 
 ---
 
-## Prerequisites
+## Anthropic defaults (2026)
 
-| Tool | Purpose |
-|------|--------|
-| Git + GitHub auth | Clone (HTTPS + credential helper, or SSH) |
-| [uv](https://docs.astral.sh/uv/) | Python deps; run backend |
-| Node.js (LTS) | Frontend (`frontend/`) |
-| LM Studio (optional) | Local LLM at `http://127.0.0.1:1234/v1` when `LLM_PROVIDER=lmstudio` |
-| Cloud API keys (optional) | Anthropic / OpenAI / OpenRouter profiles |
+- Retired model **`claude-3-5-haiku-20241022`** → use **`claude-haiku-4-5-20251001`** (or newer Haiku id from Anthropic docs).
+- Senna **does not send `temperature`** to Anthropic (current models reject it). Claude runs use the provider default → **not word-for-word reproducible** even with a fixed seed. Exports record `llm_temperature: null` and `anthropic_temperature_omitted: true` for pure Anthropic runs.
+- `LLM_TEMPERATURE` still applies to LM Studio, OpenAI, and OpenRouter.
 
-Ask the user: **macOS or Windows**, and **local LM Studio vs cloud API** for runs.
+Set in `.env`:
+
+```bash
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=<your key>
+ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+```
+
+If `LLM_PROVIDER` is omitted and only `ANTHROPIC_API_KEY` is set, the backend infers **`anthropic`**.
 
 ---
 
-## Step 1 — Clone platform
+## Dev server: do not use reload for real runs
+
+`mirofish-backend` (uvicorn) uses **`reload=False`** by default. Opt-in only: `SENNA_RELOAD=1` (watches `src/`, excludes `.venv` and `data/`).
+
+**Symptom:** run stuck at “Round 0 of 2”, status `running` forever → worker restarted mid-run. Orphan runs are marked **failed** on next startup with `failure_reason=server restarted during run`.
+
+Prefer:
+
+```bash
+cd backend && uv run uvicorn mirofish_backend.main:app --host 0.0.0.0 --port 8100
+```
+
+---
+
+## Manual steps (agents / troubleshooting)
+
+### Clone
 
 ```bash
 git clone https://github.com/learningloons-hash/school-simulation.git
-cd school-simulation
-git checkout main
-git log -1 --oneline
+cd school-simulation && git log -1 --oneline
 ```
 
-Record the commit hash for reproducibility. Pin to a specific commit if the user needs a frozen baseline.
-
-Skip `senna-sstrf-study` unless they need versioned study exports and manifests.
-
----
-
-## Step 2 — Backend
+### Backend
 
 ```bash
 cd backend
-uv sync
-uv run python -c "import sys; assert sys.version_info[:2] in ((3,11),(3,12)), sys.version"
+uv python install 3.12
+uv sync --python 3.12
+cp .env.example .env   # Windows: copy .env.example .env
 ```
 
-Copy the env template locally (user fills secrets; do not paste keys into chat):
+### Frontend
 
 ```bash
-cp .env.example .env
+cd frontend && npm install && npm run dev
 ```
 
-See `backend/.env.example` for all keys. Minimum for a **local** smoke test (set `LMSTUDIO_MODEL` to the exact id shown in LM Studio → Local Server):
+Ports: backend **8100**, frontend **3100** (Vite proxies API including **`/experiments`**).
 
-```bash
-export SQLITE_PATH="./data/new_project.sqlite"
-export LLM_PROVIDER=lmstudio
-export LMSTUDIO_BASE_URL=http://127.0.0.1:1234/v1
-export LMSTUDIO_MODEL="<model id from LM Studio>"
-export LLM_TEMPERATURE=0.0
-export LLM_MAX_TOKENS=1024
-```
+### Smoke test pass criteria
 
-**Anthropic-only** (no LM Studio):
+- Status **completed** (not **failed** with `failure_reason`).
+- Transcript lines are real dialogue, **not** `[LLM error] …`.
 
-```bash
-export LLM_PROVIDER=anthropic
-export ANTHROPIC_API_KEY="<set in shell, not in chat>"
-export ANTHROPIC_MODEL=claude-3-5-haiku-20241022
-```
+### Isolate from old work
 
-Start backend (default **0.0.0.0:8100**):
-
-```bash
-cd backend
-uv run mirofish-backend
-```
-
-Verify:
-
-```bash
-curl -s http://127.0.0.1:8100/health
-curl -s http://127.0.0.1:8100/capabilities | head
-```
-
-Optional:
-
-```bash
-cd backend && uv run pytest -q
-```
-
----
-
-## Step 3 — Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open **http://127.0.0.1:3100**. Vite proxies API routes to backend port **8100** (see `frontend/vite.config.ts`).
-
-If browser API calls fail, confirm backend is listening on 8100. The **Experiments** tab uses `/experiments`; add a matching proxy in `vite.config.ts` if that tab is required on day one.
-
----
-
-## Step 4 — Smoke test (“working”)
-
-1. **Run** tab → scenario **`psle_reform_mvp`** (or another from `/capabilities`).
-2. Small run: e.g. **2 rounds**, **2 agents**, fixed **random_seed**.
-3. Wait for **completed** (or **failed** with `failure_reason`).
-4. Check Transcript, Outcomes, and export JSON/ZIP.
-
-For LM Studio: Local Server on, model loaded, id matches `LMSTUDIO_MODEL`.
-
----
-
-## Step 5 — Isolate from old Senna work
-
-- Dedicated **`SQLITE_PATH`** (do not reuse old `.sqlite` unless importing on purpose).
-- New **`scenario_id`** / new scenario YAML or Scenarios UI entries.
-- If using a study repo later: new tree only, e.g. `docs/research/runs/<new_project>/`.
-
----
-
-## Step 6 — Report back to the user
-
-- OS; Python and Node versions  
-- Platform git commit  
-- `SQLITE_PATH` (path only)  
-- LLM mode (lmstudio / anthropic / hybrid)  
-- `/health` result and one completed smoke run (simulation id prefix is fine)  
-- URLs: backend `:8100`, frontend `:3100`
+New `SQLITE_PATH`, new `scenario_id`, new study folder if using `senna-sstrf-study`.
 
 ---
 
@@ -154,22 +124,24 @@ For LM Studio: Local Server on, model loaded, id matches `LMSTUDIO_MODEL`.
 
 | Symptom | Likely fix |
 |--------|------------|
-| Backend won’t start | Wrong Python; run `uv sync` from `backend/` |
-| LLM errors in transcript | LM Studio off, wrong model id, or missing API key |
-| Blank UI | Browser console errors |
-| Old DB concerns | Back up `*.sqlite` before migrating; fresh `SQLITE_PATH` for new work |
-| Cost / slowness | Fewer agents/rounds; check Run preflight |
+| Stuck at Round 0 / `running` forever | Backend reload restarted worker; use no-reload uvicorn; restart backend to fail orphans |
+| 404 on Anthropic | Retired model id in `.env` — update `ANTHROPIC_MODEL` |
+| 400 temperature deprecated | Update platform (Anthropic path omits temperature) |
+| UI **completed** but empty/broken transcript | All turns `[LLM error]` — read `failure_reason` or transcript; fix API key/model |
+| LM Studio failures | Start Local Server; match `LMSTUDIO_MODEL` to loaded model |
+| Wrong Python | `cd backend && uv sync --python 3.12` |
+| Windows `export` / `cp` fails | Use PowerShell `$env:NAME="value"` and `copy` (see Quick start) |
 
 ---
 
-## Out of scope (unless user asks)
+## Out of scope unless asked
 
-- Restoring bundles from `senna-sstrf-study`
-- CIEPSS validity pipelines or pre-registration
-- Always-on server / Tailscale deployment
+- Private `senna-sstrf-study` clone
+- CIEPSS validity pipelines
+- Production / Tailscale deployment
 
 ---
 
 ## One-line summary
 
-Clone **school-simulation** → `uv` backend + `npm` frontend → export env vars → LLM endpoint → fresh **`SQLITE_PATH`** = runnable platform. Private study repo is optional.
+Clone → `uv sync` + `npm install` → configure **`backend/.env`** (`LLM_PROVIDER=anthropic` + key) → start backend **without reload** + frontend → smoke run with no `[LLM error]` lines.
