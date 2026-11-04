@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # | Profile (UI)              | Model id (default)              | API key env        |
     # |---------------------------|---------------------------------|--------------------|
     # | local_lmstudio_default    | google/gemma-4-26b-a4b          | (none — LM Studio) |
-    # | anthropic_default (Claude)| claude-haiku-4-5-20251001       | ANTHROPIC_API_KEY  |
+    # | anthropic_default (Claude)| claude-haiku-5-5                  | ANTHROPIC_API_KEY  |
     # | openai_default            | gpt-4o-mini                     | OPENAI_API_KEY     |
     # | openrouter_default        | openai/gpt-4o-mini              | OPENROUTER_API_KEY |
     # Hybrid runs: frontier = anthropic row, other LLM turns = lmstudio row.
@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 1024
     llm_provider: str = "lmstudio"
     anthropic_api_key: str = ""
-    anthropic_model: str = "claude-haiku-4-5-20251001"
+    anthropic_model: str = "claude-haiku-5-5"
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4o-mini"
     openai_api_key_env: str = "OPENAI_API_KEY"

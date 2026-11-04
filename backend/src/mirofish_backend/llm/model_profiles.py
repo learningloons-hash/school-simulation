@@ -37,9 +37,13 @@ def resolve_anthropic_pricing_key(model_id: str | None) -> str:
     if not mid:
         return "anthropic"
     if "haiku" in mid:
+        if "3-5" in mid or "3.5" in mid:
+            return "anthropic_haiku_3_5"
         if "4-5" in mid or "4.5" in mid:
             return "anthropic_haiku_4_5"
-        return "anthropic_haiku_3_5"
+        if "haiku-5" in mid or "haiku_5" in mid or "-5-5" in mid:
+            return "anthropic_haiku_4_5"
+        return "anthropic_haiku_4_5"
     if "opus" in mid:
         if "4-1" in mid or "4.1" in mid:
             return "anthropic_opus_4"

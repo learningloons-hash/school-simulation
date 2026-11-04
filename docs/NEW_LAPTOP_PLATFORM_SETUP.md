@@ -53,7 +53,7 @@ Optional one-shot scripts: see `scripts/windows/` when present (`setup.ps1`, `st
 
 ## Anthropic defaults (2026)
 
-- Retired model **`claude-3-5-haiku-20241022`** → use **`claude-haiku-4-5-20251001`** (or newer Haiku id from Anthropic docs).
+- Retired: **`claude-3-5-haiku-20241022`** (404 / `not_found_error`). Default: **`claude-haiku-5-5`** (Anthropic’s current Haiku).
 - Senna **does not send `temperature`** to Anthropic (current models reject it). Claude runs use the provider default → **not word-for-word reproducible** even with a fixed seed. Exports record `llm_temperature: null` and `anthropic_temperature_omitted: true` for pure Anthropic runs.
 - `LLM_TEMPERATURE` still applies to LM Studio, OpenAI, and OpenRouter.
 
@@ -62,7 +62,7 @@ Set in `.env`:
 ```bash
 LLM_PROVIDER=anthropic
 ANTHROPIC_API_KEY=<your key>
-ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+ANTHROPIC_MODEL=claude-haiku-5-5
 ```
 
 If `LLM_PROVIDER` is omitted and only `ANTHROPIC_API_KEY` is set, the backend infers **`anthropic`**.

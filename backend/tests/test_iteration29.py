@@ -210,7 +210,7 @@ def test_economics_pure_functions() -> None:
                 {
                     "effective_provider": "anthropic",
                     "effective_profile_id": "anthropic_default",
-                    "effective_model": "claude-3-5-haiku-20241022",
+                    "effective_model": "claude-haiku-5-5",
                     "input_tokens": 100,
                     "output_tokens": 20,
                 }

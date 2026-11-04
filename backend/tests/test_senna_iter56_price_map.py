@@ -78,9 +78,16 @@ def test_unknown_anthropic_model_falls_back_to_generic_bucket() -> None:
     assert cost == pytest.approx(3.0, rel=1e-9)
 
 
+def test_haiku_5_5_resolves_to_haiku_4_5_rates() -> None:
+    key = resolve_anthropic_pricing_key("claude-haiku-5-5")
+    assert key == "anthropic_haiku_4_5"
+
+
 def test_anthropic_default_profile_pricing_key_from_settings() -> None:
-    haiku = anthropic_default(Settings(anthropic_model="claude-haiku-4-5-20251001"))
-    assert haiku.pricing_key == "anthropic_haiku_4_5"
+    haiku45 = anthropic_default(Settings(anthropic_model="claude-haiku-4-5-20251001"))
+    assert haiku45.pricing_key == "anthropic_haiku_4_5"
+    haiku55 = anthropic_default(Settings(anthropic_model="claude-haiku-5-5"))
+    assert haiku55.pricing_key == "anthropic_haiku_4_5"
     opus = anthropic_default(Settings(anthropic_model="claude-opus-5-20260201"))
     assert opus.pricing_key == "anthropic_opus_5"
 
