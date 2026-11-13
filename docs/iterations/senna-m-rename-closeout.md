@@ -4,7 +4,7 @@
 
 - **Base (post-#16 `main`):** `161cbacde3ca933c91d756f16e008eddea2ba7b0`
 - **Working branch:** the M-RENAME branch (see [PR #18](https://github.com/learningloons-hash/school-simulation/pull/18))
-- **Tip SHA:** `0d3c0bf4f645ee44bde02e40e23111f06c7310d4`
+- **Tip SHA:** `92a2cbfeff0e3a130893be6770952fa9e1945fe8`
 
 ## 2. Grep
 
