@@ -41,6 +41,11 @@ Environment defaults (when the resolved Anthropic model is Sonnet 5.5): `ANTHROP
 | `scenario_catalog_llm_fill` | `api/scenario_catalog.py` |
 | `scenario_generate_from_brief` | `api/scenarios_generate.py` |
 | `architectural_interview_rubric` | `diagnostics/architectural_interview.py` (`complete_with_profile`) |
+| `anthropic_key_ping` | `scripts/check_anthropic_key.py` |
+| `arc11_ablation_anthropic_preflight` | `scripts/run_arc11_ablation.py` |
+| `sq_reading_partc_anthropic_preflight` | `scripts/run_sq_reading_partc.py` |
+
+Operator scripts above use `llm/router.llm_complete` (not a direct `chat_completion_anthropic` import). Connectivity pings use `max_tokens=8` and do not use the simulation turn floors (no entry in `SONNET_55_CALL_SITE_FLOORS`).
 
 Queued runs also resolve thinking/effort in `queue_simulation_run` before the orchestrator starts (`simulation/orchestrator.py` uses `resolve_anthropic_request_config` so missing run kwargs still get Sonnet defaults).
 

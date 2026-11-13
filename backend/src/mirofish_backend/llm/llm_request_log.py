@@ -21,7 +21,8 @@ def llm_request_log_path(transcript_dir: str, simulation_id: str) -> str:
 
 def adhoc_llm_request_log_path(settings: Settings | None = None) -> str:
     s = settings or get_settings()
-    return os.path.join(s.llm_request_log_dir, "adhoc_requests.jsonl")
+    log_dir = getattr(s, "llm_request_log_dir", None) or "./data/llm_requests"
+    return os.path.join(str(log_dir), "adhoc_requests.jsonl")
 
 
 _adhoc_logger_cache: dict[str, LLMRequestLogger] = {}

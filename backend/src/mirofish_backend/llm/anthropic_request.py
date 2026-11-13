@@ -183,8 +183,12 @@ def resolve_anthropic_request_config(
     effort: str | None = None
 
     if anthropic_request_params_supported(mid):
-        tt = (request_thinking_type or settings.anthropic_thinking_type or "between_tools").strip().lower()
-        ef = (request_effort or settings.anthropic_effort or "medium").strip().lower()
+        tt = (
+            request_thinking_type
+            or getattr(settings, "anthropic_thinking_type", "")
+            or "between_tools"
+        ).strip().lower()
+        ef = (request_effort or getattr(settings, "anthropic_effort", "") or "medium").strip().lower()
         validate_sonnet_55_thinking_effort(model_id=mid, thinking_type=tt, effort=ef)
         thinking = {"type": tt}
         effort = ef

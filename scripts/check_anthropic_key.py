@@ -15,7 +15,7 @@ sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 from run_arc11_ablation import load_backend_env_for_live_runs  # noqa: E402
 
 from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.llm.claude_client import chat_completion_anthropic  # noqa: E402
+from mirofish_backend.llm.router import llm_complete  # noqa: E402
 
 
 async def main() -> int:
@@ -33,15 +33,22 @@ async def main() -> int:
     print(f"key_len={len(key)} sk-ant-apiNN-prefix={shape_ok} model={model}")
 
     try:
-        text, _, _ = await chat_completion_anthropic(
-            api_key=key,
-            model=model,
-            system_prompt="Reply OK",
-            user_prompt="ping",
+        completion = await llm_complete(
+            provider="anthropic",
+            messages=[
+                {"role": "system", "content": "Reply OK"},
+                {"role": "user", "content": "ping"},
+            ],
             temperature=0.0,
             max_tokens=8,
-            timeout_s=30.0,
+            lmstudio_base_url=settings.lmstudio_base_url,
+            lmstudio_model=settings.lmstudio_model,
+            anthropic_api_key=key,
+            anthropic_model=model,
+            settings=settings,
+            llm_call_site="anthropic_key_ping",
         )
+        text = completion.text
     except RuntimeError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         if "404" in str(exc) or "not_found" in str(exc).lower():

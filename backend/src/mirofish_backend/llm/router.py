@@ -6,7 +6,7 @@ from mirofish_backend.llm.anthropic_request import (
     resolve_wire_anthropic_thinking_effort,
     sonnet_55_effective_max_tokens,
 )
-from mirofish_backend.llm.claude_client import chat_completion_anthropic
+from mirofish_backend.llm import claude_client
 from mirofish_backend.llm.llm_request_log import resolve_llm_request_logger
 from mirofish_backend.llm.openai_compatible_client import chat_completion_openai_compatible
 from mirofish_backend.llm.routing_policies import (
@@ -116,7 +116,7 @@ async def llm_complete(
             random_seed=anthropic_random_seed,
         )
         effective_max = sonnet_55_effective_max_tokens(anthropic_model, max_tokens, llm_call_site)
-        t, inp, out = await chat_completion_anthropic(
+        t, inp, out = await claude_client.chat_completion_anthropic(
             api_key=anthropic_api_key,
             model=anthropic_model,
             system_prompt=system_text,

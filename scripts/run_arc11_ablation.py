@@ -133,8 +133,8 @@ async def run_ablation_preflight(
     """
     import httpx
 
-    from mirofish_backend.llm.claude_client import chat_completion_anthropic
     from mirofish_backend.llm.model_profiles import get_builtin_profile
+    from mirofish_backend.llm.router import llm_complete
 
     base_url = settings.lmstudio_base_url
     lm_model = settings.lmstudio_model
@@ -236,15 +236,22 @@ async def run_ablation_preflight(
         )
 
     try:
-        text, _, _ = await chat_completion_anthropic(
-            api_key=api_key,
-            model=settings.anthropic_model,
-            system_prompt="Reply with the single word: OK",
-            user_prompt="ping",
+        completion = await llm_complete(
+            provider="anthropic",
+            messages=[
+                {"role": "system", "content": "Reply with the single word: OK"},
+                {"role": "user", "content": "ping"},
+            ],
             temperature=0.0,
             max_tokens=8,
-            timeout_s=30.0,
+            lmstudio_base_url=settings.lmstudio_base_url,
+            lmstudio_model=settings.lmstudio_model,
+            anthropic_api_key=api_key,
+            anthropic_model=settings.anthropic_model,
+            settings=settings,
+            llm_call_site="arc11_ablation_anthropic_preflight",
         )
+        text = completion.text
     except httpx.HTTPStatusError as exc:
         status = exc.response.status_code if exc.response is not None else "?"
         raise RuntimeError(
