@@ -10,6 +10,7 @@ from mirofish_backend.config import Settings
 from mirofish_backend.llm.importance_parse import FALLBACK_SCORE
 from mirofish_backend.llm.reflection_parse import ReflectionSource, resolve_reflection
 from mirofish_backend.llm.reflection_prompts import REFLECTION_PROMPT_VERSION, build_reflection_prompt
+from mirofish_backend.llm.anthropic_request import RunLLMExtras
 from mirofish_backend.llm.router import llm_complete
 from mirofish_backend.llm.routing_policies import resolve_effective_provider
 
@@ -146,6 +147,7 @@ async def synthesize_reflection(
     anthropic_model: str,
     openai_compatible_api_key: str,
     routing_policy: str,
+    run_llm_extras: RunLLMExtras | None = None,
 ) -> tuple[str, list[str], ReflectionSource, int, int]:
     obs_payload = [
         {
@@ -173,6 +175,12 @@ async def synthesize_reflection(
     out_acc = 0
     fallback_ids = [o.turn_id for o in observations]
     try:
+        extras_kw = run_llm_extras.llm_complete_kwargs() if run_llm_extras else {}
+        extras_kw["llm_request_context"] = {
+            "call_site": "reflection",
+            "round_number": round_number,
+            "agent_name": agent_name,
+        }
         completion = await llm_complete(
             provider=effective,
             messages=[
@@ -186,6 +194,7 @@ async def synthesize_reflection(
             anthropic_api_key=anthropic_api_key,
             anthropic_model=anthropic_model,
             openai_compatible_api_key=openai_compatible_api_key,
+            **extras_kw,
         )
         raw = completion.text
         if completion.input_tokens is not None:

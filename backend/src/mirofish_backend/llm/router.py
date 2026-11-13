@@ -66,6 +66,11 @@ async def llm_complete(
     anthropic_api_key: str,
     anthropic_model: str,
     openai_compatible_api_key: str = "",
+    anthropic_thinking: dict[str, Any] | None = None,
+    anthropic_effort: str | None = None,
+    anthropic_random_seed: int | None = None,
+    llm_request_logger: Any | None = None,
+    llm_request_context: dict[str, Any] | None = None,
 ) -> LLMCompletion:
     """
     Dispatch chat completion by provider. Expects OpenAI-style messages with
@@ -93,8 +98,25 @@ async def llm_complete(
             user_prompt=user_text,
             temperature=temperature,
             max_tokens=max_tokens,
+            thinking=anthropic_thinking,
+            effort=anthropic_effort,
+            random_seed=anthropic_random_seed,
+            llm_request_logger=llm_request_logger,
+            llm_request_context=llm_request_context,
         )
         return LLMCompletion(text=t, input_tokens=inp, output_tokens=out)
+
+    if llm_request_logger is not None:
+        llm_request_logger.append(
+            provider=provider,
+            model_id=lmstudio_model,
+            thinking=None,
+            effort=None,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            seed=None,
+            extra=llm_request_context,
+        )
 
     t, inp, out = await chat_completion_openai_compatible(
         base_url=lmstudio_base_url,

@@ -15,12 +15,14 @@ LeakageRiskLevel = Literal["low", "medium", "high"]
 
 LOCAL_LMSTUDIO_DEFAULT_ID = "local_lmstudio_default"
 ANTHROPIC_DEFAULT_ID = "anthropic_default"
+ANTHROPIC_SONNET_55_ID = "anthropic_sonnet_5_5"
 OPENAI_DEFAULT_ID = "openai_default"
 OPENROUTER_DEFAULT_ID = "openrouter_default"
 
 PROFILE_UI_DESCRIPTIONS: dict[str, str] = {
     LOCAL_LMSTUDIO_DEFAULT_ID: "Runs on your local LM Studio server (OpenAI-compatible API).",
     ANTHROPIC_DEFAULT_ID: "Uses the configured Anthropic API model (Claude).",
+    ANTHROPIC_SONNET_55_ID: "Claude Sonnet 5.5 study pin (claude-sonnet-5-5; thinking/effort configurable).",
     OPENAI_DEFAULT_ID: "OpenAI chat completions API (requires API key in environment).",
     OPENROUTER_DEFAULT_ID: "OpenRouter gateway (OpenAI-compatible; requires API key in environment).",
 }
@@ -56,11 +58,17 @@ def resolve_anthropic_pricing_key(model_id: str | None) -> str:
         if mid.startswith("claude-opus-4-") or mid == "claude-opus-4":
             return "anthropic_opus_4"
         return "anthropic_opus_5"
+    if mid == "claude-sonnet-5-5" or mid.startswith("claude-sonnet-5-5-"):
+        return "anthropic_sonnet_5_5"
     if "sonnet" in mid:
         return "anthropic_sonnet"
     return "anthropic"
 
 _BUILTIN_PROFILE_FACTORIES: dict[str, Callable[[Settings], "ModelProfile"]] = {}
+
+# Study-selectable profiles kept out of ``_BUILTIN_PROFILE_FACTORIES`` so existing
+# capability tests continue to list exactly four built-ins (M3).
+_STUDY_PROFILE_FACTORIES: dict[str, Callable[[Settings], ModelProfile]] = {}
 
 
 def register_builtin_profile(profile_id: str) -> Callable[[Callable[[Settings], ModelProfile]], Callable[[Settings], ModelProfile]]:
@@ -251,6 +259,41 @@ def openrouter_default(settings: Settings) -> ModelProfile:
     )
 
 
+def _register_study_profile(profile_id: str) -> Callable[[Callable[[Settings], ModelProfile]], Callable[[Settings], ModelProfile]]:
+    def decorator(fn: Callable[[Settings], ModelProfile]) -> Callable[[Settings], ModelProfile]:
+        _STUDY_PROFILE_FACTORIES[profile_id] = fn
+        return fn
+
+    return decorator
+
+
+def anthropic_sonnet_5_5_profile(settings: Settings) -> ModelProfile:
+    """Study pin for Senna v3 confirmatory runs (``claude-sonnet-5-5``)."""
+    return ModelProfile(
+        profile_id=ANTHROPIC_SONNET_55_ID,
+        label="Claude Sonnet 5.5 (study)",
+        provider_type="anthropic",
+        base_url=None,
+        model_id="claude-sonnet-5-5",
+        api_key_env="ANTHROPIC_API_KEY",
+        pricing_key="anthropic_sonnet_5_5",
+        is_builtin=False,
+        capabilities=ModelCapabilities(
+            context_window=200_000,
+            supports_embeddings=False,
+            supports_usage=True,
+            supports_streaming=True,
+            json_reliability="high",
+            state_block_reliability="high",
+            reasoning_leakage_risk="low",
+            recommended_max_concurrency=8,
+        ),
+    )
+
+
+_register_study_profile(ANTHROPIC_SONNET_55_ID)(anthropic_sonnet_5_5_profile)
+
+
 @register_builtin_profile(ANTHROPIC_DEFAULT_ID)
 def anthropic_default(settings: Settings) -> ModelProfile:
     return ModelProfile(
@@ -277,6 +320,7 @@ def anthropic_default(settings: Settings) -> ModelProfile:
 
 # Derive built-in id set from registry (iter-36).
 BUILTIN_PROFILE_IDS = frozenset(_BUILTIN_PROFILE_FACTORIES.keys())
+SELECTABLE_PROFILE_IDS = frozenset(BUILTIN_PROFILE_IDS | _STUDY_PROFILE_FACTORIES.keys())
 
 
 def list_builtin_profiles(settings: Settings) -> list[ModelProfile]:
@@ -346,6 +390,15 @@ def get_builtin_profile(profile_id: str, settings: Settings) -> ModelProfile | N
     return factory(settings)
 
 
+def get_selectable_profile(profile_id: str, settings: Settings) -> ModelProfile | None:
+    """Built-in or study-selectable profile (not necessarily listed on GET /capabilities)."""
+    pid = (profile_id or "").strip()
+    study = _STUDY_PROFILE_FACTORIES.get(pid)
+    if study is not None:
+        return study(settings)
+    return get_builtin_profile(pid, settings)
+
+
 def resolve_run_profiles(
     *,
     model_profile_id: str | None,
@@ -366,11 +419,11 @@ def resolve_run_profiles(
 
     requested = (model_profile_id or "").strip() or None
     if requested:
-        explicit = get_builtin_profile(requested, settings)
+        explicit = get_selectable_profile(requested, settings)
         if explicit is None:
             raise ValueError(
                 f"Unknown model_profile_id {requested!r}; "
-                f"expected one of: {sorted(BUILTIN_PROFILE_IDS)}"
+                f"expected one of: {sorted(SELECTABLE_PROFILE_IDS)}"
             )
         return RunProfileResolution(
             requested_profile_id=requested,

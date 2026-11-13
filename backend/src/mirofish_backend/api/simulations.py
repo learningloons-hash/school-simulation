@@ -40,8 +40,14 @@ from mirofish_backend.export_bundle import (
     build_export_zip,
     compute_cohort_summary,
 )
+from mirofish_backend.llm.anthropic_request import (
+    anthropic_request_config_snapshot,
+    resolve_anthropic_request_config,
+    run_manifest_from_anthropic_config,
+)
+from mirofish_backend.llm.llm_request_log import llm_request_log_path
 from mirofish_backend.llm.model_profiles import (
-    BUILTIN_PROFILE_IDS,
+    SELECTABLE_PROFILE_IDS,
     model_profile_config_snapshot,
     resolve_run_llm_provider,
     resolve_run_profiles,
@@ -235,6 +241,9 @@ async def run_simulation_task_guarded(
     reflection_enabled: bool = False,
     reflection_trigger_threshold: int = 150,
     reflection_prompt_version: str = "v1",
+    anthropic_thinking: dict[str, str] | None = None,
+    anthropic_effort: str | None = None,
+    llm_request_log_path: str | None = None,
 ) -> None:
     """Run simulation and mark run failed with reason on uncaught errors (used by API and tests)."""
     try:
@@ -296,6 +305,9 @@ async def run_simulation_task_guarded(
             reflection_enabled=reflection_enabled,
             reflection_trigger_threshold=reflection_trigger_threshold,
             reflection_prompt_version=reflection_prompt_version,
+            anthropic_thinking=anthropic_thinking,
+            anthropic_effort=anthropic_effort,
+            llm_request_log_path=llm_request_log_path,
         )
     except Exception as e:
         logger.exception("Simulation task failed for %s", simulation_id)
@@ -343,6 +355,14 @@ class SimulationRunRequest(BaseModel):
         default=None,
         description="Optional built-in model profile (e.g. local_lmstudio_default, anthropic_default). "
         "Omit to resolve from llm_provider.",
+    )
+    anthropic_thinking_type: str | None = Field(
+        default=None,
+        description='Claude Sonnet 5.5 thinking.type (e.g. "between_tools"). Validated before queue.',
+    )
+    anthropic_effort: str | None = Field(
+        default=None,
+        description="Claude Sonnet 5.5 output_config.effort: low | medium | high (not xhigh/max with between_tools).",
     )
     rag_enabled: bool | None = Field(
         default=None,
@@ -505,11 +525,27 @@ class SimulationRunRequest(BaseModel):
         s = v.strip()
         if not s:
             return None
-        if s not in BUILTIN_PROFILE_IDS:
+        if s not in SELECTABLE_PROFILE_IDS:
             raise ValueError(
-                f"model_profile_id must be one of: {sorted(BUILTIN_PROFILE_IDS)}; got {s!r}"
+                f"model_profile_id must be one of: {sorted(SELECTABLE_PROFILE_IDS)}; got {s!r}"
             )
         return s
+
+    @field_validator("anthropic_effort")
+    @classmethod
+    def _normalize_anthropic_effort(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip().lower()
+        return s if s else None
+
+    @field_validator("anthropic_thinking_type")
+    @classmethod
+    def _normalize_anthropic_thinking_type(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip().lower()
+        return s if s else None
 
     @field_validator("simulation_mode")
     @classmethod
@@ -612,6 +648,18 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
             model_profile_id=req.model_profile_id,
             llm_provider=llm_provider,
             settings=settings,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+    _, _, anthropic_model_preflight = run_llm_credentials(profile_resolution, settings)
+    try:
+        resolve_anthropic_request_config(
+            model_id=anthropic_model_preflight,
+            settings=settings,
+            request_thinking_type=req.anthropic_thinking_type,
+            request_effort=req.anthropic_effort,
+            random_seed=req.random_seed,
         )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
@@ -798,6 +846,17 @@ async def queue_simulation_run(
         settings,
     )
     openai_api_key_run = run_openai_compatible_api_key(profile_resolution)
+
+    try:
+        anthropic_req_cfg = resolve_anthropic_request_config(
+            model_id=anthropic_model_run,
+            settings=settings,
+            request_thinking_type=_req.anthropic_thinking_type,
+            request_effort=_req.anthropic_effort,
+            random_seed=_req.random_seed,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
     if llm_provider == "anthropic":
         model_used = anthropic_model_run
@@ -1189,6 +1248,11 @@ async def queue_simulation_run(
             trigger_threshold=reflection_threshold,
             prompt_version=reflection_prompt_ver,
         ),
+        **anthropic_request_config_snapshot(anthropic_req_cfg),
+        "run_manifest": {
+            **run_manifest_from_anthropic_config(anthropic_req_cfg, llm_request_log_basename=None),
+            "llm_request_log_file_pattern": "{simulation_id}_llm_requests.jsonl",
+        },
     }
     if _req.convergence_threshold is not None:
         config_snapshot["convergence_threshold"] = _req.convergence_threshold
@@ -1214,6 +1278,8 @@ async def queue_simulation_run(
         config_snapshot=config_snapshot,
         experiment_id=experiment_id,
     )
+
+    llm_log_path = llm_request_log_path(settings.transcript_dir, sim_id)
 
     asyncio.create_task(
         run_simulation_task_guarded(
@@ -1274,6 +1340,9 @@ async def queue_simulation_run(
             reflection_enabled=reflection_effective,
             reflection_trigger_threshold=reflection_threshold,
             reflection_prompt_version=reflection_prompt_ver,
+            anthropic_thinking=anthropic_req_cfg.thinking,
+            anthropic_effort=anthropic_req_cfg.effort,
+            llm_request_log_path=llm_log_path,
         )
     )
 

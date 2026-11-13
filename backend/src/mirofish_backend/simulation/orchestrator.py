@@ -31,6 +31,8 @@ from mirofish_backend.llm.routing_policies import (
     resolve_effective_profile_id,
     HEURISTIC_PROFILE_SENTINEL,
 )
+from mirofish_backend.llm.anthropic_request import AnthropicRequestConfig, RunLLMExtras
+from mirofish_backend.llm.llm_request_log import LLMRequestLogger
 from mirofish_backend.llm.router import effective_model_id, llm_complete, resolve_effective_provider
 from mirofish_backend.llm.context_clip import clip_memory_lines, clip_recent_interactions
 from mirofish_backend.llm.state_parse import resolve_state_from_response
@@ -399,6 +401,7 @@ async def _collect_round_end_likert(
     routing_policy: str,
     routing_profile_local_id: str,
     routing_profile_frontier_id: str,
+    run_llm_extras: RunLLMExtras | None = None,
 ) -> tuple[int, int]:
     """One LLM call per agent; persists Likert rows without mutating float state."""
     in_acc = 0
@@ -476,6 +479,12 @@ async def _collect_round_end_likert(
         in_tokens: int | None = None
         out_tokens: int | None = None
         try:
+            likert_llm_kw = run_llm_extras.llm_complete_kwargs() if run_llm_extras else {}
+            likert_llm_kw["llm_request_context"] = {
+                "call_site": "likert_round_end",
+                "round_number": round_number,
+                "agent_id": agent.agent_id,
+            }
             completion = await llm_complete(
                 provider=effective,
                 messages=[
@@ -489,6 +498,7 @@ async def _collect_round_end_likert(
                 anthropic_api_key=anthropic_api_key,
                 anthropic_model=anthropic_model,
                 openai_compatible_api_key=openai_compatible_api_key,
+                **likert_llm_kw,
             )
             raw_response = completion.text
             in_tokens = completion.input_tokens
@@ -693,6 +703,9 @@ async def run_simulation_task(
     reflection_enabled: bool = False,
     reflection_trigger_threshold: int = 150,
     reflection_prompt_version: str = "v1",
+    anthropic_thinking: dict[str, str] | None = None,
+    anthropic_effort: str | None = None,
+    llm_request_log_path: str | None = None,
 ) -> None:
     mode = (llm_provider or "lmstudio").strip().lower()
     if mode not in ("lmstudio", "anthropic", "hybrid"):
@@ -701,6 +714,24 @@ async def run_simulation_task(
     policy = routing_policy or llm_provider_to_routing_policy(mode)
     local_profile_id = routing_profile_local_id or LOCAL_LMSTUDIO_DEFAULT_ID
     frontier_profile_id = routing_profile_frontier_id or ANTHROPIC_DEFAULT_ID
+
+    anthropic_cfg = AnthropicRequestConfig(
+        model_id=anthropic_model,
+        thinking=anthropic_thinking,
+        effort=anthropic_effort,
+        random_seed=random_seed,
+        price_map_key=None,
+        price_map_date=None,
+    )
+    req_logger = (
+        LLMRequestLogger(path=llm_request_log_path, simulation_id=simulation_id)
+        if llm_request_log_path
+        else None
+    )
+    run_llm_extras = RunLLMExtras(
+        anthropic_config=anthropic_cfg if (anthropic_thinking or anthropic_effort) else None,
+        request_logger=req_logger,
+    )
 
     random.seed(random_seed)
     scenario = scenario_config if scenario_config is not None else get_scenario(scenario_id)
@@ -860,6 +891,7 @@ async def run_simulation_task(
                 anthropic_model=anthropic_model,
                 openai_compatible_api_key=openai_compatible_api_key,
                 routing_policy=policy,
+                run_llm_extras=run_llm_extras,
             )
             reflection_in_acc += rin
             reflection_out_acc += rout
@@ -935,6 +967,7 @@ async def run_simulation_task(
                     routing_policy=policy,
                     routing_profile_local_id=local_profile_id,
                     routing_profile_frontier_id=frontier_profile_id,
+                    run_llm_extras=run_llm_extras,
                 )
             importance_in_acc += imp_in
             importance_out_acc += imp_out
@@ -1336,6 +1369,14 @@ async def run_simulation_task(
                 turn_llm_attempted = False
                 turn_llm_failed = False
                 try:
+                    turn_llm_kw = run_llm_extras.llm_complete_kwargs()
+                    turn_llm_kw["llm_request_context"] = {
+                        "call_site": "agent_turn",
+                        "round_number": round_number,
+                        "turn_index": turn_index,
+                        "agent_id": agent.agent_id,
+                        "tier": tier,
+                    }
                     completion = await llm_complete(
                         provider=effective,
                         messages=[
@@ -1349,6 +1390,7 @@ async def run_simulation_task(
                         anthropic_api_key=anthropic_api_key,
                         anthropic_model=anthropic_model,
                         openai_compatible_api_key=openai_compatible_api_key,
+                        **turn_llm_kw,
                     )
                     turn_llm_attempted = True
                     raw_response = completion.text
@@ -1523,6 +1565,7 @@ async def run_simulation_task(
                     routing_policy=policy,
                     routing_profile_local_id=local_profile_id,
                     routing_profile_frontier_id=frontier_profile_id,
+                    run_llm_extras=run_llm_extras,
                 )
             importance_in_acc += imp_in
             importance_out_acc += imp_out
@@ -1610,6 +1653,7 @@ async def run_simulation_task(
                 routing_policy=policy,
                 routing_profile_local_id=local_profile_id,
                 routing_profile_frontier_id=frontier_profile_id,
+                run_llm_extras=run_llm_extras,
             )
             if likert_in or likert_out:
                 run_in_acc += likert_in

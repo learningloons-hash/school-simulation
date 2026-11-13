@@ -3,9 +3,30 @@ from typing import Any
 
 import httpx
 
+from mirofish_backend.llm.anthropic_request import anthropic_request_params_supported
+
 logger = logging.getLogger("mirofish_backend.llm.claude_client")
 
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
+
+
+def _loggable_request_record(
+    *,
+    model: str,
+    thinking: dict[str, Any] | None,
+    effort: str | None,
+    max_tokens: int,
+    temperature: float | None,
+    seed: int | None,
+) -> dict[str, Any]:
+    return {
+        "model_id": model,
+        "thinking": thinking,
+        "effort": effort,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "seed": seed,
+    }
 
 
 async def chat_completion_anthropic(
@@ -16,12 +37,19 @@ async def chat_completion_anthropic(
     user_prompt: str,
     temperature: float | None,
     max_tokens: int,
+    thinking: dict[str, Any] | None = None,
+    effort: str | None = None,
+    random_seed: int | None = None,
     timeout_s: float = 120.0,
+    llm_request_logger: Any | None = None,
+    llm_request_context: dict[str, Any] | None = None,
 ) -> tuple[str, int | None, int | None]:
     """
     Minimal Anthropic Messages API client (system + single user turn).
 
     ``temperature`` is ignored (omitted from the request): current Claude models reject it.
+    Sonnet 5.5 accepts ``thinking`` and ``output_config.effort`` (see migration guide).
+    Thinking blocks in responses are skipped; only ``type == "text"`` blocks are concatenated.
     """
     headers = {
         "x-api-key": api_key,
@@ -34,6 +62,30 @@ async def chat_completion_anthropic(
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_prompt}],
     }
+    wire_thinking = thinking if anthropic_request_params_supported(model) else None
+    wire_effort = effort if anthropic_request_params_supported(model) else None
+    if wire_thinking is not None:
+        payload["thinking"] = wire_thinking
+    if wire_effort is not None:
+        payload["output_config"] = {"effort": wire_effort}
+
+    log_record = _loggable_request_record(
+        model=model,
+        thinking=wire_thinking,
+        effort=wire_effort,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        seed=random_seed,
+    )
+    if llm_request_logger is not None:
+        llm_request_logger.append(
+            provider="anthropic",
+            **log_record,
+            extra=llm_request_context,
+        )
+    else:
+        logger.info("anthropic_request %s", log_record)
+
     async with httpx.AsyncClient(timeout=timeout_s) as client:
         resp = await client.post(ANTHROPIC_MESSAGES_URL, headers=headers, json=payload)
         if resp.status_code >= 400:

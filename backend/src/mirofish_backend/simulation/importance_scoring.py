@@ -17,6 +17,7 @@ from mirofish_backend.llm.importance_prompts import (
     build_batch_importance_prompt,
     build_single_turn_importance_prompt,
 )
+from mirofish_backend.llm.anthropic_request import RunLLMExtras
 from mirofish_backend.llm.router import effective_model_id, llm_complete
 from mirofish_backend.llm.routing_policies import resolve_effective_provider
 
@@ -85,6 +86,7 @@ async def score_turn_importance(
     routing_policy: str,
     routing_profile_local_id: str,
     routing_profile_frontier_id: str,
+    run_llm_extras: RunLLMExtras | None = None,
 ) -> tuple[int, ImportanceSource, int, int]:
     """Dedicated LLM call for one turn. Returns (score, source, in_tokens, out_tokens)."""
     system, user = build_single_turn_importance_prompt(
@@ -103,6 +105,12 @@ async def score_turn_importance(
     in_acc = 0
     out_acc = 0
     try:
+        extras_kw = run_llm_extras.llm_complete_kwargs() if run_llm_extras else {}
+        extras_kw["llm_request_context"] = {
+            "call_site": "importance_per_turn",
+            "round_number": round_number,
+            "turn_index": turn_index,
+        }
         completion = await llm_complete(
             provider=effective,
             messages=[
@@ -116,6 +124,7 @@ async def score_turn_importance(
             anthropic_api_key=anthropic_api_key,
             anthropic_model=anthropic_model,
             openai_compatible_api_key=openai_compatible_api_key,
+            **extras_kw,
         )
         raw = completion.text
         if completion.input_tokens is not None:
@@ -144,6 +153,7 @@ async def score_round_importance_batch(
     routing_policy: str,
     routing_profile_local_id: str,
     routing_profile_frontier_id: str,
+    run_llm_extras: RunLLMExtras | None = None,
 ) -> tuple[dict[str, tuple[int, ImportanceSource]], int, int]:
     """One LLM call scoring all turns in a round. Returns (scores_by_turn_id, in, out)."""
     if not turns:
@@ -162,6 +172,11 @@ async def score_round_importance_batch(
     out_acc = 0
     expected_ids = [str(t["turn_id"]) for t in turns]
     try:
+        extras_kw = run_llm_extras.llm_complete_kwargs() if run_llm_extras else {}
+        extras_kw["llm_request_context"] = {
+            "call_site": "importance_per_round_batch",
+            "round_number": round_number,
+        }
         completion = await llm_complete(
             provider=effective,
             messages=[
@@ -175,6 +190,7 @@ async def score_round_importance_batch(
             anthropic_api_key=anthropic_api_key,
             anthropic_model=anthropic_model,
             openai_compatible_api_key=openai_compatible_api_key,
+            **extras_kw,
         )
         raw = completion.text
         if completion.input_tokens is not None:
