@@ -5,8 +5,8 @@
 
 ## Shipped
 
-- **`backend/src/mirofish_backend/llm/model_profiles.py`** — `ModelProfile`, built-ins `local_lmstudio_default` / `anthropic_default`, `resolve_run_profiles`, `profile_snapshot_dict`, `model_profile_config_snapshot`, `run_llm_credentials`.
-- **`backend/src/mirofish_backend/api/simulations.py`** — optional `model_profile_id` on `SimulationRunRequest`; profile metadata in `config_snapshot`; resolved `lmstudio_model` / `lmstudio_base_url` / `anthropic_model` passed to orchestration.
+- **`backend/src/senna_backend/llm/model_profiles.py`** — `ModelProfile`, built-ins `local_lmstudio_default` / `anthropic_default`, `resolve_run_profiles`, `profile_snapshot_dict`, `model_profile_config_snapshot`, `run_llm_credentials`.
+- **`backend/src/senna_backend/api/simulations.py`** — optional `model_profile_id` on `SimulationRunRequest`; profile metadata in `config_snapshot`; resolved `lmstudio_model` / `lmstudio_base_url` / `anthropic_model` passed to orchestration.
 - **`backend/tests/test_model_profiles.py`** — resolution (no profile, lmstudio, anthropic, hybrid, invalid id), snapshot fields, queue wiring, API 422 for unknown profile.
 
 ## Behavior

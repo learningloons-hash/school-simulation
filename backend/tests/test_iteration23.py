@@ -8,11 +8,11 @@ import tempfile
 
 import pytest
 
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_export_bundle, get_simulation_status_with_transcript
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.llm import prompt_templates
-from mirofish_backend.scenarios.registry import get_scenario
-from mirofish_backend.simulation import orchestrator
+from senna_backend.db.repo import create_simulation_run, get_simulation_export_bundle, get_simulation_status_with_transcript
+from senna_backend.db.schema import init_db
+from senna_backend.llm import prompt_templates
+from senna_backend.scenarios.registry import get_scenario
+from senna_backend.simulation import orchestrator
 
 
 def test_simplified_persona_prompt_omits_deep_blocks() -> None:

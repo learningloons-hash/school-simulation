@@ -8,8 +8,8 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.config import Settings
-from mirofish_backend.llm.model_profiles import (
+from senna_backend.config import Settings
+from senna_backend.llm.model_profiles import (
     ANTHROPIC_DEFAULT_ID,
     LOCAL_LMSTUDIO_DEFAULT_ID,
     OPENAI_DEFAULT_ID,
@@ -18,9 +18,9 @@ from mirofish_backend.llm.model_profiles import (
     openai_default,
     resolve_run_profiles,
 )
-from mirofish_backend.main import app
-from mirofish_backend.simulation.economics import estimate_cost_usd
-from mirofish_backend.simulation.preflight import (
+from senna_backend.main import app
+from senna_backend.simulation.economics import estimate_cost_usd
+from senna_backend.simulation.preflight import (
     estimate_run_preflight,
     speakers_per_round_count,
 )
@@ -188,8 +188,8 @@ def test_post_preflight_hybrid_nonzero(client_preflight: TestClient) -> None:
 
 @pytest.mark.asyncio
 async def test_queue_run_includes_preflight_warnings(tmp_path) -> None:
-    from mirofish_backend.api import simulations as sim_api
-    from mirofish_backend.api.simulations import SimulationRunRequest, queue_simulation_run
+    from senna_backend.api import simulations as sim_api
+    from senna_backend.api.simulations import SimulationRunRequest, queue_simulation_run
 
     settings = Settings(sqlite_path=str(tmp_path / "q.sqlite"), llm_provider="hybrid")
     captured: dict[str, object] = {}
@@ -211,7 +211,7 @@ async def test_queue_run_includes_preflight_warnings(tmp_path) -> None:
         patch.object(sim_api, "load_scenario_for_run") as load_sc,
         patch.object(sim_api.asyncio, "create_task", side_effect=_discard),
     ):
-        from mirofish_backend.scenarios.registry import PersonaTemplate, ScenarioConfig
+        from senna_backend.scenarios.registry import PersonaTemplate, ScenarioConfig
 
         sc = ScenarioConfig(
             scenario_id="psle_reform_mvp",

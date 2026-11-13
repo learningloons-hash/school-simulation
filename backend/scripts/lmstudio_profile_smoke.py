@@ -14,9 +14,9 @@ import asyncio
 import os
 import sys
 
-from mirofish_backend.config import Settings
-from mirofish_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID, local_lmstudio_default
-from mirofish_backend.llm.router import llm_complete
+from senna_backend.config import Settings
+from senna_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID, local_lmstudio_default
+from senna_backend.llm.router import llm_complete
 
 
 async def main() -> int:

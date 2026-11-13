@@ -7,13 +7,13 @@
 
 ## Delivered
 
-- **`backend/src/mirofish_backend/diagnostics/architectural_interview.py`:** Five-category question bank (product-safe wording); one LLM call per agent per category; post-run administration via `run_architectural_interview_for_simulation`; `complete_with_profile` uses existing `llm_complete` + Arc 7/8 `model_profile_id`.
-- **`backend/src/mirofish_backend/diagnostics/judge_score_parse.py`:** Rubric judge parse with provenance (`model_parsed` / `repaired` / `keyword_fallback`); `<judge_score>{...}</judge_score>` block discipline (Likert-parse lineage).
+- **`backend/src/senna_backend/diagnostics/architectural_interview.py`:** Five-category question bank (product-safe wording); one LLM call per agent per category; post-run administration via `run_architectural_interview_for_simulation`; `complete_with_profile` uses existing `llm_complete` + Arc 7/8 `model_profile_id`.
+- **`backend/src/senna_backend/diagnostics/judge_score_parse.py`:** Rubric judge parse with provenance (`model_parsed` / `repaired` / `keyword_fallback`); `<judge_score>{...}</judge_score>` block discipline (Likert-parse lineage).
 - **`docs/diagnostics/ARCHITECTURAL_INTERVIEW_RUBRIC.md`:** Written 0–2 rubric per Park category; rubric version `1`.
 - **`scripts/run_architectural_interview.py`:** CLI post-run runner (dry-run default; `--execute` for live LLM).
-- **`backend/src/mirofish_backend/db/schema.py`:** `architectural_interview_responses` + `architectural_interview_scores` tables (separate from Likert / elicitation / memory context).
-- **`backend/src/mirofish_backend/db/repo.py`:** insert/query; export bundle keys `architectural_interview_responses` / `architectural_interview_scores`.
-- **`backend/src/mirofish_backend/export_bundle.py`:** `EXPORT_VERSION = "11"`; ZIP CSVs for interview responses/scores.
+- **`backend/src/senna_backend/db/schema.py`:** `architectural_interview_responses` + `architectural_interview_scores` tables (separate from Likert / elicitation / memory context).
+- **`backend/src/senna_backend/db/repo.py`:** insert/query; export bundle keys `architectural_interview_responses` / `architectural_interview_scores`.
+- **`backend/src/senna_backend/export_bundle.py`:** `EXPORT_VERSION = "11"`; ZIP CSVs for interview responses/scores.
 - **`GET /simulations/{id}/architectural-interview-report`:** JSON summary (mirrors memory-context-report pattern).
 - **`backend/tests/test_senna_iter47_architectural_interview.py`:** Mocked LLM; calibration; malformed judge; two judge profiles; export v11; Likert separation.
 

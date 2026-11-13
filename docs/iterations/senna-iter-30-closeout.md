@@ -5,9 +5,9 @@
 
 ## Shipped
 
-- **`backend/src/mirofish_backend/llm/openai_compatible_client.py`** — generic `POST …/chat/completions` adapter; `_format_openai_compatible_error_body`; token usage from `prompt_tokens`/`completion_tokens` or `input_tokens`/`output_tokens`.
-- **`backend/src/mirofish_backend/llm/lmstudio_client.py`** — thin compatibility shim re-exporting the generic client and error formatter (`_format_lm_studio_error_body` alias).
-- **`backend/src/mirofish_backend/llm/router.py`** — local path imports `chat_completion_openai_compatible` from `openai_compatible_client` (not `lmstudio_client`).
+- **`backend/src/senna_backend/llm/openai_compatible_client.py`** — generic `POST …/chat/completions` adapter; `_format_openai_compatible_error_body`; token usage from `prompt_tokens`/`completion_tokens` or `input_tokens`/`output_tokens`.
+- **`backend/src/senna_backend/llm/lmstudio_client.py`** — thin compatibility shim re-exporting the generic client and error formatter (`_format_lm_studio_error_body` alias).
+- **`backend/src/senna_backend/llm/router.py`** — local path imports `chat_completion_openai_compatible` from `openai_compatible_client` (not `lmstudio_client`).
 - **`backend/tests/test_openai_compatible_client.py`** — error formatting, token aliases, HTTP error detail, `llm_provider=lmstudio` → adapter via `llm_complete`, lmstudio shim re-export.
 
 ## Unchanged (per spec)
@@ -20,7 +20,7 @@
 
 - `uv run pytest` (from `backend/`): **206 passed, 1 skipped**
 - `rg 'openai_compatible_client' backend/src` — `router.py`, new module; `lmstudio_client.py` imports it
-- `rg 'chat_completion_openai_compatible' backend/src/mirofish_backend/llm/router.py` — imports from `openai_compatible_client`
+- `rg 'chat_completion_openai_compatible' backend/src/senna_backend/llm/router.py` — imports from `openai_compatible_client`
 
 ## Next
 

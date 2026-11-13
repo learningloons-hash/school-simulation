@@ -1,4 +1,4 @@
-from mirofish_backend.scenarios.registry import get_scenario
+from senna_backend.scenarios.registry import get_scenario
 
 
 def test_psle_yaml_loads_three_personas() -> None:

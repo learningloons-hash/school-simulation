@@ -11,7 +11,7 @@
 | # | Item | Ruling |
 |---|------|--------|
 | **1** | Calibration set public | **Approve.** Attributed paraphrases from freely-available NIE CIEPSS report, used methodologically. `SSTRF_RATER_CALIBRATION_SET.md` cites source page numbers; calibration **items** are paraphrased/invented passages (not verbatim report quotes). Ordinary scholarly practice for reproducibility. |
-| **2** | sq_reading fixtures public | **Approve** on substance (pseudonyms Miss C/Miss L from published report). **Contradiction resolved:** authoritative copies are on **`school-simulation`** at `backend/src/mirofish_backend/scenarios/data/sq_reading_culture*.yaml` (from `c238fa9` + shock variants @ `befeaad`). `senna-sstrf-study` holds **non-authoritative mirrors** only (`437d72b`). Provenance JSON files updated accordingly. |
+| **2** | sq_reading fixtures public | **Approve** on substance (pseudonyms Miss C/Miss L from published report). **Contradiction resolved:** authoritative copies are on **`school-simulation`** at `backend/src/senna_backend/scenarios/data/sq_reading_culture*.yaml` (from `c238fa9` + shock variants @ `befeaad`). `senna-sstrf-study` holds **non-authoritative mirrors** only (`437d72b`). Provenance JSON files updated accordingly. |
 | **3** | Scoring manifest public | **Confirm.** It is the result; publishing it is the point. |
 | **4** | RESULT narrative | **Publish on public repo.** A public 0/10 without explanation reads worse than either extreme. `SSTRF_RQ1_RESULT_V2.md` force-added alongside scoring manifest. Sensitive content is LLM-generated simulation output (quoted elicitation excerpts), not real persons. |
 | **5** | Elicitation transcripts private | **Confirm.** Eighty LLM-output files; no reason to publish. Remain on `senna-sstrf-study` @ `437d72b`. |
@@ -32,7 +32,7 @@
 
 | Fixture family | Authoritative repo | Path pattern |
 |----------------|-------------------|--------------|
-| `sq_reading_culture*` (all 4 variants) | **`school-simulation`** | `backend/src/mirofish_backend/scenarios/data/sq_reading_culture*.yaml` |
+| `sq_reading_culture*` (all 4 variants) | **`school-simulation`** | `backend/src/senna_backend/scenarios/data/sq_reading_culture*.yaml` |
 | `ciepss_school_b` | **`senna-sstrf-study`** | `backend/.../ciepss_school_b.yaml` @ `47013659` |
 
 Verifiers: use `docs/diagnostics/sq_reading_culture*_provenance.json` → `authoritative_repo` field.

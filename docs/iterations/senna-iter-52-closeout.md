@@ -3,7 +3,7 @@
 ## Delivered
 
 - **`scripts/run_arc11_ablation.py`** — CLI sweep: 4 cumulative conditions × configurable seeds (default `[42, 43, 44]`). Queues simulations via backend API, waits for terminal status, runs Arc 10 diagnostics with `--execute-interview`, writes JSON + markdown artifacts.
-- **`mirofish_backend/diagnostics/arc11_ablation.py`** — Condition→flag mapping, network CSV builder, metric extraction, delta vs measured baseline, between-agent dispersion (final-round support stdev + interview category stdev), aggregation, markdown generation. `execute_ablation_cell` for stubbed CI path.
+- **`senna_backend/diagnostics/arc11_ablation.py`** — Condition→flag mapping, network CSV builder, metric extraction, delta vs measured baseline, between-agent dispersion (final-round support stdev + interview category stdev), aggregation, markdown generation. `execute_ablation_cell` for stubbed CI path.
 - **Artifacts:** `docs/diagnostics/arc11_ablation_results.json` (placeholder until live sweep), `docs/diagnostics/ARC11_ABLATION_RESULTS.md`, `backend/tests/fixtures/arc11/measured_baseline_summary.json`, `ablation_results_schema.json`.
 - **Tests:** `tests/test_senna_iter52_arc11_ablation.py` — flag ladder, delta math, 1 seed × 4 conditions with stub LLM/interview/embed.
 

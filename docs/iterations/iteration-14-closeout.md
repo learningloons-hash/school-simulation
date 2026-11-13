@@ -42,8 +42,8 @@
 
 ## References
 
-- `backend/src/mirofish_backend/roster/csv_roster.py`
-- `backend/src/mirofish_backend/api/scenario_catalog.py`
+- `backend/src/senna_backend/roster/csv_roster.py`
+- `backend/src/senna_backend/api/scenario_catalog.py`
 - `frontend/src/components/ScenarioWizard.tsx`
 - `frontend/src/lib/api.ts`
 - `backend/tests/test_iteration14_attributes_ux.py`

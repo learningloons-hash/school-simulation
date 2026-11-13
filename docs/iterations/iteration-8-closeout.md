@@ -1,6 +1,6 @@
 # Iteration 8 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Gate date:** 2026-04-02  
 **Theme:** Observability + limits (Joan brief Iteration 8).
 

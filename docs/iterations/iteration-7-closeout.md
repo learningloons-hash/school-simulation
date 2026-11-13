@@ -1,6 +1,6 @@
 # Iteration 7 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Gate date:** 2026-04-02  
 **Status:** Implementation complete (MVP arc Iterations 5–7 closed).
 

@@ -22,7 +22,7 @@ GM-F's Arc 11 ruling, for the record (binds everything below):
   2. The interview ceiling is ~60% saturated, not partial: `reflection` sits at 2.00 in all four Arc 11 arms, `self_knowledge` at 2.00 in all four, `planning` only moves 2.00→1.89. Three of five categories carry no dynamic range at all.
   3. The Arc 11 ablation network was not identical to the Arc 10 baseline network — an uncontrolled variable that should have been flagged as a limitation in the closeout and wasn't.
 - **The dispersion finding is the arc's most important result, not a footnote.** Baseline cross-agent interview-score stdev ≈ 0.00 (agents give each other's answers); `+importance+retrieval` raises it to ≈ 0.31. Report it in Part C as a **study-validity finding**: if the shipped architecture produces near-identical actors, the study's propositions (P1 on authority, P3 on self-concept, P4 on adaptation scale) cannot be tested regardless of scoring quality.
-- **Blocking defect:** `backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml` is not in the platform repo — caught by `.gitignore` (line 50) in the 2026-08-18 repo split, lives only on the study side (`study` remote → `senna-sstrf-study.git`). The platform cannot currently load the case the study is meant to run.
+- **Blocking defect:** `backend/src/senna_backend/scenarios/data/ciepss_school_b.yaml` is not in the platform repo — caught by `.gitignore` (line 50) in the 2026-08-18 repo split, lives only on the study side (`study` remote → `senna-sstrf-study.git`). The platform cannot currently load the case the study is meant to run.
 
 **Mark's ruling (2026-08-24): go with Option 1** (fixture stays in the study repo; platform loads it via the existing `user_scenarios` config path, not a repo restructure). Be comprehensive — no shortcuts. This doc is the full architect/builder spec for `senna-iter-54`. **Per standing feedback ([[feedback_architect_incremental_commits]]), each part below is independently committable — commit and close out per part, not once at the end of the iteration.**
 
@@ -34,7 +34,7 @@ GM-F's Arc 11 ruling, for the record (binds everything below):
 
 | # | Option | Verdict |
 |---|---|---|
-| **1** | **Fixture stays in the study repo; platform loads external scenario config via the existing `user_scenarios` DB path.** | **Chosen.** `backend/src/mirofish_backend/scenarios/loader.py::load_scenario_for_run(sqlite_path, scenario_id)` already checks a `user_scenarios` SQLite table before falling back to the package registry. `db/repo.py` already has `upsert_user_scenario`, `get_user_scenario_row`, `list_user_scenario_rows`, `user_scenario_exists`. Zero schema/loader changes needed for the scenario document itself — only a seeding script (§1.2) and, if the fixture uses RAG, a matching mechanism for corpus text (§1.3, a genuine gap this doc found that ARC12 didn't scope). |
+| **1** | **Fixture stays in the study repo; platform loads external scenario config via the existing `user_scenarios` DB path.** | **Chosen.** `backend/src/senna_backend/scenarios/loader.py::load_scenario_for_run(sqlite_path, scenario_id)` already checks a `user_scenarios` SQLite table before falling back to the package registry. `db/repo.py` already has `upsert_user_scenario`, `get_user_scenario_row`, `list_user_scenario_rows`, `user_scenario_exists`. Zero schema/loader changes needed for the scenario document itself — only a seeding script (§1.2) and, if the fixture uses RAG, a matching mechanism for corpus text (§1.3, a genuine gap this doc found that ARC12 didn't scope). |
 | 2 | Fixture lives in the public repo | Rejected. Re-introduces the exact coupling the 2026-08-18 split removed, and is only viable if the YAML is confirmed to contain no protected material — narrower and more fragile than Option 1 regardless. |
 | 3 | Study repo vendored as a submodule at a pinned commit | Rejected as heavier than the problem needs. A submodule requires `--recurse-submodules` on every clone (or a documented follow-up step everyone will forget at least once), CI credentials for a private repo, and duplicates a loading mechanism (non-bundled scenario) the codebase already has via `user_scenarios`. |
 
@@ -53,7 +53,7 @@ Do these in order; each gates the next. Report results in the iter-54 closeout e
 
 **New file:** `scripts/seed_scenario_from_study_repo.py`.
 
-Mirror the validation path the platform already uses for user-authored scenarios (`backend/src/mirofish_backend/api/scenario_catalog.py::create_user_scenario`) rather than inventing a bespoke bypass:
+Mirror the validation path the platform already uses for user-authored scenarios (`backend/src/senna_backend/api/scenario_catalog.py::create_user_scenario`) rather than inventing a bespoke bypass:
 
 ```
 validate_scenario_document(doc, is_update=<user_scenario_exists(...)>, allowed_corpus_paths=<list_allowed_corpus_paths()>)
@@ -76,7 +76,7 @@ validate_scenario_document(doc, is_update=<user_scenario_exists(...)>, allowed_c
 2. **Check the study repo's working tree is clean** (`git -C <path> status --porcelain`). If dirty, **abort by default** with a clear message — an uncommitted local edit means the commit hash recorded in provenance (§1.4) would not actually describe what got seeded, which defeats the entire point of provenance. Allow a `--allow-dirty` escape hatch for local iteration, but it must print a loud warning and the emitted manifest must record `"dirty": true` so nobody mistakes it for a clean provenance record later.
 3. Capture `source_commit = git -C <path> rev-parse HEAD` and `source_repo = git -C <path> remote get-url origin` (fall back to the `--study-repo-path` itself if no remote, with a warning).
 4. Read and `yaml.safe_load` the file at `<study-repo-path>/<yaml-rel-path>`.
-5. **If `--corpus-rel-dir` given:** copy every file under it into `backend/src/mirofish_backend/scenarios/data/<scenario_id>/` (creating the directory). This is the local, gitignored home for corpus text — see §1.3 for why this location and not something new. Do this *before* validation, so `list_allowed_corpus_paths()` (which scans that directory live) picks the files up.
+5. **If `--corpus-rel-dir` given:** copy every file under it into `backend/src/senna_backend/scenarios/data/<scenario_id>/` (creating the directory). This is the local, gitignored home for corpus text — see §1.3 for why this location and not something new. Do this *before* validation, so `list_allowed_corpus_paths()` (which scans that directory live) picks the files up.
 6. Run `validate_scenario_document(...)`. **Errors abort the script with a non-zero exit and the full error list printed** — no partial/best-effort seeding. Warnings are printed but non-blocking, matching existing behavior in `scenario_catalog.py`.
 7. `upsert_user_scenario(sqlite_path, scenario_id=..., display_name=..., document_json=json.dumps(doc), scenario_doc_version="1", source_repo=source_repo, source_commit=source_commit)` — see §1.4 for the two new kwargs.
 8. Write/overwrite the manifest at `docs/diagnostics/<scenario_id>_provenance.json` (§1.4).
@@ -84,14 +84,14 @@ validate_scenario_document(doc, is_update=<user_scenario_exists(...)>, allowed_c
 
 ### 1.3 Corpus reunification (only if `rag_enabled: true` — confirm in §1.1 step 3)
 
-**This is a real gap ARC12's handoff did not scope, and Ops's first draft of this handoff missed it too.** `backend/src/mirofish_backend/rag/corpus.py::load_scenario_corpus_texts()` hardcodes its root to `backend/src/mirofish_backend/scenarios/data/` on the **local filesystem** — it has no DB-backed override path the way scenario documents do. Fixing the scenario YAML's loading path (§1.2) does nothing for corpus text if the fixture uses RAG; that's a second, independent reunification problem.
+**This is a real gap ARC12's handoff did not scope, and Ops's first draft of this handoff missed it too.** `backend/src/senna_backend/rag/corpus.py::load_scenario_corpus_texts()` hardcodes its root to `backend/src/senna_backend/scenarios/data/` on the **local filesystem** — it has no DB-backed override path the way scenario documents do. Fixing the scenario YAML's loading path (§1.2) does nothing for corpus text if the fixture uses RAG; that's a second, independent reunification problem.
 
-**Chosen mechanism:** the seeding script (§1.2 step 5) copies corpus files into `backend/src/mirofish_backend/scenarios/data/<scenario_id>/` locally at seed time — the same directory `load_scenario_corpus_texts()` already resolves relative paths against, so **no code change is needed in `rag/corpus.py` or `validate.py`** — `list_allowed_corpus_paths()` already scans that directory fresh on every call. This keeps the whole reunification story to one mechanism (seed locally, gitignore locally, never commit) instead of two.
+**Chosen mechanism:** the seeding script (§1.2 step 5) copies corpus files into `backend/src/senna_backend/scenarios/data/<scenario_id>/` locally at seed time — the same directory `load_scenario_corpus_texts()` already resolves relative paths against, so **no code change is needed in `rag/corpus.py` or `validate.py`** — `list_allowed_corpus_paths()` already scans that directory fresh on every call. This keeps the whole reunification story to one mechanism (seed locally, gitignore locally, never commit) instead of two.
 
 **`.gitignore` addition required** (mirror the existing single-file entry at line 50): add a directory entry, e.g.
 
 ```
-backend/src/mirofish_backend/scenarios/data/ciepss_school_b/
+backend/src/senna_backend/scenarios/data/ciepss_school_b/
 ```
 
 right next to the existing `ciepss_school_b.yaml` line, so a future `git status` doesn't show the copied corpus files as untracked-and-alarming, and nobody accidentally `git add -A`s real CIEPSS source text into the public repo.
@@ -100,7 +100,7 @@ right next to the existing `ciepss_school_b.yaml` line, so a future `git status`
 
 ARC12 §5 requires the frozen pre-registration to name "Fixture commit hash and repo — **study repo**, not `origin`." Two things carry that forward:
 
-**Schema (`backend/src/mirofish_backend/db/schema.py`):** add columns to `user_scenarios` using the existing idempotent pattern (used ~20 times already in that file, e.g. `await _ensure_column(db, "simulation_runs", "converged_at_round", "INTEGER")`):
+**Schema (`backend/src/senna_backend/db/schema.py`):** add columns to `user_scenarios` using the existing idempotent pattern (used ~20 times already in that file, e.g. `await _ensure_column(db, "simulation_runs", "converged_at_round", "INTEGER")`):
 
 ```python
 await _ensure_column(db, "user_scenarios", "source_repo", "TEXT")
@@ -167,7 +167,7 @@ Add a short section — new file `docs/SETUP_STUDY_FIXTURES.md`, linked from `do
 
 ### Sequencing — read before scheduling this
 
-**Part B does not depend on Part A.** The Arc 11 ablation's `AblationRunProfile` defaults to `scenario_id="fsbb_comparator"`, `agent_limit=3`, `total_rounds=5` (`backend/src/mirofish_backend/diagnostics/arc11_ablation.py:36`) — the confound test is a same-shape rerun of the existing Arc 11 harness on the Anthropic tier, not a `ciepss_school_b` run. It needs no fixture. **Run Part B in parallel with Part A**, not queued behind it — Part A's pre-flight checklist (§1.1) may surface something that changes scope (e.g., corpus content that fails the source-text check), and there's no reason to let that block a $10, few-hour test that answers an independent question.
+**Part B does not depend on Part A.** The Arc 11 ablation's `AblationRunProfile` defaults to `scenario_id="fsbb_comparator"`, `agent_limit=3`, `total_rounds=5` (`backend/src/senna_backend/diagnostics/arc11_ablation.py:36`) — the confound test is a same-shape rerun of the existing Arc 11 harness on the Anthropic tier, not a `ciepss_school_b` run. It needs no fixture. **Run Part B in parallel with Part A**, not queued behind it — Part A's pre-flight checklist (§1.1) may surface something that changes scope (e.g., corpus content that fails the source-text check), and there's no reason to let that block a $10, few-hour test that answers an independent question.
 
 **ARC12 §1 Part B doesn't name a scenario explicitly** ("same scenario and same network CSV in both conditions"). Use `fsbb_comparator` at the existing `agent_limit=3, rounds=5` profile — that's the only way this test is commensurable with the Arc 11 numbers it's meant to explain.
 

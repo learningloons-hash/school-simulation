@@ -75,7 +75,7 @@ Close the accepted Arc 7 follow-ups that should be fixed before adding more prov
 #### Agent planner parity
 
 - Add optional `model_profile_id` to the agent planning path:
-  - `backend/src/mirofish_backend/agent/orchestrator.py`
+  - `backend/src/senna_backend/agent/orchestrator.py`
   - any `PlanSimulationParams` / execution-plan validation helpers
   - request construction that eventually builds `SimulationRunRequest`
 - The planner should treat `model_profile_id` as an optional run parameter, not as a required planning field.
@@ -122,7 +122,7 @@ Replace literal built-in profile enumeration with a registry pattern, then add e
 
 #### Profile registry
 
-- Refactor `backend/src/mirofish_backend/llm/model_profiles.py` so built-ins are described through a registry-like structure.
+- Refactor `backend/src/senna_backend/llm/model_profiles.py` so built-ins are described through a registry-like structure.
 - Keep public profile ids stable:
   - `local_lmstudio_default`
   - `anthropic_default`
@@ -231,7 +231,7 @@ Add a preflight estimator that warns analysts before launching runs that may exc
 
 Create a pure preflight module, likely:
 
-- `backend/src/mirofish_backend/simulation/preflight.py`
+- `backend/src/senna_backend/simulation/preflight.py`
 
 It should estimate:
 

@@ -17,10 +17,10 @@ if str(_SCRIPTS) not in sys.path:
 
 import seed_scenario_from_study_repo as seeder  # noqa: E402
 
-from mirofish_backend.db.repo import get_user_scenario_row, user_scenario_exists  # noqa: E402
-from mirofish_backend.db.schema import init_db  # noqa: E402
-from mirofish_backend.rag.corpus import load_scenario_corpus_texts  # noqa: E402
-from mirofish_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
+from senna_backend.db.repo import get_user_scenario_row, user_scenario_exists  # noqa: E402
+from senna_backend.db.schema import init_db  # noqa: E402
+from senna_backend.rag.corpus import load_scenario_corpus_texts  # noqa: E402
+from senna_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
 
 FIXTURE_YAML = _REPO / "backend/tests/fixtures/dummy_external_scenario.yaml"
 FIXTURE_CORPUS = _REPO / "backend/tests/fixtures/dummy_external_scenario_corpus"
@@ -73,11 +73,11 @@ def reunification_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     db_path = tmp_path / "test.sqlite"
 
     monkeypatch.setattr(
-        "mirofish_backend.rag.corpus._SCENARIOS_DATA",
+        "senna_backend.rag.corpus._SCENARIOS_DATA",
         scenarios_data,
     )
     monkeypatch.setattr(
-        "mirofish_backend.scenarios.validate.list_allowed_corpus_paths",
+        "senna_backend.scenarios.validate.list_allowed_corpus_paths",
         lambda: _allowed_paths_for(scenarios_data),
     )
     monkeypatch.setattr(
@@ -204,7 +204,7 @@ def test_git_clean_check_helpers(fake_study_repo: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_ui_upsert_does_not_wipe_provenance(tmp_path: Path) -> None:
-    from mirofish_backend.db.repo import upsert_user_scenario
+    from senna_backend.db.repo import upsert_user_scenario
 
     db = str(tmp_path / "prov.sqlite")
     await init_db(db)

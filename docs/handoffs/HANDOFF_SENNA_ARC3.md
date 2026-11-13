@@ -733,7 +733,7 @@ Iters 11, 12, 13, 14 are independent of each other (different files/sections). I
 
 **Builder bootstrap (paste into each new Cursor Builder chat):**
 
-> You are implementing the Senna UX redesign in `mirofish-mvp/frontend/`. Read in order:
+> You are implementing the Senna UX redesign in `school-simulation/frontend/`. Read in order:
 > 1. `docs/SESSION_STATE.md`
 > 2. `docs/handoffs/HANDOFF_SENNA_ARC1.md` — design palette and patterns
 > 3. `docs/handoffs/HANDOFF_SENNA_ARC2.md` — component patterns established in Arc 2

@@ -21,7 +21,7 @@
 ## Part B — Arc 10 baseline
 
 - **`scripts/run_arc10_diagnostics.py`:** Combined JSON for memory context summary + MemBench fixtures (seed 42 default) + architectural interview (existing rows or `--execute-interview`).
-- **`backend/src/mirofish_backend/diagnostics/arc10_baseline.py`:** Summary builder, hypothesis evaluation, markdown generator.
+- **`backend/src/senna_backend/diagnostics/arc10_baseline.py`:** Summary builder, hypothesis evaluation, markdown generator.
 - **`docs/diagnostics/ARC10_BASELINE.md`:** Generated artifact (canonical fixture run; body reproducible except `generated_at`).
 - **Hypothesis verdict:** **mixed** — recall-style avg 0.5 vs synthesis-style avg 0.375 (delta 0.125); MemBench reflective > factual on vendored fixtures; interview memory_retrieval strong, reflection weak.
 

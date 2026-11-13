@@ -6,8 +6,8 @@
 
 ## Shipped
 
-- **`backend/src/mirofish_backend/llm/likert_parse.py`** — three-tier parse/provenance for round-end Likert responses.
-- **`backend/src/mirofish_backend/simulation/likert.py`** — anchor resolution, visible-history grounding, round-end collection helpers.
+- **`backend/src/senna_backend/llm/likert_parse.py`** — three-tier parse/provenance for round-end Likert responses.
+- **`backend/src/senna_backend/simulation/likert.py`** — anchor resolution, visible-history grounding, round-end collection helpers.
 - Platform wiring: orchestrator, schema/repo, API flag, export bundle, scenario anchor schema + `fsbb_comparator` example anchors, economics cost accounting.
 - Tests: `test_likert_parse.py`, `test_senna_iter40_likert.py`; iteration 28/29 economics tests updated.
 

@@ -2,19 +2,19 @@
 
 import pytest
 
-from mirofish_backend.llm.model_profiles import (
+from senna_backend.llm.model_profiles import (
     ANTHROPIC_DEFAULT_ID,
     LOCAL_LMSTUDIO_DEFAULT_ID,
     routing_policy_config_snapshot,
 )
-from mirofish_backend.llm.routing_policies import (
+from senna_backend.llm.routing_policies import (
     LEGACY_HYBRID_ROUTING_POLICY,
     llm_provider_to_routing_policy,
     resolve_effective_profile_id,
     resolve_effective_provider,
     routing_policy_from_mode,
 )
-from mirofish_backend.llm.router import resolve_effective_provider as router_resolve
+from senna_backend.llm.router import resolve_effective_provider as router_resolve
 
 
 @pytest.mark.parametrize(
@@ -112,8 +112,8 @@ def test_routing_policy_from_mode_accepts_policy_id() -> None:
 
 
 def test_routing_policy_config_snapshot() -> None:
-    from mirofish_backend.config import Settings
-    from mirofish_backend.llm.model_profiles import resolve_run_profiles
+    from senna_backend.config import Settings
+    from senna_backend.llm.model_profiles import resolve_run_profiles
 
     s = Settings()
     hybrid = resolve_run_profiles(model_profile_id=None, llm_provider="hybrid", settings=s)

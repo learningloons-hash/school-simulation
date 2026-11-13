@@ -25,7 +25,7 @@ Two terminals (from `backend/` after editing `.env`):
 
 ```powershell
 # Terminal 1 — no reload (reload kills runs)
-uv run uvicorn mirofish_backend.main:app --host 0.0.0.0 --port 8100
+uv run uvicorn senna_backend.main:app --host 0.0.0.0 --port 8100
 
 # Terminal 2
 cd ..\frontend
@@ -71,14 +71,14 @@ If `LLM_PROVIDER` is omitted and only `ANTHROPIC_API_KEY` is set, the backend in
 
 ## Dev server: do not use reload for real runs
 
-`mirofish-backend` (uvicorn) uses **`reload=False`** by default. Opt-in only: `SENNA_RELOAD=1` (watches `src/`, excludes `.venv` and `data/`).
+`senna-backend` (uvicorn) uses **`reload=False`** by default. Opt-in only: `SENNA_RELOAD=1` (watches `src/`, excludes `.venv` and `data/`).
 
 **Symptom:** run stuck at “Round 0 of 2”, status `running` forever → worker restarted mid-run. Orphan runs are marked **failed** on next startup with `failure_reason=server restarted during run`.
 
 Prefer:
 
 ```bash
-cd backend && uv run uvicorn mirofish_backend.main:app --host 0.0.0.0 --port 8100
+cd backend && uv run uvicorn senna_backend.main:app --host 0.0.0.0 --port 8100
 ```
 
 ---

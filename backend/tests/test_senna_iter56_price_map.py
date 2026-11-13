@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from mirofish_backend.config import Settings
-from mirofish_backend.llm.model_profiles import (
+from senna_backend.config import Settings
+from senna_backend.llm.model_profiles import (
     ANTHROPIC_DEFAULT_ID,
     anthropic_default,
     resolve_anthropic_pricing_key,
 )
-from mirofish_backend.simulation.economics import (
+from senna_backend.simulation.economics import (
     PROVIDER_PRICE_MAP,
     estimate_cost_usd,
     resolve_billing_provider_key,

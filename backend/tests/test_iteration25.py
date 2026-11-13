@@ -10,12 +10,12 @@ from fastapi.testclient import TestClient
 
 from pydantic import ValidationError
 
-from mirofish_backend.api.simulations import SimulationRunRequest, wait_for_simulation_terminal
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.main import app
-from mirofish_backend.simulation.network import degree_centrality, parse_network_csv
-from mirofish_backend.simulation.sampling_strategy import SAMPLING_STRATEGY_VALUES, compute_fidelity_tiers
-from mirofish_backend.scenarios.registry import get_scenario
+from senna_backend.api.simulations import SimulationRunRequest, wait_for_simulation_terminal
+from senna_backend.db.schema import init_db
+from senna_backend.main import app
+from senna_backend.simulation.network import degree_centrality, parse_network_csv
+from senna_backend.simulation.sampling_strategy import SAMPLING_STRATEGY_VALUES, compute_fidelity_tiers
+from senna_backend.scenarios.registry import get_scenario
 
 
 def test_parse_network_csv_warns_unknown_agents() -> None:
@@ -88,7 +88,7 @@ def client_skip(monkeypatch, tmp_path):
         return None
 
     monkeypatch.setattr(
-        "mirofish_backend.api.simulations.run_simulation_task_guarded",
+        "senna_backend.api.simulations.run_simulation_task_guarded",
         _skip,
     )
     asyncio.run(init_db(str(db)))
@@ -116,7 +116,7 @@ def test_network_queued_run_audit_sampling_report_and_node_count(monkeypatch, tm
         }
         return "OK.\n\n<state>\n" + json.dumps(state) + "\n</state>"
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     cfg = get_scenario("psle_reform_mvp")
     personas = cfg.personas[:3]

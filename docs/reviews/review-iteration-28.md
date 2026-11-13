@@ -22,13 +22,13 @@ None.
 
 ### I1: Convergence fields missing from `ExperimentCreateRequest` and `ExperimentRunStep`
 - Severity: IMPORTANT
-- Files: `backend/src/mirofish_backend/api/experiments.py` (lines 49–79, 82–101)
+- Files: `backend/src/senna_backend/api/experiments.py` (lines 49–79, 82–101)
 - Problem: Neither `ExperimentCreateRequest` nor `ExperimentRunStep` includes `convergence_threshold` or `convergence_patience`. Since `_merge_to_simulation_request` merges experiment-level base fields with per-step overrides into a `SimulationRunRequest`, experiments cannot use the convergence stopping criterion. The thesis methodology requires running experiments (same scenario, multiple strategies) with convergence — this is the primary use case. A researcher would have to run individual simulations manually rather than using the experiment framework.
 - Fix: Add `convergence_threshold: float | None = Field(default=None, ge=0.0, le=1.0)` and `convergence_patience: int = Field(default=2, ge=1, le=25)` to `ExperimentCreateRequest` (base-level, shared across runs). No need to add per-step overrides — convergence parameters should be consistent across an experiment so cross-strategy comparison is fair.
 
 ### I2: Convergence fields missing from `PlanSimulationParams` (agent orchestrator)
 - Severity: IMPORTANT
-- Files: `backend/src/mirofish_backend/agent/orchestrator.py` (lines 40–95)
+- Files: `backend/src/senna_backend/agent/orchestrator.py` (lines 40–95)
 - Problem: `PlanSimulationParams` has no `convergence_threshold` or `convergence_patience` fields. Runs dispatched via `POST /agent/ask` or `POST /agent/execute` cannot use convergence. The planner LLM cannot include convergence in generated plans even though `GET /capabilities` documents it.
 - Fix: Add both fields to `PlanSimulationParams` (optional, same validators). Forward them through `_simulation_run_request`. Also update `validate_plan_against_capabilities` to accept these fields.
 
@@ -42,13 +42,13 @@ None.
 
 ### M1: `_population_convergence_delta` silently skips agents missing from `prev`
 - Severity: MINOR
-- Files: `backend/src/mirofish_backend/simulation/orchestrator.py` (lines 235–250)
+- Files: `backend/src/senna_backend/simulation/orchestrator.py` (lines 235–250)
 - Problem: If an `agent_id` is in `agents` but not in `prev` (e.g. synthetic remainders added mid-run — not currently possible but defensively), `prev[ag.agent_id]` raises `KeyError`. The function has no guard for this.
 - Fix: Add a `if ag.agent_id not in prev: continue` guard or document the pre-condition in the docstring.
 
 ### M2: Convergence delta not in `get_merged_round_metrics` (experiment comparison)
 - Severity: MINOR
-- Files: `backend/src/mirofish_backend/db/repo.py` (`get_merged_round_metrics`, ~line 1159)
+- Files: `backend/src/senna_backend/db/repo.py` (`get_merged_round_metrics`, ~line 1159)
 - Problem: `get_merged_round_metrics` (used to build the experiment comparison table) queries `global_state_snapshots` for `implementation_readiness` and `alignment_index` but does **not** fetch `convergence_delta`. The experiment comparison table therefore lacks the convergence metric per round. For the thesis, this means you can't see which strategy converged faster directly in the comparison view.
 - Fix: Add `convergence_delta` to the `get_merged_round_metrics` query and include it in the comparison table rows. Also add it to `_build_comparison_table` in `experiments.py` and `_flatten_comparison_for_csv`.
 

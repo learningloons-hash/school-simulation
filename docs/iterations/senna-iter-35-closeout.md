@@ -11,9 +11,9 @@
 
 ## Files touched
 
-- `backend/src/mirofish_backend/agent/orchestrator.py`
-- `backend/src/mirofish_backend/llm/routing_policies.py`
-- `backend/src/mirofish_backend/simulation/orchestrator.py`
+- `backend/src/senna_backend/agent/orchestrator.py`
+- `backend/src/senna_backend/llm/routing_policies.py`
+- `backend/src/senna_backend/simulation/orchestrator.py`
 - `backend/tests/test_iteration17.py`
 - `backend/tests/test_iteration23.py`
 - `backend/tests/test_model_profiles.py`

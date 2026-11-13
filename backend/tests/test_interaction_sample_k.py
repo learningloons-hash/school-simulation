@@ -4,13 +4,13 @@ import tempfile
 
 import pytest
 
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.roster.csv_roster import personas_for_run
-from mirofish_backend.scenarios.registry import get_scenario
-from mirofish_backend.api.simulations import speakers_per_round_for_config_snapshot
-from mirofish_backend.simulation import orchestrator
-from mirofish_backend.simulation.orchestrator import _agents_for_round, _build_agent_instances
+from senna_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
+from senna_backend.db.schema import init_db
+from senna_backend.roster.csv_roster import personas_for_run
+from senna_backend.scenarios.registry import get_scenario
+from senna_backend.api.simulations import speakers_per_round_for_config_snapshot
+from senna_backend.simulation import orchestrator
+from senna_backend.simulation.orchestrator import _agents_for_round, _build_agent_instances
 
 
 def test_speakers_per_round_config_snapshot_full_robin_null() -> None:

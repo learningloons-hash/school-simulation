@@ -10,7 +10,7 @@
 
 ## Completed — align `senna-sstrf-study` `.gitignore` with data policy (Architect seed 2026-09-14)
 
-**Repo:** work in the **separate** `senna-sstrf-study` checkout (`/Users/home/cursor-projects/project-1/senna-sstrf-study` or equivalent). **Not** `school-simulation` / `mirofish-mvp` — different policy there, out of scope.
+**Repo:** work in the **separate** `senna-sstrf-study` checkout (`/Users/home/cursor-projects/project-1/senna-sstrf-study` or equivalent). **Not** `school-simulation` / `school-simulation` — different policy there, out of scope.
 
 **Problem:** `.gitignore` lines 47–49 still exclude zips, export JSON, and elicitation JSON under `docs/research/runs/`. Policy reversed 2026-09-11 (GM-F): research data belongs in the **private** repo. All 47 export zips at `92a16c6` are tracked only via `git add -f`. Next run silently drops exports → unverifiable findings.
 
@@ -85,7 +85,7 @@ docs/research/runs/ciepss_school_b/scoring/trial_label_map.json
 
 ### Out of scope
 
-- `school-simulation` / `mirofish-mvp` `.gitignore`
+- `school-simulation` / `school-simulation` `.gitignore`
 - Re-committing or rewriting `92a16c6` artefacts
 - Changing manifest hash contents (read-only validation)
 
@@ -110,7 +110,7 @@ When done: fill [`handoff-to-architect.md`](./handoff-to-architect.md) with comm
   **Flagged by Cursor, not yet actioned:** the zips needed `git add -f` — `senna-sstrf-study`'s
   own `.gitignore` still blocks `docs/research/runs/**/*.zip` by default, so every future
   commit under these paths needs the same force-add until/unless gitignore exceptions are
-  added there. Worth a small follow-up if this pattern continues (mirofish-mvp hit the same
+  added there. Worth a small follow-up if this pattern continues (school-simulation hit the same
   shape of problem with `validity_v2_scoring_manifest.json` — deep-nested negation patterns
   don't reliably re-include a file once a parent directory is `.gitignore`d, so the practical
   fix is a scoped `!path` exception per committed path, not a blanket unignore).

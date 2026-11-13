@@ -13,10 +13,10 @@
 
 ## Files touched
 
-- `backend/src/mirofish_backend/llm/state_parse.py`
-- `backend/src/mirofish_backend/simulation/orchestrator.py`
-- `backend/src/mirofish_backend/db/schema.py`
-- `backend/src/mirofish_backend/db/repo.py`
+- `backend/src/senna_backend/llm/state_parse.py`
+- `backend/src/senna_backend/simulation/orchestrator.py`
+- `backend/src/senna_backend/db/schema.py`
+- `backend/src/senna_backend/db/repo.py`
 - `backend/tests/test_state_parse.py`
 - `backend/tests/test_senna_arc8_integration.py` (new)
 - `backend/scripts/lmstudio_profile_smoke.py` (new)

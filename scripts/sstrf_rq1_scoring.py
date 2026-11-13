@@ -58,7 +58,7 @@ from sstrf_scoring_evidence import (
     save_trial_label_map,
     trial_record_from_label,
 )
-from mirofish_backend.llm.model_profiles import OPENAI_DEFAULT_ID
+from senna_backend.llm.model_profiles import OPENAI_DEFAULT_ID
 
 from sstrf_scoring_judge import (
     INSTRUCTIONS_VERBATIM,

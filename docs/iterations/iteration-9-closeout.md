@@ -1,6 +1,6 @@
 # Iteration 9 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Gate date:** 2026-04-02  
 **Theme:** Rosters, groups/factions, bulk CSV import, higher `agent_limit` with soft warnings (Joan brief Iteration 9).
 
@@ -9,7 +9,7 @@
 | Item | Detail |
 |------|--------|
 | Scenario model | Optional YAML **`groups`** (`group_id`, `name`, `description`); optional **`groups: [ids…]`** on personas; `GroupDef`, `ScenarioConfig.groups`, `PersonaTemplate.groups`. |
-| Roster CSV | `mirofish_backend.roster.csv_roster`: 1-based **`slot`**, optional overrides + **`groups`** (pipe-separated); merge onto base persona; **`roster_unknown_group_ids`** in `config_snapshot` when ids are not declared on the scenario. |
+| Roster CSV | `senna_backend.roster.csv_roster`: 1-based **`slot`**, optional overrides + **`groups`** (pipe-separated); merge onto base persona; **`roster_unknown_group_ids`** in `config_snapshot` when ids are not declared on the scenario. |
 | API | `POST /simulations/run` optional **`roster_csv`** (422 on parse errors); **`agent_limit` 1–50**; **`GET /simulations/roster-csv-template`** plain-text template. |
 | DB | Migrated **`group_ids`** (JSON array text) on **`agent_turns`** and **`agent_state_snapshots`**; transcript, export bundle, state timeline expose **`group_ids`**. |
 | Orchestrator | Optional **`personas_for_run`**; prompts include group labels when non-empty; persists **`group_ids`** per turn/snapshot. |

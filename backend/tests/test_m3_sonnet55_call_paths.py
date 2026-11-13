@@ -15,14 +15,14 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
-from mirofish_backend.agent.orchestrator import llm_build_execution_plan
-from mirofish_backend.api.scenario_catalog import LlmFillRequest, llm_fill_persona_sections
-from mirofish_backend.api.scenarios_generate import GenerateFromBriefRequest, generate_scenario_from_brief
-from mirofish_backend.api.simulations import SimulationAnalyzeRequest, analyze_simulation_export
-from mirofish_backend.config import Settings, get_settings
-from mirofish_backend.diagnostics.architectural_interview import score_interview_response
-from mirofish_backend.llm.model_profiles import ANTHROPIC_SONNET_55_ID
-from mirofish_backend.llm.router import llm_complete
+from senna_backend.agent.orchestrator import llm_build_execution_plan
+from senna_backend.api.scenario_catalog import LlmFillRequest, llm_fill_persona_sections
+from senna_backend.api.scenarios_generate import GenerateFromBriefRequest, generate_scenario_from_brief
+from senna_backend.api.simulations import SimulationAnalyzeRequest, analyze_simulation_export
+from senna_backend.config import Settings, get_settings
+from senna_backend.diagnostics.architectural_interview import score_interview_response
+from senna_backend.llm.model_profiles import ANTHROPIC_SONNET_55_ID
+from senna_backend.llm.router import llm_complete
 from sonnet55_test_support import (  # noqa: F401 -- fixtures referenced by name in test signatures
     CapturedRequest,
     FakeAnthropicTransport,
@@ -62,7 +62,7 @@ async def test_analyze_sends_thinking_and_effort_for_sonnet_55(
         }
 
     monkeypatch.setattr(
-        "mirofish_backend.api.simulations.get_simulation_export_bundle",
+        "senna_backend.api.simulations.get_simulation_export_bundle",
         _fake_bundle,
     )
 

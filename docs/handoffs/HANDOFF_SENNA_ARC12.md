@@ -25,7 +25,7 @@ Every row differs. Arc 12 closes that gap or the study does not run.
 
 ### 🚨 Blocking defect found on GM-F review
 
-**`backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml` is not in the platform
+**`backend/src/senna_backend/scenarios/data/ciepss_school_b.yaml` is not in the platform
 repository.** The scenarios directory contains only `fsbb_comparator.yaml` and
 `psle_reform_mvp.yaml`. The fixture was caught by the gitignore rules during the 2026-08-18
 repo split and exists only on the study side.

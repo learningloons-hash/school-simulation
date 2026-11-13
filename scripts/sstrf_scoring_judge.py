@@ -8,14 +8,14 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Awaitable
 
-from mirofish_backend.config import Settings, get_settings
-from mirofish_backend.llm.model_profiles import (
+from senna_backend.config import Settings, get_settings
+from senna_backend.llm.model_profiles import (
     OPENAI_DEFAULT_ID,
     OPENROUTER_DEFAULT_ID,
     get_builtin_profile,
     resolve_api_key_from_env,
 )
-from mirofish_backend.llm.openai_compatible_client import chat_completion_openai_compatible
+from senna_backend.llm.openai_compatible_client import chat_completion_openai_compatible
 
 from sstrf_scoring_evidence import TrialEvidence, build_rater_payload
 

@@ -10,15 +10,15 @@ import zipfile
 import pytest
 from fastapi.testclient import TestClient
 
-import mirofish_backend.api.experiments as experiments_api
-from mirofish_backend.db.repo import (
+import senna_backend.api.experiments as experiments_api
+from senna_backend.db.repo import (
     create_simulation_run,
     get_experiment_row,
     list_experiment_run_links,
     list_experiments,
 )
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.main import app
+from senna_backend.db.schema import init_db
+from senna_backend.main import app
 
 
 @pytest.fixture
@@ -69,7 +69,7 @@ def test_create_experiment_two_runs_sequential_fake_llm(monkeypatch, tmp_path) -
         }
         return "OK.\n\n<state>\n" + json.dumps(state) + "\n</state>"
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     with TestClient(app) as client:
         r = client.post(
@@ -158,7 +158,7 @@ def test_experiment_failure_sets_status_failed(monkeypatch, tmp_path) -> None:
         }
         return "OK.\n\n<state>\n" + json.dumps(state) + "\n</state>"
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     real_queue = experiments_api.queue_simulation_run
     calls = {"n": 0}
@@ -212,7 +212,7 @@ def test_list_experiments_includes_run_count(monkeypatch, tmp_path) -> None:
         }
         return "OK.\n\n<state>\n" + json.dumps(state) + "\n</state>"
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     with TestClient(app) as client:
         r = client.post(

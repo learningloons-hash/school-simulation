@@ -7,12 +7,12 @@ import re
 import types
 from typing import Any
 
-from mirofish_backend.simulation.interaction_policy import (
+from senna_backend.simulation.interaction_policy import (
     VisibilityPolicy,
     build_interaction_policy,
     visible_turns_for_agent,
 )
-from mirofish_backend.simulation.network import parse_network_csv, undirected_neighbor_map
+from senna_backend.simulation.network import parse_network_csv, undirected_neighbor_map
 
 DEFAULT_TRANSCRIPT_MAX_CHARS = int(
     os.environ.get("SSTRF_ELICITATION_TRANSCRIPT_MAX_CHARS", "120000")

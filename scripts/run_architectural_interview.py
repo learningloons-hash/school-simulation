@@ -12,20 +12,20 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT / "backend" / "src"))
 
-from mirofish_backend.config import get_settings
-from mirofish_backend.db.repo import (
+from senna_backend.config import get_settings
+from senna_backend.db.repo import (
     count_architectural_interview_responses,
     delete_architectural_interview_for_simulation,
     get_simulation_export_bundle,
     insert_architectural_interview_response,
     insert_architectural_interview_score,
 )
-from mirofish_backend.db.schema import init_db as schema_init
-from mirofish_backend.diagnostics.architectural_interview import (
+from senna_backend.db.schema import init_db as schema_init
+from senna_backend.diagnostics.architectural_interview import (
     INTERVIEW_CATEGORIES,
     run_architectural_interview_for_simulation,
 )
-from mirofish_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
 
 
 async def _get_bundle(sqlite_path: str, simulation_id: str):
@@ -41,7 +41,7 @@ async def _run(args: argparse.Namespace) -> dict:
         bundle = await get_simulation_export_bundle(sqlite_path, simulation_id=args.simulation_id)
         if bundle is None:
             raise SystemExit(f"simulation not found: {args.simulation_id}")
-        from mirofish_backend.diagnostics.architectural_interview import agents_from_snapshots
+        from senna_backend.diagnostics.architectural_interview import agents_from_snapshots
 
         agents = agents_from_snapshots(bundle.get("agent_state_snapshots") or [])
         existing = await count_architectural_interview_responses(

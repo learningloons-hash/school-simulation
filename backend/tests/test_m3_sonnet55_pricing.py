@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from mirofish_backend.llm.model_profiles import resolve_anthropic_pricing_key
-from mirofish_backend.simulation.economics import (
+from senna_backend.llm.model_profiles import resolve_anthropic_pricing_key
+from senna_backend.simulation.economics import (
     PROVIDER_PRICE_MAP,
     estimate_cost_usd,
     price_map_date_for_key,

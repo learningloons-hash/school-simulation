@@ -49,7 +49,7 @@ def test_trial_record_from_validity_label_loads_elicitation() -> None:
 async def test_validity_scoring_dry_run_one_trial() -> None:
     if not VALIDITY_V2_MANIFEST_PATH.is_file():
         pytest.skip("validity manifest not present")
-    from mirofish_backend.config import get_settings
+    from senna_backend.config import get_settings
 
     args = scoring_script.build_parser().parse_args(
         [

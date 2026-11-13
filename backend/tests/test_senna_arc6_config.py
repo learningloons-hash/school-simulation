@@ -1,6 +1,6 @@
 """Senna iter-29: `Settings` flags for round summaries and transcript path (see HANDOFF_SENNA_ARC6 ## senna-iter-29)."""
 
-from mirofish_backend.config import Settings, get_settings
+from senna_backend.config import Settings, get_settings
 
 
 def test_settings_senna_arc6_defaults() -> None:

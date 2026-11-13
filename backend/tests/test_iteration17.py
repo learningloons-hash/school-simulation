@@ -9,19 +9,19 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from mirofish_backend.agent.orchestrator import (
+from senna_backend.agent.orchestrator import (
     ExecutionPlan,
     PlanSimulationParams,
     _simulation_run_request,
     execute_plan,
     validate_plan_against_capabilities,
 )
-from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
-from mirofish_backend.api.capabilities import build_capabilities_dict
-from mirofish_backend.api.simulations import SimulationAnalyzeResponse, SimulationRunResponse
-from mirofish_backend.config import get_settings
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
+from senna_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.api.capabilities import build_capabilities_dict
+from senna_backend.api.simulations import SimulationAnalyzeResponse, SimulationRunResponse
+from senna_backend.config import get_settings
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
 
 
 @pytest.fixture
@@ -98,9 +98,9 @@ def test_execute_plan_forwards_model_profile_id_to_queue(monkeypatch, tmp_path) 
             suggested_follow_ups=[],
         )
 
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.queue_simulation_run", fake_queue)
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.wait_for_simulation_terminal", fake_wait)
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.analyze_simulation_export", fake_analyze)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.queue_simulation_run", fake_queue)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.wait_for_simulation_terminal", fake_wait)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.analyze_simulation_export", fake_analyze)
 
     plan = ExecutionPlan.model_validate(
         {
@@ -157,9 +157,9 @@ def test_agent_execute_with_mocks(monkeypatch, tmp_path) -> None:
             suggested_follow_ups=["more"],
         )
 
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.queue_simulation_run", fake_queue)
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.wait_for_simulation_terminal", fake_wait)
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.analyze_simulation_export", fake_analyze)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.queue_simulation_run", fake_queue)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.wait_for_simulation_terminal", fake_wait)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.analyze_simulation_export", fake_analyze)
 
     with TestClient(app) as client:
         r = client.post(
@@ -205,10 +205,10 @@ def test_execute_plan_continues_after_generate_http_exception(monkeypatch, tmp_p
             suggested_follow_ups=[],
         )
 
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.generate_scenario_from_brief", gen_side_effect)
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.queue_simulation_run", fake_queue)
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.wait_for_simulation_terminal", fake_wait)
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.analyze_simulation_export", fake_analyze)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.generate_scenario_from_brief", gen_side_effect)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.queue_simulation_run", fake_queue)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.wait_for_simulation_terminal", fake_wait)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.analyze_simulation_export", fake_analyze)
 
     plan = ExecutionPlan.model_validate(
         {
@@ -265,7 +265,7 @@ def test_agent_plan_mock_llm(monkeypatch, tmp_path) -> None:
         )
 
     # Patch where the route uses the symbol (api.agent imports it), not the defining module.
-    monkeypatch.setattr("mirofish_backend.api.agent.llm_build_execution_plan", fake_llm_build)
+    monkeypatch.setattr("senna_backend.api.agent.llm_build_execution_plan", fake_llm_build)
 
     with TestClient(app) as client:
         r = client.post(
@@ -297,7 +297,7 @@ def test_agent_plan_forwards_plan_temperature_to_llm(monkeypatch, tmp_path) -> N
             )
         )
 
-    monkeypatch.setattr("mirofish_backend.agent.orchestrator.llm_complete", fake_llm_complete)
+    monkeypatch.setattr("senna_backend.agent.orchestrator.llm_complete", fake_llm_complete)
 
     with TestClient(app) as client:
         r = client.post(
@@ -343,8 +343,8 @@ def test_agent_ask_json_mock(monkeypatch, tmp_path) -> None:
             ]
         }
 
-    monkeypatch.setattr("mirofish_backend.api.agent.llm_build_execution_plan", fake_llm_build)
-    monkeypatch.setattr("mirofish_backend.api.agent.execute_plan", fake_execute)
+    monkeypatch.setattr("senna_backend.api.agent.llm_build_execution_plan", fake_llm_build)
+    monkeypatch.setattr("senna_backend.api.agent.execute_plan", fake_execute)
 
     with TestClient(app) as client:
         r = client.post(

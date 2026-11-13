@@ -12,10 +12,10 @@ import os
 
 import pytest
 
-from mirofish_backend.config import Settings
-from mirofish_backend.db.repo import create_simulation_run
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.llm.anthropic_request import (
+from senna_backend.config import Settings
+from senna_backend.db.repo import create_simulation_run
+from senna_backend.db.schema import init_db
+from senna_backend.llm.anthropic_request import (
     RunLLMExtras,
     SONNET_55_MAX_TOKENS_AGENT_TURN,
     SONNET_55_MAX_TOKENS_IMPORTANCE,
@@ -24,16 +24,16 @@ from mirofish_backend.llm.anthropic_request import (
     SONNET_55_MAX_TOKENS_REFLECTION,
     resolve_anthropic_request_config,
 )
-from mirofish_backend.llm.llm_request_log import (
+from senna_backend.llm.llm_request_log import (
     LLMRequestLogger,
     adhoc_llm_request_log_path,
     llm_request_log_path,
 )
-from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
-from mirofish_backend.llm.router import llm_complete
-from mirofish_backend.simulation import orchestrator
-from mirofish_backend.simulation.importance_scoring import score_round_importance_batch, score_turn_importance
-from mirofish_backend.simulation.reflection import PendingObservation, synthesize_reflection
+from senna_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.llm.router import llm_complete
+from senna_backend.simulation import orchestrator
+from senna_backend.simulation.importance_scoring import score_round_importance_batch, score_turn_importance
+from senna_backend.simulation.reflection import PendingObservation, synthesize_reflection
 from sonnet55_test_support import (  # noqa: F401 -- fixture referenced by name in test signatures
     FakeAnthropicTransport,
     anthropic_transport,

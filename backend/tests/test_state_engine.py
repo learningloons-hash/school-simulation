@@ -4,9 +4,9 @@ import tempfile
 
 import pytest
 
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.simulation import orchestrator
+from senna_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
+from senna_backend.db.schema import init_db
+from senna_backend.simulation import orchestrator
 
 
 async def _run_with_fake_llm(db_path: str, *, total_rounds: int = 2, seed: int = 42) -> dict:

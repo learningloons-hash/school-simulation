@@ -8,12 +8,12 @@ import zipfile
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.export_bundle import (
+from senna_backend.export_bundle import (
     EXPORT_VERSION,
     build_export_zip,
     compute_cohort_summary,
 )
-from mirofish_backend.main import app
+from senna_backend.main import app
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +192,7 @@ def client_skip_sim(monkeypatch, tmp_path):
         return None
 
     monkeypatch.setattr(
-        "mirofish_backend.api.simulations.run_simulation_task_guarded",
+        "senna_backend.api.simulations.run_simulation_task_guarded",
         skip_run,
     )
     with TestClient(app) as c:

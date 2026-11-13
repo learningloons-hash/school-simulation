@@ -45,23 +45,23 @@ from run_sq_reading_partc import (  # noqa: E402
     capture_system_prompt,
 )
 
-from mirofish_backend.api.simulations import (  # noqa: E402
+from senna_backend.api.simulations import (  # noqa: E402
     build_preflight_response,
     queue_simulation_run,
     wait_for_simulation_terminal,
 )
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.db.repo import get_simulation_export_bundle  # noqa: E402
-from mirofish_backend.db.schema import init_db as schema_init  # noqa: E402
-from mirofish_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.db.repo import get_simulation_export_bundle  # noqa: E402
+from senna_backend.db.schema import init_db as schema_init  # noqa: E402
+from senna_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
     DEFAULT_NETWORK_CSV_REL,
     build_expected_run_agent_ids,
     load_documented_network_csv,
     extract_mechanics_metrics,
 )
-from mirofish_backend.export_bundle import build_export_zip  # noqa: E402
-from mirofish_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
-from mirofish_backend.scenarios.registry import get_scenario  # noqa: E402
+from senna_backend.export_bundle import build_export_zip  # noqa: E402
+from senna_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
+from senna_backend.scenarios.registry import get_scenario  # noqa: E402
 
 CELLS: tuple[tuple[str, str], ...] = (
     ("positive_rich", "sq_reading_culture_rich"),

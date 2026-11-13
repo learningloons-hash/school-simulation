@@ -9,16 +9,16 @@ from unittest.mock import patch
 
 import pytest
 
-from mirofish_backend.db.repo import create_simulation_run
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.llm.prompt_templates import (
+from senna_backend.db.repo import create_simulation_run
+from senna_backend.db.schema import init_db
+from senna_backend.llm.prompt_templates import (
     ORGANISATIONAL_CONTEXT_TITLE,
     build_system_prompt,
     simplified_persona_prompt,
 )
-from mirofish_backend.scenarios.registry import get_scenario, scenario_from_mapping
-from mirofish_backend.scenarios.serialize import scenario_config_to_document
-from mirofish_backend.simulation import orchestrator
+from senna_backend.scenarios.registry import get_scenario, scenario_from_mapping
+from senna_backend.scenarios.serialize import scenario_config_to_document
+from senna_backend.simulation import orchestrator
 
 SENTINEL = "SENNA_CTX_SENTINEL_7f3a9c"
 
@@ -204,9 +204,9 @@ async def test_sentinel_phrase_in_every_llm_system_prompt() -> None:
 
 @pytest.mark.asyncio
 async def test_scenario_context_in_config_snapshot(tmp_path) -> None:
-    from mirofish_backend.api import simulations as sim_api
-    from mirofish_backend.api.simulations import SimulationRunRequest, queue_simulation_run
-    from mirofish_backend.config import Settings
+    from senna_backend.api import simulations as sim_api
+    from senna_backend.api.simulations import SimulationRunRequest, queue_simulation_run
+    from senna_backend.config import Settings
 
     doc = scenario_config_to_document(get_scenario("psle_reform_mvp"))
     doc["scenario_id"] = "ctx_snapshot_test"

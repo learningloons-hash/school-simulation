@@ -1,4 +1,4 @@
-from mirofish_backend.llm.router import effective_model_id, resolve_effective_provider
+from senna_backend.llm.router import effective_model_id, resolve_effective_provider
 
 
 def test_hybrid_frontier_on_first_turn_only() -> None:

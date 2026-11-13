@@ -12,17 +12,17 @@ from io import BytesIO
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.llm.model_profiles import (
+from senna_backend.db.schema import init_db
+from senna_backend.llm.model_profiles import (
     ANTHROPIC_DEFAULT_ID,
     LOCAL_LMSTUDIO_DEFAULT_ID,
     OPENAI_DEFAULT_ID,
     OPENROUTER_DEFAULT_ID,
 )
-from mirofish_backend.llm.routing_policies import HEURISTIC_PROFILE_SENTINEL
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
-from mirofish_backend.simulation.economics import (
+from senna_backend.llm.routing_policies import HEURISTIC_PROFILE_SENTINEL
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
+from senna_backend.simulation.economics import (
     estimated_run_cost_usd_from_transcript,
     resolve_billing_provider_key,
 )
@@ -136,7 +136,7 @@ def test_openai_default_run_economics_in_api_and_export(monkeypatch, tmp_path) -
     monkeypatch.setenv("SQLITE_PATH", str(db))
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-not-real")
     asyncio.run(init_db(str(db)))
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _fake_llm)
 
     with TestClient(app) as client:
         r = client.post(

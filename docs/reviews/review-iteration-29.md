@@ -27,13 +27,13 @@ None.
 
 ### M1: `estimate_cost_usd` ignores `provider_key` parameter after the early return
 - Severity: MINOR
-- Files: `backend/src/mirofish_backend/simulation/economics.py` (lines 31–42)
+- Files: `backend/src/senna_backend/simulation/economics.py` (lines 31–42)
 - Problem: The function accepts `provider_key` but after the `lmstudio` early-return, it always calls `_per_mtok_rates("anthropic")` regardless of the actual `provider_key` value. If a new provider (e.g. `openai`, `google`) is added in the future, this function would apply Anthropic pricing to it. Currently harmless because only `anthropic`, `lmstudio`, and `hybrid` exist, and `hybrid` deliberately uses Anthropic rates.
 - Fix: Pass `provider_key` instead of hardcoded `"anthropic"` to `_per_mtok_rates`. This is a 1-line change that makes the function future-proof. Not urgent.
 
 ### M2: `_turn_cost_usd` only bills `"anthropic"` — `hybrid` turns attributed to LM Studio get $0
 - Severity: MINOR (correct for now, needs documentation)
-- Files: `backend/src/mirofish_backend/simulation/economics.py` (lines 45–53)
+- Files: `backend/src/senna_backend/simulation/economics.py` (lines 45–53)
 - Problem: `_turn_cost_usd` checks `effective_provider == "anthropic"` at the per-turn level, which is the correct granularity for hybrid runs — only actual Anthropic calls are costed. However, the `PROVIDER_PRICE_MAP` has `"hybrid": $3/$15`, which implies hybrid runs should be fully costed at Anthropic rates. This is intentional (documented as "upper-bound envelope" in `estimate_cost_usd`) but creates two different answers for the same run: `estimate_cost_usd` with `provider_key="hybrid"` gives the worst-case; `estimated_run_cost_usd_from_transcript` gives actual per-turn cost. The code uses the per-turn version, which is more accurate, but the `hybrid` entry in `PROVIDER_PRICE_MAP` is now dead code.
 - Fix: Remove `"hybrid"` from `PROVIDER_PRICE_MAP` or add a comment explaining it exists only for external callers (e.g. pre-run cost estimation). Minor — not a bug.
 
@@ -45,7 +45,7 @@ None.
 
 ### M4: Token totals duplicate information
 - Severity: MINOR (design trade-off, not a bug)
-- Files: `backend/src/mirofish_backend/db/repo.py`
+- Files: `backend/src/senna_backend/db/repo.py`
 - Problem: `total_input_tokens` / `total_output_tokens` on `simulation_runs` are denormalised — they're the sum of `agent_turns.input_tokens` / `output_tokens` for that simulation. The orchestrator updates them after each round for performance (avoids re-summing all turns on every poll). If a turn row is ever deleted or modified, the totals become stale. Currently there's no mutation path for turn rows, so this is safe.
 - Fix: None needed now. If turn mutation is ever added, add a trigger or recomputation step. Document the invariant.
 

@@ -11,7 +11,7 @@
 
 ## Files touched
 
-- `backend/src/mirofish_backend/llm/model_profiles.py`
+- `backend/src/senna_backend/llm/model_profiles.py`
 - `backend/tests/test_model_profiles.py`
 
 ## Verification

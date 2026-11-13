@@ -10,15 +10,15 @@ from dataclasses import replace
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.api.simulations import wait_for_simulation_terminal
-from mirofish_backend.db.repo import create_simulation_run
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.main import app
-from mirofish_backend.roster.csv_roster import parse_roster_csv
-from mirofish_backend.scenarios.registry import get_scenario
-from mirofish_backend.scenarios.validate import validate_scenario_document
-from mirofish_backend.simulation.sampling_report import build_sampling_report_json
-from mirofish_backend.simulation.sampling_strategy import compute_fidelity_tiers
+from senna_backend.api.simulations import wait_for_simulation_terminal
+from senna_backend.db.repo import create_simulation_run
+from senna_backend.db.schema import init_db
+from senna_backend.main import app
+from senna_backend.roster.csv_roster import parse_roster_csv
+from senna_backend.scenarios.registry import get_scenario
+from senna_backend.scenarios.validate import validate_scenario_document
+from senna_backend.simulation.sampling_report import build_sampling_report_json
+from senna_backend.simulation.sampling_strategy import compute_fidelity_tiers
 
 
 def test_posture_maxvar_distinct_postures_tier_one() -> None:
@@ -209,7 +209,7 @@ def test_posture_maxvar_queued_run_audit_and_sampling_report(monkeypatch, tmp_pa
         }
         return "OK.\n\n<state>\n" + json.dumps(state) + "\n</state>"
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     with TestClient(app) as client:
         r = client.post(

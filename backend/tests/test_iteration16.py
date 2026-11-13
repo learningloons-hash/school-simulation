@@ -8,15 +8,15 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.api.simulations import (
+from senna_backend.api.simulations import (
     ANALYZE_RAW_RESPONSE_MAX_CHARS_FIRST_PASS,
     ANALYZE_TRANSCRIPT_MAX_TURNS_FIRST_PASS,
 )
-from mirofish_backend.db.repo import create_simulation_run
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.export_bundle import EXPORT_VERSION
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
+from senna_backend.db.repo import create_simulation_run
+from senna_backend.db.schema import init_db
+from senna_backend.export_bundle import EXPORT_VERSION
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ def test_generate_from_brief_success(monkeypatch, tmp_path) -> None:
     async def fake_llm_complete(**kwargs) -> LLMCompletion:
         return LLMCompletion(text=json.dumps(_valid_scenario_doc()))
 
-    monkeypatch.setattr("mirofish_backend.api.scenarios_generate.llm_complete", fake_llm_complete)
+    monkeypatch.setattr("senna_backend.api.scenarios_generate.llm_complete", fake_llm_complete)
 
     with TestClient(app) as client:
         r = client.post(
@@ -97,7 +97,7 @@ def test_generate_from_brief_validation_422(monkeypatch, tmp_path) -> None:
     async def fake_llm_bad(**kwargs) -> LLMCompletion:
         return LLMCompletion(text=json.dumps({"scenario_id": "BAD", "name": "x", "policy_events": {"1": "a"}, "personas": []}))
 
-    monkeypatch.setattr("mirofish_backend.api.scenarios_generate.llm_complete", fake_llm_bad)
+    monkeypatch.setattr("senna_backend.api.scenarios_generate.llm_complete", fake_llm_bad)
 
     with TestClient(app) as client:
         r = client.post(
@@ -172,7 +172,7 @@ def test_analyze_completed_run(monkeypatch, tmp_path) -> None:
             )
         )
 
-    monkeypatch.setattr("mirofish_backend.api.simulations.llm_complete", fake_analyze_llm)
+    monkeypatch.setattr("senna_backend.api.simulations.llm_complete", fake_analyze_llm)
 
     with TestClient(app) as client:
         r = client.post(
@@ -248,8 +248,8 @@ def test_analyze_second_stage_reclips_transcript_for_char_budget(monkeypatch, tm
             )
         )
 
-    monkeypatch.setattr("mirofish_backend.api.simulations.get_simulation_export_bundle", fake_bundle)
-    monkeypatch.setattr("mirofish_backend.api.simulations.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.api.simulations.get_simulation_export_bundle", fake_bundle)
+    monkeypatch.setattr("senna_backend.api.simulations.llm_complete", fake_llm)
 
     with TestClient(app) as client:
         r = client.post(
@@ -326,8 +326,8 @@ def test_analyze_second_stage_shortens_responses_when_few_turns(monkeypatch, tmp
             )
         )
 
-    monkeypatch.setattr("mirofish_backend.api.simulations.get_simulation_export_bundle", fake_bundle)
-    monkeypatch.setattr("mirofish_backend.api.simulations.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.api.simulations.get_simulation_export_bundle", fake_bundle)
+    monkeypatch.setattr("senna_backend.api.simulations.llm_complete", fake_llm)
 
     with TestClient(app) as client:
         r = client.post(

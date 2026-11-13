@@ -17,7 +17,7 @@ None.
 
 ### I1: `POST /experiments` blocks the HTTP connection for the entire experiment lifetime
 - Severity: IMPORTANT
-- Files: `backend/src/mirofish_backend/api/experiments.py` (lines 268–315)
+- Files: `backend/src/senna_backend/api/experiments.py` (lines 268–315)
 - Problem: The endpoint runs all child simulations **sequentially inside the request handler**. Each run can block up to 900 seconds (`wait_for_simulation_terminal` timeout). A 16-run experiment could hold the connection for hours. If the browser, reverse proxy, or network times out, the experiment continues server-side but the client loses the response — the `experiment_id` is never returned. The frontend has no cancel button or progress reporting during this wait.
 - Fix (recommended — choose one):
   - **Option A (background task):** Return `{ experiment_id }` immediately with `status: "pending"`. Move the sequential run loop into `asyncio.create_task` (same pattern as `queue_simulation_run` → `run_simulation_task_guarded`). The frontend polls `GET /experiments/{id}` to watch per-run status updates — this endpoint already returns per-run status.
@@ -36,7 +36,7 @@ None.
 
 ### I3: `_series_key` and `_series_key_for_link` are near-duplicate functions
 - Severity: IMPORTANT
-- Files: `backend/src/mirofish_backend/api/experiments.py` (lines 130–159)
+- Files: `backend/src/senna_backend/api/experiments.py` (lines 130–159)
 - Problem: Both functions implement the same `base → deduplicate with __N suffix` algorithm with slightly different input shapes. Duplication risks drift and makes the deduplication logic harder to test in isolation.
 - Fix: Extract a shared helper:
   ```python
@@ -61,7 +61,7 @@ None.
 
 ### M2: `set_experiment_status` has duplicated SQL branches
 - Severity: MINOR
-- Files: `backend/src/mirofish_backend/db/repo.py` (lines 1046–1064)
+- Files: `backend/src/senna_backend/db/repo.py` (lines 1046–1064)
 - Problem: The `completed` and `failed` branches execute identical SQL (`UPDATE … SET status = ?, completed_at = CURRENT_TIMESTAMP …`). The `else` branch is for non-terminal states.
 - Fix: Collapse to:
   ```python
@@ -79,7 +79,7 @@ None.
 
 ### M3: Experiment list doesn't expose run count
 - Severity: MINOR
-- Files: `backend/src/mirofish_backend/db/repo.py` (`list_experiments`), `frontend/src/components/ExperimentConsole.tsx`
+- Files: `backend/src/senna_backend/db/repo.py` (`list_experiments`), `frontend/src/components/ExperimentConsole.tsx`
 - Problem: `GET /experiments` returns only the base experiment row. The frontend list shows name/status/id but not how many runs each experiment has. A researcher scanning old experiments has to click each one to see the run count.
 - Fix: Add a `run_count` field via a `LEFT JOIN experiment_runs … GROUP BY` or a subquery in `list_experiments`. Surface in the frontend list item.
 
@@ -91,7 +91,7 @@ None.
 
 ### M5: No `DELETE /experiments` endpoint
 - Severity: MINOR
-- Files: `backend/src/mirofish_backend/api/experiments.py`
+- Files: `backend/src/senna_backend/api/experiments.py`
 - Problem: No way to clean up old or failed experiments. Acceptable for MVP — backlog item.
 - Fix: Add `DELETE /experiments/{experiment_id}` that removes the experiment row, experiment_run links, and optionally the child simulation_runs (or just unlinks them by nulling `experiment_id`).
 

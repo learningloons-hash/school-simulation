@@ -14,8 +14,8 @@ sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
 from run_arc11_ablation import load_backend_env_for_live_runs  # noqa: E402
 
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.llm.router import llm_complete  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.llm.router import llm_complete  # noqa: E402
 
 
 async def main() -> int:

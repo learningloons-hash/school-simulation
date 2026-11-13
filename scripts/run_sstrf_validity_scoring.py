@@ -53,13 +53,13 @@ from sstrf_scoring_evidence import (
     VALIDITY_V2_SCORING_MANIFEST,
     VALIDITY_V2_TRIAL_LABEL_MAP,
 )
-from mirofish_backend.diagnostics.sstrf_validity_v2_scoring import (
+from senna_backend.diagnostics.sstrf_validity_v2_scoring import (
     attach_scoring_to_validity_manifest,
     save_validity_manifest_with_scoring,
 )
 from run_arc11_ablation import load_dotenv_if_present  # noqa: E402
 
-from mirofish_backend.llm.model_profiles import OPENAI_DEFAULT_ID
+from senna_backend.llm.model_profiles import OPENAI_DEFAULT_ID
 
 from sstrf_scoring_judge import (
     calibration_gate_passes,

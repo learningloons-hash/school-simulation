@@ -8,18 +8,18 @@ from typing import Any
 
 import pytest
 
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_export_bundle
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.export_bundle import EXPORT_VERSION
-from mirofish_backend.rag import memory_index
-from mirofish_backend.simulation import orchestrator
-from mirofish_backend.simulation.memory_retrieval import (
+from senna_backend.db.repo import create_simulation_run, get_simulation_export_bundle
+from senna_backend.db.schema import init_db
+from senna_backend.export_bundle import EXPORT_VERSION
+from senna_backend.rag import memory_index
+from senna_backend.simulation import orchestrator
+from senna_backend.simulation.memory_retrieval import (
     RetrievalWeights,
     importance_component,
     rank_turns,
     recency_components,
 )
-from mirofish_backend.simulation.weighted_retrieval import weighted_retrieval_config_snapshot_fields
+from senna_backend.simulation.weighted_retrieval import weighted_retrieval_config_snapshot_fields
 
 import sys
 from pathlib import Path
@@ -133,7 +133,7 @@ async def _run_sim(
     lmstudio_model: str = "local-test",
 ) -> dict[str, Any]:
     monkeypatch.setattr(
-        "mirofish_backend.simulation.orchestrator.llm_complete",
+        "senna_backend.simulation.orchestrator.llm_complete",
         fake_llm_state_block,
     )
     embed_calls: list[int] = []
@@ -143,11 +143,11 @@ async def _run_sim(
         return await _fake_embed(texts=texts, **kwargs)
 
     monkeypatch.setattr(
-        "mirofish_backend.rag.memory_index.embed_texts_openai_compatible",
+        "senna_backend.rag.memory_index.embed_texts_openai_compatible",
         _count_embed,
     )
     monkeypatch.setattr(
-        "mirofish_backend.rag.embeddings.embed_texts_openai_compatible",
+        "senna_backend.rag.embeddings.embed_texts_openai_compatible",
         _count_embed,
     )
 
@@ -345,7 +345,7 @@ async def test_integration_weight_change_alters_self_prompt_turn_ids(
 @pytest.mark.asyncio
 async def test_weighted_retrieval_rejected_without_embed_model(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "mirofish_backend.simulation.orchestrator.llm_complete",
+        "senna_backend.simulation.orchestrator.llm_complete",
         fake_llm_state_block,
     )
     with tempfile.TemporaryDirectory() as tmp:
@@ -375,9 +375,9 @@ async def test_weighted_retrieval_rejected_without_embed_model(monkeypatch: pyte
 
 
 def test_preflight_weighted_without_embed_model_warns() -> None:
-    from mirofish_backend.config import Settings
-    from mirofish_backend.llm.model_profiles import resolve_run_profiles
-    from mirofish_backend.simulation.preflight import estimate_run_preflight
+    from senna_backend.config import Settings
+    from senna_backend.llm.model_profiles import resolve_run_profiles
+    from senna_backend.simulation.preflight import estimate_run_preflight
 
     settings = Settings(embedding_model="", lmstudio_model="")
     res = resolve_run_profiles(model_profile_id=None, llm_provider="lmstudio", settings=settings)
@@ -418,7 +418,7 @@ async def test_weighted_retrieval_bounded_db_work(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(orchestrator, "get_last_agent_turn_rows", _track_self)
     monkeypatch.setattr(orchestrator, "get_recent_interactions", _track_recent)
     monkeypatch.setattr(
-        "mirofish_backend.rag.memory_index.embed_texts_openai_compatible",
+        "senna_backend.rag.memory_index.embed_texts_openai_compatible",
         _fake_embed,
     )
 
@@ -443,7 +443,7 @@ async def test_weighted_retrieval_bounded_db_work(monkeypatch: pytest.MonkeyPatc
             )
             kwargs["embedding_model"] = "test-embed"
             monkeypatch.setattr(
-                "mirofish_backend.simulation.orchestrator.llm_complete",
+                "senna_backend.simulation.orchestrator.llm_complete",
                 fake_llm_state_block,
             )
             await orchestrator.run_simulation_task(

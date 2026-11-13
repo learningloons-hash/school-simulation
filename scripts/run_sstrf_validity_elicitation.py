@@ -28,10 +28,10 @@ sys.path.insert(0, str(_SCRIPTS_DIR))
 
 from run_arc11_ablation import load_dotenv_if_present  # noqa: E402
 
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.db.repo import get_simulation_export_bundle  # noqa: E402
-from mirofish_backend.diagnostics.sstrf_validity_v2 import is_production_validity_manifest  # noqa: E402
-from mirofish_backend.diagnostics.sstrf_validity_v2_elicitation import (  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.db.repo import get_simulation_export_bundle  # noqa: E402
+from senna_backend.diagnostics.sstrf_validity_v2 import is_production_validity_manifest  # noqa: E402
+from senna_backend.diagnostics.sstrf_validity_v2_elicitation import (  # noqa: E402
     VALIDITY_PINNED_MODEL,
     attach_elicitation_to_trial,
     completed_validity_trials,
@@ -43,10 +43,10 @@ from mirofish_backend.diagnostics.sstrf_validity_v2_elicitation import (  # noqa
     save_validity_manifest,
     trial_elicitation_dir,
 )
-from mirofish_backend.llm.prompt_templates import build_system_prompt  # noqa: E402
-from mirofish_backend.llm.router import llm_complete  # noqa: E402
-from mirofish_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
-from mirofish_backend.scenarios.registry import PersonaTemplate  # noqa: E402
+from senna_backend.llm.prompt_templates import build_system_prompt  # noqa: E402
+from senna_backend.llm.router import llm_complete  # noqa: E402
+from senna_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
+from senna_backend.scenarios.registry import PersonaTemplate  # noqa: E402
 
 from sstrf_elicitation_instruments import (  # noqa: E402
     CIEPSS_STUDY_ID,
@@ -97,7 +97,7 @@ def _build_system_prompt(
     prompt_version: str,
     slot_index: int,
 ) -> str:
-    from mirofish_backend.simulation.agent_context import build_agent_context_v1
+    from senna_backend.simulation.agent_context import build_agent_context_v1
 
     attr = snapshot.get("attribute_sections") or {}
     demographics = {

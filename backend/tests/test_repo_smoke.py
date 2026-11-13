@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from mirofish_backend.db.repo import (
+from senna_backend.db.repo import (
     create_simulation_run,
     get_recent_interactions,
     get_simulation_export_bundle,
@@ -11,7 +11,7 @@ from mirofish_backend.db.repo import (
     insert_agent_turn,
     list_simulation_runs,
 )
-from mirofish_backend.db.schema import init_db
+from senna_backend.db.schema import init_db
 
 
 @pytest.mark.asyncio

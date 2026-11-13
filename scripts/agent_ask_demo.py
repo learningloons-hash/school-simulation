@@ -4,7 +4,7 @@ One-liner demo for POST /agent/ask (Iteration 17).
 
 Requires a running backend (default http://127.0.0.1:8100) and a working LLM.
 Usage:
-  export MIROFISH_BACKEND_URL=http://127.0.0.1:8100
+  export SENNA_BACKEND_URL=http://127.0.0.1:8100
   python3 scripts/agent_ask_demo.py "Run a short PSLE policy simulation and summarize stakeholder reactions."
 """
 
@@ -15,10 +15,27 @@ import os
 import sys
 import urllib.error
 import urllib.request
+import warnings
+
+
+def _backend_base_url() -> str:
+    explicit = os.environ.get("SENNA_BACKEND_URL", "").strip()
+    if explicit:
+        return explicit.rstrip("/")
+    # Legacy env var (pre M-RENAME).
+    legacy = os.environ.get("MIROFISH_BACKEND_URL", "").strip()
+    if legacy:
+        warnings.warn(
+            "MIROFISH_BACKEND_URL is deprecated; use SENNA_BACKEND_URL",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return legacy.rstrip("/")
+    return "http://127.0.0.1:8100"
 
 
 def main() -> None:
-    base = os.environ.get("MIROFISH_BACKEND_URL", "http://127.0.0.1:8100").rstrip("/")
+    base = _backend_base_url()
     q = (
         sys.argv[1]
         if len(sys.argv) > 1

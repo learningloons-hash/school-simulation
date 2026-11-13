@@ -16,7 +16,7 @@
 
 ## Definition of done
 
-- `rg 'open_transcript' backend/src/mirofish_backend/simulation/orchestrator.py` — matches
+- `rg 'open_transcript' backend/src/senna_backend/simulation/orchestrator.py` — matches
 - `uv run pytest` (from `backend/`): **196 passed, 1 skipped**
 
 ## Next

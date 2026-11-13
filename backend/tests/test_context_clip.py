@@ -1,4 +1,4 @@
-from mirofish_backend.llm.context_clip import (
+from senna_backend.llm.context_clip import (
     clip_recent_interactions,
     prepare_peer_response_for_prompt,
 )

@@ -7,12 +7,13 @@ Update it at the end of each iteration gate.
 
 ## Current Status
 
-- Project: `mirofish-mvp` (product name: **Senna**); public repo `school-simulation`.
+- Project: `school-simulation` (product name: **Senna**); public repo `school-simulation`.
 - **Platform arcs (1–12): CLOSED.** Arc scope and gate table: [`CLAUDE.md`](../CLAUDE.md) — authoritative; do not duplicate here.
 - **Research utility track: ACTIVE** (2026-09-15). Mechanics-only harness work on `sq_reading_culture` (Part C, persona-rich, tempsweep); CIEPSS validity re-run blocked on new pre-registration. Neutral-prior discipline holds for `ciepss_school_b`; differentiated personas are utility-only.
 - **Study repo anchors (`senna-sstrf-study` `main`):** gitignore fix + manifest validator **`46c57c2`**; persona-rich + Part C export bundles **`92a16c6`**; ops bundle **`f5e77ec`**; legacy zip backfill flat paths **`f9ecc7f`** (supersedes nested-path **`37529eb`**).
 - **Public repo handoffs:** Architect PASS on study gitignore **`f647caa`**; validity harness dry-run guard **`dfc0bb1`**; persona-rich fixtures **`e242142`**; CIEPSS dissociation narrative **`d2110e1`**.
-- Last update date: **2026-09-15** (GM-F Ops ruling execution).
+- **M-RENAME (package/build):** builder pass open for review — Python package `senna_backend`, dist `senna-backend`; legacy CLI/SQLite/env fallbacks in [`HANDOFF_SENNA_M_RENAME.md`](handoffs/HANDOFF_SENNA_M_RENAME.md).
+- Last update date: **2026-11-13** (M-RENAME builder pass).
 - Last verified: adoption_momentum round-1 null slice + validity harness tests (see Gate Evidence).
 
 ## Environment and Access
@@ -117,7 +118,7 @@ Update it at the end of each iteration gate.
 
 - Second YAML scenario **`fsbb_comparator`** (`scenarios/data/fsbb_comparator.yaml`) with FSBB-themed `policy_events`, three personas, and `rag_enabled` + `rag_corpus_paths` pointing at `scenarios/data/corpus/fsbb_comparator/brief.txt`.
 - Scenario registry extended with optional **`rag_enabled`** and **`rag_corpus_paths`** (backward compatible; PSLE unchanged).
-- RAG scaffold package **`mirofish_backend.rag/`**: character chunking, cosine top‑k retrieval, in-process embedding cache; **`rag/embeddings.py`** calls LM Studio OpenAI-compatible **`POST /v1/embeddings`** (same base URL as chat).
+- RAG scaffold package **`senna_backend.rag/`**: character chunking, cosine top‑k retrieval, in-process embedding cache; **`rag/embeddings.py`** calls LM Studio OpenAI-compatible **`POST /v1/embeddings`** (same base URL as chat).
 - Orchestrator: when **`rag_effective`**, retrieves top‑k snippets from query = policy event + intent tag and injects a **“Reference excerpts”** block into the **user** prompt via **`build_user_prompt(..., context_snippets=...)`**; failures log a warning and continue without snippets.
 - Config / provenance: **`RAG_ENABLED`**, **`EMBEDDING_MODEL`** (empty → `lmstudio_model`), **`RAG_TOP_K`**, **`RAG_CHUNK_SIZE`**, **`RAG_CHUNK_OVERLAP`**, **`RAG_MAX_INJECT_CHARS`**; **`config_snapshot`** includes **`rag_effective`**, **`embedding_model_id`**, server/scenario flags, corpus paths, and RAG tuning fields. **`POST /simulations/run`** optional **`rag_enabled`** forces on/off.
 - Frontend: Run tab scenario list includes **FSBB Comparator (MVP)**; `StartSimulationRequest` allows optional **`rag_enabled`**.
@@ -154,7 +155,7 @@ Update it at the end of each iteration gate.
 ### Iteration 9 (Completed)
 
 - **Scenario / YAML:** optional top-level **`groups`** and per-persona **`groups`** (list of `group_id` strings); **`fsbb_comparator.yaml`** carries an example.
-- **Roster CSV:** `mirofish_backend.roster` — parse + merge by **1-based `slot`**; **`POST /simulations/run`** body **`roster_csv`** (optional); invalid CSV → **422**.
+- **Roster CSV:** `senna_backend.roster` — parse + merge by **1-based `slot`**; **`POST /simulations/run`** body **`roster_csv`** (optional); invalid CSV → **422**.
 - **API:** **`agent_limit`** **1–50**; **`GET /simulations/roster-csv-template`**; **`config_snapshot`** adds **`scenario_groups`**, **`scale_warning`**, roster provenance fields, **`roster_unknown_group_ids`**.
 - **Persistence:** **`group_ids`** column (JSON text) on **`agent_turns`** and **`agent_state_snapshots`**; transcript + **`state_timeline`** + export bundle include **`group_ids`**.
 - **Orchestrator / prompts:** optional **`personas_for_run`**; system prompt lists group affiliations when non-empty.
@@ -175,7 +176,7 @@ Update it at the end of each iteration gate.
 
 ### Iteration 11 (Completed)
 
-- **Population contract v1:** [`population/csv_population.py`](../../backend/src/mirofish_backend/population/csv_population.py) — parse pool CSV; **`weighted`** / **`stratified`** draw without replacement (`random_seed`); keys align to **`AgentContextV1`** (demographics, `group_ids` via `persona_id` template + row).
+- **Population contract v1:** [`population/csv_population.py`](../../backend/src/senna_backend/population/csv_population.py) — parse pool CSV; **`weighted`** / **`stratified`** draw without replacement (`random_seed`); keys align to **`AgentContextV1`** (demographics, `group_ids` via `persona_id` template + row).
 - **API:** `population_csv`, `population_sample_mode` on **`POST /simulations/run`**; **`GET /simulations/population-csv-template`**.
 - **Merge order:** population draw → optional roster overlay per slot (roster wins on conflicts).
 - **Orchestrator:** **`slot_overrides`** parallel list (demographics + optional attribute section dicts from population); `_merge_demographics` overlays CSV fields on synthetic base.

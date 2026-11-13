@@ -26,7 +26,7 @@ Standing constraint honoured: mechanics only — no reading, citing, or scoring 
 
 **Shipped:**
 
-- `backend/src/mirofish_backend/diagnostics/arc12_study_rehearsal.py` — documented network loader, mechanics extraction (tokens by round, QA counts, dispersion, provenance, `group_addressed_proportion`).
+- `backend/src/senna_backend/diagnostics/arc12_study_rehearsal.py` — documented network loader, mechanics extraction (tokens by round, QA counts, dispersion, provenance, `group_addressed_proportion`).
 - `scripts/run_arc12_study_rehearsal.py` — RQ1 matrix CLI, `--skip-rq2`, requires seeded `ciepss_school_b`, interim mechanism-flags banner.
 - `backend/tests/test_senna_iter55_study_rehearsal.py` — 4 CI tests; stub run asserts `config_snapshot.network_csv_applied`.
 

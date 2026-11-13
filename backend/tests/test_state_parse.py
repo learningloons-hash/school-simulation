@@ -1,6 +1,6 @@
 import json
 
-from mirofish_backend.llm.state_parse import (
+from senna_backend.llm.state_parse import (
     extract_all_state_blocks,
     extract_state_json_block,
     resolve_state_from_response,
@@ -128,7 +128,7 @@ def test_resolve_state_keyword_fallback_invalid_json() -> None:
 
 def test_state_update_uses_structured_output_in_orchestrator_path() -> None:
     """Regression: orchestrator prefers <state> JSON when present (via try_parse)."""
-    from mirofish_backend.simulation.orchestrator import AgentState, _apply_state_from_response
+    from senna_backend.simulation.orchestrator import AgentState, _apply_state_from_response
 
     prev = AgentState(0.5, 0.5, 0.5, "mixed")
     raw = (
@@ -152,7 +152,7 @@ def test_state_update_uses_structured_output_in_orchestrator_path() -> None:
 
 
 def test_keyword_fallback_when_no_state_block() -> None:
-    from mirofish_backend.simulation.orchestrator import AgentState, _apply_state_from_response
+    from senna_backend.simulation.orchestrator import AgentState, _apply_state_from_response
 
     prev = AgentState(0.5, 0.5, 0.5, "mixed")
     raw = "We support alignment and are ready to implement."

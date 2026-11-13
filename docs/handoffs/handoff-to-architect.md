@@ -12,7 +12,7 @@
 
 Updated `senna-sstrf-study` `.gitignore` to stop excluding research run artefacts (zips, export JSON, elicitation JSON). Kept deliberate `trial_label_map.json` exclusion. Added regression test + manifest hash tracking validator. Pushed to `main`.
 
-**Repo:** `senna-sstrf-study` only — `mirofish-mvp` / `school-simulation` untouched.
+**Repo:** `senna-sstrf-study` only — `school-simulation` / `school-simulation` untouched.
 
 ### Commit
 

@@ -1,12 +1,12 @@
 # Handoff to Opus — 2026-04-06
 
-This file is a cold-start brief for Opus (or any other assistant picking up this work in a new channel). It assumes no prior conversation context. It covers two threads: (1) what MiroFish has built through Iteration 18, and (2) a grant proposal discussion that took place on 2026-04-06. Read both sections before responding.
+This file is a cold-start brief for Opus (or any other assistant picking up this work in a new channel). It assumes no prior conversation context. It covers two threads: (1) what Senna has built through Iteration 18, and (2) a grant proposal discussion that took place on 2026-04-06. Read both sections before responding.
 
 ---
 
-## 1. What MiroFish is
+## 1. What Senna is
 
-**MiroFish** is an LLM-powered multi-agent simulation platform built to model policy implementation dynamics in Singapore education contexts. It is a research tool and a PhD thesis artefact.
+**Senna** is an LLM-powered multi-agent simulation platform built to model policy implementation dynamics in Singapore education contexts. It is a research tool and a PhD thesis artefact.
 
 | Item | Detail |
 |------|--------|
@@ -17,7 +17,7 @@ This file is a cold-start brief for Opus (or any other assistant picking up this
 | **Backend** | `0.0.0.0:8100` |
 | **Frontend** | `0.0.0.0:3100` |
 | **Host machine** | Mac mini (always-on); thin client is a Windows laptop over Tailscale |
-| **Repo root** | `mirofish-mvp/` |
+| **Repo root** | `school-simulation/` |
 | **Session state doc** | `docs/SESSION_STATE.md` — single source of truth for cross-session handoffs; updated at every iteration gate |
 
 The simulation runs multi-agent "rounds" where LLM-backed agents (teachers, school leaders, parents, policy officers, etc.) interact under a policy scenario, producing transcripts, state timelines, and outcome indicators. The entire pipeline from scenario definition through simulation run through export and analysis is now API-driven and can be triggered by a single natural-language question via the `/agent/ask` endpoint.
@@ -36,7 +36,7 @@ Iteration 1 added structured interaction metadata per turn (`interaction_type`, 
 Structured `<state>{...json...}</state>` blocks appended by agents; `llm/state_parse.py` parses them. `llm/router.py` + `llm/claude_client.py` introduced `llm_provider` `lmstudio` | `anthropic`. YAML scenario registry in `scenarios/data/*.yaml` (PSLE MVP included). Context clipping (`llm/context_clip.py`) strips reasoning from peer context to avoid `n_ctx` exhaustion. Config: `llm_max_tokens`, `llm_provider`, `anthropic_api_key`, `peer_context_max_chars`.
 
 ### Iteration 5: RAG scaffold, FSBB scenario
-Second YAML scenario `fsbb_comparator` with FSBB-themed policy events. RAG package (`mirofish_backend.rag/`): character chunking, cosine top-k retrieval, in-process embedding cache. Embeddings via LM Studio `/v1/embeddings`. Orchestrator injects "Reference excerpts" block into user prompt when `rag_effective`. Config: `RAG_ENABLED`, `EMBEDDING_MODEL`, `RAG_TOP_K`, `RAG_CHUNK_SIZE`. `config_snapshot` records RAG provenance.
+Second YAML scenario `fsbb_comparator` with FSBB-themed policy events. RAG package (`senna_backend.rag/`): character chunking, cosine top-k retrieval, in-process embedding cache. Embeddings via LM Studio `/v1/embeddings`. Orchestrator injects "Reference excerpts" block into user prompt when `rag_effective`. Config: `RAG_ENABLED`, `EMBEDDING_MODEL`, `RAG_TOP_K`, `RAG_CHUNK_SIZE`. `config_snapshot` records RAG provenance.
 
 ### Iteration 6: Validity notes
 SQLite `validity_notes` table with optional round-level scores (`face_score`, `construct_score`, `predictive_score`) and rubric text fields. `POST /simulations/{id}/validity-notes` and `GET /simulations/{id}` includes notes array. Export bundle and ZIP include validity notes. Frontend Validity tab.
@@ -48,7 +48,7 @@ Persona YAML extended with optional `psychological_profile` and `implementation_
 Frontend Live tab with SVG sparklines and tables from `GET /simulations/{id}` — global readiness/alignment, adoption series, per-agent support/resistance/workload. Poll frequency reduced to ~750ms while running. Scale/cost doc added (`docs/plans/SCALE_LIMITS_AND_COST.md`).
 
 ### Iteration 9: Groups, factions, roster CSV
-Optional `groups` field on personas and roster rows. `mirofish_backend.roster` parses and merges by 1-based slot. `POST /simulations/run` accepts `roster_csv`; `GET /simulations/roster-csv-template`. `agent_limit` 1–50. `group_ids` persisted on turns and state snapshots. Frontend: roster textarea, agent limit 50, warning >20 agents.
+Optional `groups` field on personas and roster rows. `senna_backend.roster` parses and merges by 1-based slot. `POST /simulations/run` accepts `roster_csv`; `GET /simulations/roster-csv-template`. `agent_limit` 1–50. `group_ids` persisted on turns and state snapshots. Frontend: roster textarea, agent limit 50, warning >20 agents.
 
 ### Iteration 10: AgentContextV1, simulation modes
 `AgentContextV1`: versioned per-agent bundle (`slot_index`, `demographics`, `group_ids`). `simulation_mode`: `full_round_robin` (default) | `sample_k_per_round` (deterministic subset per round via `random_seed` + round index; non-sampled agents skip LLM). `spoke_this_round` on state snapshots. ADR-001 Interface section updated.
@@ -105,12 +105,12 @@ Three endpoints: `POST /agent/plan`, `POST /agent/execute`, `POST /agent/ask` (+
 ## 3. Grant proposal discussion (2026-04-06)
 
 ### Background
-Mark is applying for a **small internal MOE research seed grant** (~SGD 5,000–20,000) covering **January–December 2027**. The primary motivation is to **legitimise the MiroFish work** in front of Ministry bosses and peer researchers, not primarily to obtain funds. He also wants to present at the **annual MOE research conference in October 2026** — so much of the actual simulation work will be done in 2026 (before the official grant window opens). The timelines are intentionally misaligned and that is fine.
+Mark is applying for a **small internal MOE research seed grant** (~SGD 5,000–20,000) covering **January–December 2027**. The primary motivation is to **legitimise the Senna work** in front of Ministry bosses and peer researchers, not primarily to obtain funds. He also wants to present at the **annual MOE research conference in October 2026** — so much of the actual simulation work will be done in 2026 (before the official grant window opens). The timelines are intentionally misaligned and that is fine.
 
 ### What is realistic in 2026 vs the full thesis
 
 The PhD thesis has three phases:
-- **Phase 1 (Year 1):** Retrospective simulation validation — use Singapore education policy cases, compare simulation outputs to known outcomes, assess face/construct/predictive validity. **→ This is what MiroFish is already doing. Phase 1 work is completable Apr–Oct 2026.**
+- **Phase 1 (Year 1):** Retrospective simulation validation — use Singapore education policy cases, compare simulation outputs to known outcomes, assess face/construct/predictive validity. **→ This is what Senna is already doing. Phase 1 work is completable Apr–Oct 2026.**
 - **Phase 2 (Year 2):** Fine-tune a locally-grounded LLM for Singapore governance context (LoRA, RAG, hybrid). Requires corpus assembly and comparative validation. Genuine 12+ month effort.
 - **Phase 3 (Year 3):** Simulate policy evaluations (RCTs, quasi-experiments, developmental evaluation); produce governance guidelines; expert feedback rounds. Cannot be compressed.
 
@@ -124,7 +124,7 @@ The PhD thesis has three phases:
 
 3. **Proposed title:** *Piloting LLM Multi-Agent Simulation for Pre-Implementation Policy Analysis in Singapore Education*
 
-4. **Trinidad's framework data:** Mark conducted a qualitative school case study last year using Trinidad's (2024) structural/network/ecological framework. He has interview data and document analysis from that case. This is the empirical seed: the profiles and interaction patterns from the case study become the YAML persona configurations in MiroFish.
+4. **Trinidad's framework data:** Mark conducted a qualitative school case study last year using Trinidad's (2024) structural/network/ecological framework. He has interview data and document analysis from that case. This is the empirical seed: the profiles and interaction patterns from the case study become the YAML persona configurations in Senna.
 
 ### Proposed grant proposal outline (Sections A–J)
 
@@ -148,7 +148,7 @@ Anchor on: Lipsky (2010) street-level bureaucracy → Trinidad (2024) structural
 
 **E — Methodology and design**
 Three-stage design:
-1. *Profile construction* — translate Trinidad case study interviews and document analysis into MiroFish YAML persona configs (structural role, network position, ecological context → `identity`, `attitudes`, `personal_history` fields).
+1. *Profile construction* — translate Trinidad case study interviews and document analysis into Senna YAML persona configs (structural role, network position, ecological context → `identity`, `attitudes`, `personal_history` fields).
 2. *Simulation runs* — retrospective simulation of one Singapore education policy case; multiple configurations (RAG corpus from public documents, interaction policy variants); transcripts and state timelines produced.
 3. *Validity assessment* — structured comparison of simulated vs documented stakeholder responses (parliamentary debates, media, academic sources); score face / construct / predictive validity; document failure modes and simulation limits.
 
@@ -158,7 +158,7 @@ Sampling: purposive selection of one policy case with well-documented implementa
 - Practical: a reusable pre-implementation analysis methodology for MOE policy officers.
 - Governance: preliminary guidelines for responsible internal use (what simulation can and cannot substitute; human oversight requirements; accountability for simulation-informed decisions).
 - Academic: conference paper at the Oct 2026 MOE annual research conference; journal submission (target: *Asia-Pacific Education Researcher* or *Journal of Policy Analysis and Management*).
-- Open-source: MiroFish YAML configuration templates for Singapore education policy contexts.
+- Open-source: Senna YAML configuration templates for Singapore education policy contexts.
 
 **G — Research team**
 Mark Lee Ser Ming (PI). Research assistance may be engaged for document coding or validity scoring if budget permits.
@@ -175,7 +175,7 @@ A/Prof Michael Di Francesco (primary, ANU Crawford — public administration ref
 | May–Jun 2027 | Simulation runs; iterative refinement |
 | Jul–Aug 2027 | Validity assessment; comparative analysis against documented outcomes |
 | Sep–Oct 2027 | Governance guidelines draft; expert review round |
-| Nov–Dec 2027 | Final report; journal submission; open-source release of MiroFish configs |
+| Nov–Dec 2027 | Final report; journal submission; open-source release of Senna configs |
 
 *Narrative note:* Preliminary simulation runs were completed in 2026 as part of doctoral fieldwork; this grant formalises, extends, and publishes that pilot.
 
@@ -209,7 +209,7 @@ Hardware (Mac mini + LM Studio) is already owned — no grant cost.
 - The **Oct 2026 conference paper** — early output of the 2026 simulation pilot; shorter and more descriptive; Mark will produce this independently.
 - The **Jan–Dec 2027 grant** — formalises and extends the pilot; produces the full methodology write-up, validity report, and governance guidelines.
 
-**On the MiroFish build side:** Mark is continuing development through Iterations 19–20 (parallel LLM, population scale) in parallel to the grant write-up work. These are separate threads; Opus should not conflate them unless Mark asks.
+**On the Senna build side:** Mark is continuing development through Iterations 19–20 (parallel LLM, population scale) in parallel to the grant write-up work. These are separate threads; Opus should not conflate them unless Mark asks.
 
 ---
 

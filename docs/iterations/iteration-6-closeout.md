@@ -1,6 +1,6 @@
 # Iteration 6 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Gate date:** 2026-04-02  
 **Status:** Implementation complete.
 
@@ -44,11 +44,11 @@
 
 | Area | Path |
 |------|------|
-| Migration / table | `backend/src/mirofish_backend/db/schema.py` |
-| Repo | `backend/src/mirofish_backend/db/repo.py` (`insert_validity_note`, `_get_validity_notes`, `simulation_exists`, `get_simulation_total_rounds`) |
-| API | `backend/src/mirofish_backend/api/simulations.py` |
-| Config | `backend/src/mirofish_backend/config.py` |
-| ZIP | `backend/src/mirofish_backend/export_bundle.py` |
+| Migration / table | `backend/src/senna_backend/db/schema.py` |
+| Repo | `backend/src/senna_backend/db/repo.py` (`insert_validity_note`, `_get_validity_notes`, `simulation_exists`, `get_simulation_total_rounds`) |
+| API | `backend/src/senna_backend/api/simulations.py` |
+| Config | `backend/src/senna_backend/config.py` |
+| ZIP | `backend/src/senna_backend/export_bundle.py` |
 | Tests | `backend/tests/test_validity_notes.py`, `test_export_bundle.py` |
 | UI | `frontend/src/App.tsx`, `frontend/src/lib/api.ts` |
 

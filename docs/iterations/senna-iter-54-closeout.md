@@ -32,7 +32,7 @@ Standing constraint honoured throughout: mechanics only — no reading, citing, 
 | Check | Result |
 |-------|--------|
 | Study repo | `https://github.com/learningloons-hash/senna-sstrf-study.git` @ `47013659309c5ac047dbc53dcea3fd1441d74042` |
-| YAML path | `backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml` |
+| YAML path | `backend/src/senna_backend/scenarios/data/ciepss_school_b.yaml` |
 | Content | Clean — roster, roles, paraphrased policy events, `# source:` comments only |
 | `rag_enabled` | Absent — corpus reunification out of scope |
 | Personas | 8 (matches ARC12 RQ1 assumption) |

@@ -3,9 +3,9 @@ from unittest.mock import patch
 
 import pytest
 
-from mirofish_backend.api.simulations import run_simulation_task_guarded
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
-from mirofish_backend.db.schema import init_db
+from senna_backend.api.simulations import run_simulation_task_guarded
+from senna_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
+from senna_backend.db.schema import init_db
 
 
 @pytest.mark.asyncio
@@ -30,7 +30,7 @@ async def test_simulation_error_sets_failed_status() -> None:
         async def boom(**_kwargs: object) -> None:
             raise RuntimeError("simulation task boom")
 
-        with patch("mirofish_backend.api.simulations.run_simulation_task", new=boom):
+        with patch("senna_backend.api.simulations.run_simulation_task", new=boom):
             await run_simulation_task_guarded(
                 sqlite_path=db_path,
                 simulation_id=sim_id,

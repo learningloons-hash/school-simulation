@@ -15,9 +15,9 @@ if str(_SCRIPTS) not in sys.path:
 
 import run_sstrf_validity_elicitation as elic_script  # noqa: E402
 
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.diagnostics.sstrf_validity_v2 import default_manifest_path  # noqa: E402
-from mirofish_backend.diagnostics.sstrf_validity_v2_elicitation import (  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.diagnostics.sstrf_validity_v2 import default_manifest_path  # noqa: E402
+from senna_backend.diagnostics.sstrf_validity_v2_elicitation import (  # noqa: E402
     completed_validity_trials,
     load_validity_manifest,
     trial_elicitation_dir,

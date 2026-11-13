@@ -3,11 +3,11 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.db.repo import upsert_user_scenario
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.main import app
-from mirofish_backend.scenarios.loader import load_scenario_for_run
-from mirofish_backend.scenarios.registry import get_scenario
+from senna_backend.db.repo import upsert_user_scenario
+from senna_backend.db.schema import init_db
+from senna_backend.main import app
+from senna_backend.scenarios.loader import load_scenario_for_run
+from senna_backend.scenarios.registry import get_scenario
 
 
 @pytest.fixture

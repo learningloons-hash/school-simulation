@@ -10,22 +10,22 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.db.repo import (
+from senna_backend.db.repo import (
     create_simulation_run,
     get_group_addressed_turn_summary,
     get_simulation_export_bundle,
     insert_agent_turn,
 )
-from mirofish_backend.db.schema import init_db as schema_init
-from mirofish_backend.export_bundle import EXPORT_VERSION, build_export_zip
-from mirofish_backend.llm.context_clip import prepare_peer_response_for_prompt_with_meta
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
-from mirofish_backend.simulation.interaction_policy import (
+from senna_backend.db.schema import init_db as schema_init
+from senna_backend.export_bundle import EXPORT_VERSION, build_export_zip
+from senna_backend.llm.context_clip import prepare_peer_response_for_prompt_with_meta
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
+from senna_backend.simulation.interaction_policy import (
     build_interaction_policy,
     partition_turns_by_visibility,
 )
-from mirofish_backend.simulation.memory_context import build_memory_context_inclusion_records
+from senna_backend.simulation.memory_context import build_memory_context_inclusion_records
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from simulation_helpers import fake_llm_state_block, memory_context_run_kwargs  # noqa: E402
@@ -140,7 +140,7 @@ def test_build_inclusion_same_round_peer() -> None:
 
 
 def test_peer_turns_for_prompt_excludes_same_round() -> None:
-    from mirofish_backend.simulation.orchestrator import _peer_turns_for_prompt
+    from senna_backend.simulation.orchestrator import _peer_turns_for_prompt
 
     turns = [
         {"id": "same", "agent_id": "peer_a", "round_number": 2},
@@ -273,9 +273,9 @@ def _memory_context_run_kwargs() -> dict:
 
 @pytest.mark.asyncio
 async def test_run_persists_memory_context_export(monkeypatch: pytest.MonkeyPatch) -> None:
-    from mirofish_backend.simulation import orchestrator
+    from senna_backend.simulation import orchestrator
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _fake_llm)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "mem.sqlite")
@@ -325,9 +325,9 @@ def test_export_version_bumped() -> None:
 
 
 def test_memory_context_report_endpoint(client_mem: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    from mirofish_backend.simulation import orchestrator
+    from senna_backend.simulation import orchestrator
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _fake_llm)
 
     async def run_and_complete():
         import asyncio

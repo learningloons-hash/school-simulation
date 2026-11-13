@@ -13,12 +13,12 @@
 
 ## Files touched
 
-- `backend/src/mirofish_backend/config.py`
-- `backend/src/mirofish_backend/llm/model_profiles.py`
-- `backend/src/mirofish_backend/llm/openai_compatible_client.py`
-- `backend/src/mirofish_backend/llm/router.py`
-- `backend/src/mirofish_backend/api/simulations.py`
-- `backend/src/mirofish_backend/simulation/orchestrator.py`
+- `backend/src/senna_backend/config.py`
+- `backend/src/senna_backend/llm/model_profiles.py`
+- `backend/src/senna_backend/llm/openai_compatible_client.py`
+- `backend/src/senna_backend/llm/router.py`
+- `backend/src/senna_backend/api/simulations.py`
+- `backend/src/senna_backend/simulation/orchestrator.py`
 - `backend/tests/test_model_profiles.py`
 - `backend/tests/test_openai_compatible_client.py`
 

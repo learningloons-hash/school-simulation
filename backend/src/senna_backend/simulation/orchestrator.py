@@ -1,0 +1,1897 @@
+import asyncio
+import json
+import logging
+import random
+import time
+from dataclasses import dataclass
+from typing import Any, NamedTuple
+
+from senna_backend.roster.csv_roster import personas_for_run as build_personas_for_agent_limit
+from senna_backend.scenarios.registry import PersonaTemplate, ScenarioConfig, get_scenario
+from senna_backend.simulation.agent_context import (
+    AgentContextV1,
+    attribute_sections_for_snapshot,
+    build_agent_context_v1,
+)
+from senna_backend.simulation.interaction_policy import (
+    InteractionPolicy,
+    ChannelType,
+    VisibilityPolicy,
+    apply_turn_order,
+    build_interaction_policy,
+    channel_for_turn,
+    partition_turns_by_visibility,
+    visible_turns_for_agent,
+)
+from senna_backend.llm.prompt_templates import build_system_prompt, build_user_prompt, simplified_persona_prompt
+from senna_backend.llm.round_summary import build_round_summary
+from senna_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.llm.routing_policies import (
+    llm_provider_to_routing_policy,
+    resolve_effective_profile_id,
+    HEURISTIC_PROFILE_SENTINEL,
+)
+from senna_backend.config import get_settings
+from senna_backend.llm.anthropic_request import RunLLMExtras, resolve_anthropic_request_config
+from senna_backend.llm.llm_request_log import LLMRequestLogger
+from senna_backend.llm.router import effective_model_id, llm_complete, resolve_effective_provider
+from senna_backend.llm.context_clip import clip_memory_lines, clip_recent_interactions
+from senna_backend.llm.state_parse import resolve_state_from_response
+from senna_backend.llm.likert_parse import resolve_likert_per_indicator
+from senna_backend.simulation.likert import (
+    build_likert_self_report_prompt,
+    compute_divergence,
+    format_likert_visible_history,
+    float_value_for_indicator,
+    resolve_likert_anchor_labels,
+    resolve_likert_indicators,
+)
+from senna_backend.rag.memory_index import embed_situation, embed_turn, memory_embed_api_call_count, reset_memory_embed_api_call_count
+from senna_backend.rag.retrieve import retrieve_top_k, snippets_for_prompt
+from senna_backend.simulation.memory_retrieval import (
+    RetrievalWeights,
+    build_situation_query,
+    rank_turns,
+    self_candidate_cap,
+)
+from senna_backend.simulation.transcript_writer import (
+    append_round_to_transcript,
+    close_transcript,
+    open_transcript,
+)
+from senna_backend.simulation.weighted_retrieval import resolve_memory_embedding_model
+from senna_backend.simulation.memory_context import (
+    build_memory_context_inclusion_records,
+)
+from senna_backend.simulation.heuristic import (
+    apply_tier3_heuristic_to_states,
+    mean_deltas_tier12_for_round,
+    tier3_heuristic_rng,
+)
+from senna_backend.simulation.importance_scoring import (
+    merge_importance_audit,
+    score_round_importance_batch,
+    score_turn_importance,
+)
+from senna_backend.simulation.reflection import (
+    PendingObservation,
+    ReflectionAccumulator,
+    format_self_memory_line,
+    merge_reflection_audit,
+    merge_self_memory_candidates,
+    observation_importance_for_reflection,
+    synthesize_reflection,
+    take_last_k_memory_rows,
+)
+from senna_backend.db.repo import (
+    get_agent_reflections_for_agent,
+    get_recent_interactions,
+    get_last_agent_responses,
+    get_last_agent_turn_rows,
+    get_round_summaries,
+    get_turns_for_round,
+    insert_agent_state_snapshot,
+    insert_agent_turn,
+    insert_agent_context_inclusion_batch,
+    insert_agent_reflection,
+    insert_agent_round_likert,
+    insert_global_state_snapshot,
+    insert_round_outcome,
+    merge_simulation_config_snapshot,
+    set_simulation_status,
+    update_agent_turn_importance,
+    update_simulation_token_totals,
+    upsert_round_summary,
+)
+from senna_backend.llm.importance_parse import FALLBACK_SCORE
+
+logger = logging.getLogger("senna_backend.simulation.orchestrator")
+
+# Wider candidate scan for inclusion logging vs peer prompt window (Arc 10 B2).
+MEMORY_LOG_EXTENDED_K_CAP = 24
+
+
+def _peer_turns_for_prompt(
+    turns: list[dict[str, Any]],
+    *,
+    observer_agent_id: str,
+    round_number: int,
+) -> list[dict[str, Any]]:
+    """Exclude same-round peer turns from peer prompt (parallel rounds may persist early speakers)."""
+    return [
+        t
+        for t in turns
+        if t.get("agent_id") != observer_agent_id
+        and int(t.get("round_number") or 0) < round_number
+    ]
+
+
+class _TurnOutcome(NamedTuple):
+    conflict: bool
+    input_tokens: int | None
+    output_tokens: int | None
+    llm_attempted: bool = False
+    llm_failed: bool = False
+    llm_error_message: str | None = None
+
+
+@dataclass(frozen=True)
+class AgentInstance:
+    agent_id: str
+    persona: PersonaTemplate
+    role: str
+    name: str
+    context: AgentContextV1
+    # Iteration 22: metadata for sampling_audit; Iteration 23+ may branch prompts/LLM by tier.
+    fidelity_tier: int = 1
+
+    @property
+    def demographics(self) -> dict[str, Any]:
+        return self.context.demographics
+
+
+@dataclass(frozen=True)
+class InteractionPlan:
+    interaction_type: str
+    target_scope: str
+    target_agent_id: str | None
+    target_agent_name: str | None
+    intent_tag: str
+
+
+@dataclass
+class AgentState:
+    support_level: float
+    resistance_level: float
+    workload_stress: float
+    belief_posture: str
+
+
+def _group_labels_for_persona(scenario: ScenarioConfig, persona: PersonaTemplate) -> tuple[str, ...]:
+    id_to_name = {g.group_id: g.name for g in scenario.groups}
+    return tuple(id_to_name.get(gid, gid) for gid in persona.groups)
+
+
+def _merge_section_dict(base: dict[str, Any], overlay: dict[str, Any] | None) -> dict[str, Any]:
+    out = dict(base)
+    if overlay:
+        out.update(overlay)
+    return out
+
+
+def _attribute_overlays_from_slot(ov: dict[str, Any] | None) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    if not ov:
+        return {}, {}, {}
+
+    def grab(key: str) -> dict[str, Any]:
+        raw = ov.get(key)
+        return dict(raw) if isinstance(raw, dict) else {}
+
+    return grab("identity"), grab("attitudes"), grab("personal_history")
+
+
+def _merge_demographics(
+    *,
+    role_level: int,
+    idx: int,
+    overrides: dict[str, Any] | None,
+) -> dict[str, Any]:
+    dem = _build_demographics(role_level=role_level, idx=idx)
+    if overrides:
+        for k in ("age", "sex", "ethnicity", "ses"):
+            if k in overrides and overrides[k] is not None:
+                dem[k] = overrides[k]
+    return dem
+
+
+def _build_agent_instances(
+    scenario: ScenarioConfig,
+    personas_for_run: list[PersonaTemplate],
+    slot_overrides: list[dict[str, Any]] | None = None,
+    fidelity_tiers: list[int] | None = None,
+) -> list[AgentInstance]:
+    base_personas = scenario.personas
+    if not base_personas:
+        raise ValueError(f"Scenario has no personas: {scenario.scenario_id}")
+    if not personas_for_run:
+        raise ValueError("personas_for_run is empty")
+    if slot_overrides is not None and len(slot_overrides) != len(personas_for_run):
+        raise ValueError("slot_overrides length must match personas_for_run")
+    if fidelity_tiers is not None and len(fidelity_tiers) != len(personas_for_run):
+        raise ValueError("fidelity_tiers length must match personas_for_run")
+
+    instances: list[AgentInstance] = []
+    for idx, persona in enumerate(personas_for_run):
+        agent_id = f"{persona.persona_id}_{idx:03d}"
+        if idx < len(base_personas):
+            name = persona.name
+        else:
+            name = f"{persona.name} {idx + 1}"
+        ov = slot_overrides[idx] if slot_overrides else None
+        dem = _merge_demographics(role_level=persona.role_level, idx=idx, overrides=ov)
+        io, ao, ho = _attribute_overlays_from_slot(ov)
+        ctx = build_agent_context_v1(
+            slot_index=idx,
+            demographics=dem,
+            group_ids=persona.groups,
+            identity=_merge_section_dict(persona.identity, io),
+            attitudes=_merge_section_dict(persona.attitudes, ao),
+            personal_history=_merge_section_dict(persona.personal_history, ho),
+        )
+        ft = fidelity_tiers[idx] if fidelity_tiers is not None else 1
+        instances.append(
+            AgentInstance(
+                agent_id=agent_id,
+                persona=persona,
+                role=persona.role,
+                name=name,
+                context=ctx,
+                fidelity_tier=ft,
+            )
+        )
+    return instances
+
+
+def _agents_for_round(
+    all_agents: list[AgentInstance],
+    *,
+    round_number: int,
+    simulation_mode: str,
+    speakers_per_round: int,
+    random_seed: int,
+) -> list[AgentInstance]:
+    """
+    Deterministic subset for ``sample_k_per_round``; full roster for ``full_round_robin``.
+    Seed mix: reproducible per (random_seed, round_number, mode).
+    """
+    mode = (simulation_mode or "full_round_robin").strip().lower()
+    if mode == "full_round_robin":
+        return list(all_agents)
+    if mode != "sample_k_per_round":
+        raise ValueError(f"Unknown simulation_mode {simulation_mode!r}; use 'full_round_robin' or 'sample_k_per_round'")
+    n = len(all_agents)
+    if n == 0:
+        return []
+    k = max(1, min(speakers_per_round, n))
+    # Local RNG so we do not rely on global random state ordering elsewhere.
+    mix = (random_seed & 0xFFFFFFFF) ^ (round_number * 0x9E3779B9)
+    r = random.Random(mix)
+    idxs = list(range(n))
+    r.shuffle(idxs)
+    chosen = sorted(idxs[:k])
+    return [all_agents[i] for i in chosen]
+
+
+def _build_demographics(*, role_level: int, idx: int) -> dict[str, Any]:
+    """Synthetic demographics when roster/population do not supply them.
+
+    Domain-agnostic: age scales with ``role_level`` (lower number = higher authority → older baseline).
+    No role-name strings.
+    """
+    sex_cycle = ["female", "male"]
+    # Baseline ages matched legacy principal / middle / teacher spacing (8-year steps).
+    # Cap spacing at six tiers and floor age so high role_level never goes negative (architect review).
+    age = max(22, 49 - (min(max(1, role_level), 6) - 1) * 8 + (idx % 3))
+    return {
+        "age": age,
+        "sex": sex_cycle[idx % len(sex_cycle)],
+        "ethnicity": "unspecified",
+        "ses": "unspecified",
+    }
+
+
+def _neutral_initial_state() -> AgentState:
+    return AgentState(support_level=0.50, resistance_level=0.35, workload_stress=0.45, belief_posture="neutral")
+
+
+def _initial_state_from_persona(persona: PersonaTemplate) -> AgentState:
+    raw = persona.initial_state
+    if not raw:
+        return _neutral_initial_state()
+    base = _neutral_initial_state()
+    return AgentState(
+        support_level=float(raw.get("support_level", base.support_level)),
+        resistance_level=float(raw.get("resistance_level", base.resistance_level)),
+        workload_stress=float(raw.get("workload_stress", base.workload_stress)),
+        belief_posture=str(raw.get("belief_posture", base.belief_posture)),
+    )
+
+
+def _clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+    return max(low, min(high, value))
+
+
+def _population_convergence_delta(
+    agents: list[AgentInstance],
+    agent_states: dict[str, AgentState],
+    prev: dict[str, tuple[float, float, float]],
+) -> float | None:
+    """Mean over agents of mean abs Δ across support, resistance, workload vs prior round.
+
+    Precondition: every ``agents`` entry should have a ``prev`` entry (same roster each round).
+    Agents missing from ``prev`` are skipped defensively (e.g. future mid-run roster changes).
+    """
+    if not agents:
+        return None
+    acc = 0.0
+    n = 0
+    for ag in agents:
+        if ag.agent_id not in prev:
+            continue
+        st = agent_states[ag.agent_id]
+        ps, pr, pw = prev[ag.agent_id]
+        acc += (
+            abs(st.support_level - ps) + abs(st.resistance_level - pr) + abs(st.workload_stress - pw)
+        ) / 3.0
+        n += 1
+    return acc / n if n else None
+
+
+def _count_keywords(text: str, keywords: list[str]) -> int:
+    lowered = text.lower()
+    return sum(lowered.count(k) for k in keywords)
+
+
+def _apply_state_from_response(state: AgentState, response: str) -> tuple[AgentState, bool, str]:
+    parsed, source = resolve_state_from_response(
+        response,
+        support_level=state.support_level,
+        resistance_level=state.resistance_level,
+        workload_stress=state.workload_stress,
+        belief_posture=state.belief_posture,
+    )
+    if parsed is not None:
+        s, r, w, posture, conflict = parsed
+        return (
+            AgentState(
+                support_level=_clamp(s),
+                resistance_level=_clamp(r),
+                workload_stress=_clamp(w),
+                belief_posture=posture,
+            ),
+            conflict,
+            source,
+        )
+    new_state, conflict = _apply_state_update_keyword(state, response)
+    return new_state, conflict, "keyword_fallback"
+
+
+async def _collect_round_end_likert(
+    *,
+    sqlite_path: str,
+    simulation_id: str,
+    round_number: int,
+    agents: list[AgentInstance],
+    agent_states: dict[str, AgentState],
+    scenario: ScenarioConfig,
+    scenario_id: str,
+    prompt_version: str,
+    indicators: tuple[str, ...],
+    interaction_policy: InteractionPolicy,
+    effective_visibility: VisibilityPolicy,
+    network_neighbors: dict[str, frozenset[str]] | None,
+    spoke_ids: frozenset[str],
+    peer_context_max_chars: int,
+    llm_temperature: float,
+    llm_max_tokens: int,
+    lmstudio_base_url: str,
+    lmstudio_model: str,
+    anthropic_api_key: str,
+    anthropic_model: str,
+    openai_compatible_api_key: str,
+    routing_policy: str,
+    routing_profile_local_id: str,
+    routing_profile_frontier_id: str,
+    run_llm_extras: RunLLMExtras | None = None,
+) -> tuple[int, int]:
+    """One LLM call per agent; persists Likert rows without mutating float state."""
+    in_acc = 0
+    out_acc = 0
+    interaction_last_k = max(24, len(agents) * max(1, round_number) * 3)
+
+    for agent in agents:
+        anchor_labels = resolve_likert_anchor_labels(scenario, agent.persona)
+        agent_indicators = resolve_likert_indicators(anchor_labels) if anchor_labels else indicators
+        if not agent_indicators:
+            continue
+        missing = [ind for ind in agent_indicators if len(anchor_labels.get(ind, ())) != 6]
+        if missing:
+            logger.warning(
+                "likert_skip simulation_id=%s round=%s agent=%s missing anchors for %s",
+                simulation_id[:12],
+                round_number,
+                agent.agent_id,
+                missing,
+            )
+            continue
+
+        recent_raw = await get_recent_interactions(
+            sqlite_path,
+            simulation_id=simulation_id,
+            last_k=interaction_last_k,
+        )
+        recent_clipped = clip_recent_interactions(
+            recent_raw,
+            max_chars=peer_context_max_chars,
+        )
+        recent_visible = visible_turns_for_agent(
+            recent_clipped,
+            agent,
+            interaction_policy,
+            effective_visibility=effective_visibility,
+            network_neighbors=network_neighbors,
+            round_speaker_ids=spoke_ids,
+        )
+        visible_history = format_likert_visible_history(
+            recent_visible,
+            agent_id=agent.agent_id,
+        )
+
+        state = agent_states[agent.agent_id]
+        float_values = {ind: float_value_for_indicator(ind, state) for ind in agent_indicators}
+        system_prompt, user_prompt = build_likert_self_report_prompt(
+            round_number=round_number,
+            scenario_id=scenario_id,
+            persona=agent.persona,
+            agent_name=agent.name,
+            agent_role=agent.role,
+            demographics=agent.demographics,
+            prompt_version=prompt_version,
+            indicators=agent_indicators,
+            anchor_labels=anchor_labels,
+            visible_history=visible_history,
+        )
+        effective = resolve_effective_provider(
+            routing_policy=routing_policy,
+            round_number=round_number,
+            turn_index=999,
+        )
+        profile_id = resolve_effective_profile_id(
+            routing_policy=routing_policy,
+            turn_index=999,
+            local_profile_id=routing_profile_local_id,
+            frontier_profile_id=routing_profile_frontier_id,
+        )
+        eff_model = effective_model_id(
+            provider=effective,
+            lmstudio_model=lmstudio_model,
+            anthropic_model=anthropic_model,
+        )
+        in_tokens: int | None = None
+        out_tokens: int | None = None
+        try:
+            likert_llm_kw = run_llm_extras.llm_complete_kwargs() if run_llm_extras else {}
+            likert_llm_kw["llm_request_context"] = {
+                "call_site": "likert_round_end",
+                "round_number": round_number,
+                "agent_id": agent.agent_id,
+            }
+            completion = await llm_complete(
+                provider=effective,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=llm_temperature,
+                max_tokens=llm_max_tokens,
+                lmstudio_base_url=lmstudio_base_url,
+                lmstudio_model=lmstudio_model,
+                anthropic_api_key=anthropic_api_key,
+                anthropic_model=anthropic_model,
+                openai_compatible_api_key=openai_compatible_api_key,
+                settings=get_settings(),
+                llm_call_site="likert_round_end",
+                **likert_llm_kw,
+            )
+            raw_response = completion.text
+            in_tokens = completion.input_tokens
+            out_tokens = completion.output_tokens
+            if in_tokens is not None:
+                in_acc += in_tokens
+            if out_tokens is not None:
+                out_acc += out_tokens
+        except Exception as llm_err:
+            raw_response = f"[LLM error] {type(llm_err).__name__}: {llm_err}"
+
+        per_indicator = resolve_likert_per_indicator(
+            raw_response,
+            indicators=agent_indicators,
+            anchor_labels=anchor_labels,
+            float_values=float_values,
+        )
+        for ind, (anchor_label, ordinal, mapped_float, ind_source) in per_indicator.items():
+            fv = float_values.get(ind)
+            divergence = compute_divergence(fv, mapped_float)
+            await insert_agent_round_likert(
+                sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                agent_id=agent.agent_id,
+                indicator=ind,
+                anchor_label=anchor_label,
+                ordinal_value=ordinal,
+                mapped_float=mapped_float,
+                source=ind_source,
+                float_value=fv,
+                divergence=divergence,
+                input_tokens=in_tokens,
+                output_tokens=out_tokens,
+                effective_provider=effective,
+                effective_model=eff_model,
+                effective_profile_id=profile_id,
+            )
+    return in_acc, out_acc
+
+
+def _apply_state_update_keyword(state: AgentState, response: str) -> tuple[AgentState, bool]:
+    support_hits = _count_keywords(response, ["support", "align", "feasible", "improve", "ready"])
+    resistance_hits = _count_keywords(response, ["concern", "resist", "risk", "unclear", "difficult"])
+    workload_hits = _count_keywords(response, ["workload", "burden", "time", "resource", "capacity"])
+
+    support_level = _clamp(state.support_level + (0.03 * support_hits) - (0.02 * resistance_hits))
+    resistance_level = _clamp(state.resistance_level + (0.03 * resistance_hits) - (0.02 * support_hits))
+    workload_stress = _clamp(state.workload_stress + (0.04 * workload_hits) - 0.01)
+
+    if support_level - resistance_level >= 0.20:
+        posture = "supportive"
+    elif resistance_level - support_level >= 0.20:
+        posture = "resistant"
+    else:
+        posture = "mixed"
+
+    conflict_flag = resistance_hits > support_hits
+    return (
+        AgentState(
+            support_level=support_level,
+            resistance_level=resistance_level,
+            workload_stress=workload_stress,
+            belief_posture=posture,
+        ),
+        conflict_flag,
+    )
+
+
+def _policy_event_for_round(scenario: ScenarioConfig, round_number: int) -> str:
+    if round_number in scenario.policy_events:
+        return scenario.policy_events[round_number]
+    return (
+        f"Round {round_number}: No new external MOE bulletin this round; continue implementation "
+        "discussion grounded in what stakeholders already said in prior rounds."
+    )
+
+
+def _build_interaction_plan(
+    agents: list[AgentInstance],
+    round_number: int,
+    turn_index: int,
+    policy: InteractionPolicy | None = None,
+) -> InteractionPlan:
+    """
+    Deterministic interaction planning over the **current round's speaker list** (`agents`):
+    - First turn of a round is a school-wide broadcast.
+    - Middle turns reply to the previous agent (within this list).
+    - Last turn records a meeting-style synthesis note.
+
+    With `sample_k_per_round` and small K (e.g. 2), roles are only broadcast + meeting_note
+    (no reply turns). At K >= 3, reply turns appear between them. The same physical agent may
+    receive different interaction_type sequences across rounds depending on sampling order.
+
+    Iteration 15: When an :class:`~senna_backend.simulation.interaction_policy.InteractionPolicy`
+    is provided, ``channel_for_turn`` may override the default channel selection (e.g. Trinity
+    overlay forces BROADCAST for principal regardless of position).
+    """
+    agent_role_level = agents[turn_index - 1].persona.role_level if agents else 3
+
+    if policy is not None:
+        channel = channel_for_turn(
+            turn_index=turn_index,
+            total_speakers=len(agents),
+            agent_role_level=agent_role_level,
+            policy=policy,
+        )
+    else:
+        # Legacy: replicate pre-Iteration-15 logic
+        if turn_index == 1:
+            channel = ChannelType.BROADCAST
+        elif turn_index == len(agents):
+            channel = ChannelType.MEETING
+        else:
+            channel = ChannelType.DIRECT
+
+    if channel == ChannelType.BROADCAST:
+        return InteractionPlan(
+            interaction_type=ChannelType.BROADCAST.value,
+            target_scope="all",
+            target_agent_id=None,
+            target_agent_name=None,
+            intent_tag="policy_update",
+        )
+
+    if channel == ChannelType.MEETING:
+        return InteractionPlan(
+            interaction_type="meeting_note",
+            target_scope="all",
+            target_agent_id=None,
+            target_agent_name=None,
+            intent_tag="coordination_summary",
+        )
+
+    # DIRECT / reply
+    target_agent = agents[turn_index - 2]
+    return InteractionPlan(
+        interaction_type="reply",
+        target_scope="agent",
+        target_agent_id=target_agent.agent_id,
+        target_agent_name=target_agent.name,
+        intent_tag="peer_response",
+    )
+
+
+async def run_simulation_task(
+    *,
+    sqlite_path: str,
+    simulation_id: str,
+    scenario_id: str,
+    total_rounds: int,
+    agent_limit: int,
+    random_seed: int,
+    prompt_version: str,
+    model_used: str,
+    lmstudio_model: str,
+    lmstudio_base_url: str,
+    llm_temperature: float,
+    llm_max_tokens: int,
+    working_memory_last_k: int,
+    llm_provider: str,
+    anthropic_api_key: str,
+    anthropic_model: str,
+    peer_context_max_chars: int,
+    rag_effective: bool,
+    embedding_model: str,
+    rag_top_k: int,
+    rag_chunk_size: int,
+    rag_chunk_overlap: int,
+    rag_max_inject_chars: int,
+    personas_for_run: list[PersonaTemplate] | None = None,
+    slot_overrides: list[dict[str, Any]] | None = None,
+    scenario_config: ScenarioConfig | None = None,
+    simulation_mode: str = "full_round_robin",
+    speakers_per_round: int = 2,
+    turn_order_policy: str = "round_robin",
+    visibility_policy: str = "full",
+    interaction_overlay: str = "none",
+    llm_concurrency_cap: int = 4,
+    fidelity_tiers: list[int] | None = None,
+    tier_3_dampening: float = 0.6,
+    tier_3_noise_std: float = 0.02,
+    network_neighbors: dict[str, frozenset[str]] | None = None,
+    visibility_effective: str | None = None,
+    convergence_threshold: float | None = None,
+    convergence_patience: int = 2,
+    round_summary_enabled: bool = True,
+    transcript_dir: str = "./data/transcripts",
+    routing_policy: str | None = None,
+    routing_profile_local_id: str | None = None,
+    routing_profile_frontier_id: str | None = None,
+    openai_compatible_api_key: str = "",
+    likert_self_report_enabled: bool = False,
+    likert_indicators: tuple[str, ...] | None = None,
+    importance_scoring_enabled: bool = False,
+    importance_prompt_version: str = "v1",
+    importance_scoring_mode: str = "per_turn",
+    weighted_retrieval_enabled: bool = False,
+    retrieval_weight_recency: float = 0.5,
+    retrieval_weight_importance: float = 0.25,
+    retrieval_weight_relevance: float = 0.25,
+    reflection_enabled: bool = False,
+    reflection_trigger_threshold: int = 150,
+    reflection_prompt_version: str = "v1",
+    anthropic_thinking: dict[str, str] | None = None,
+    anthropic_effort: str | None = None,
+    llm_request_log_path: str | None = None,
+) -> None:
+    mode = (llm_provider or "lmstudio").strip().lower()
+    if mode not in ("lmstudio", "anthropic", "hybrid"):
+        raise ValueError(f"Unknown llm_provider {llm_provider!r}; expected 'lmstudio', 'anthropic', or 'hybrid'")
+
+    policy = routing_policy or llm_provider_to_routing_policy(mode)
+    local_profile_id = routing_profile_local_id or LOCAL_LMSTUDIO_DEFAULT_ID
+    frontier_profile_id = routing_profile_frontier_id or ANTHROPIC_DEFAULT_ID
+
+    run_settings = get_settings()
+    anthropic_req_cfg = resolve_anthropic_request_config(
+        model_id=anthropic_model,
+        settings=run_settings,
+        request_thinking_type=(anthropic_thinking or {}).get("type") if anthropic_thinking else None,
+        request_effort=anthropic_effort,
+        random_seed=random_seed,
+    )
+    req_logger = (
+        LLMRequestLogger(path=llm_request_log_path, simulation_id=simulation_id)
+        if llm_request_log_path
+        else None
+    )
+    run_llm_extras = RunLLMExtras(anthropic_config=anthropic_req_cfg, request_logger=req_logger)
+
+    random.seed(random_seed)
+    scenario = scenario_config if scenario_config is not None else get_scenario(scenario_id)
+    if scenario.scenario_id != scenario_id:
+        raise ValueError(
+            f"scenario_config.scenario_id {scenario.scenario_id!r} does not match request {scenario_id!r}"
+        )
+    personas = (
+        personas_for_run
+        if personas_for_run is not None
+        else build_personas_for_agent_limit(scenario, agent_limit, None)
+    )
+    if len(personas) != agent_limit:
+        raise ValueError(f"personas_for_run length {len(personas)} != agent_limit {agent_limit}")
+    agents = _build_agent_instances(
+        scenario, personas, slot_overrides=slot_overrides, fidelity_tiers=fidelity_tiers
+    )
+    agent_states = {agent.agent_id: _initial_state_from_persona(agent.persona) for agent in agents}
+    previous_readiness = 0.0
+    sim_mode = (simulation_mode or "full_round_robin").strip().lower()
+
+    # Resolve interaction overlay from scenario if not explicitly passed
+    effective_overlay = interaction_overlay or getattr(scenario, "interaction_overlay", "none") or "none"
+    interaction_policy = build_interaction_policy(
+        turn_order_policy=turn_order_policy,
+        visibility_policy=visibility_policy,
+        interaction_overlay=effective_overlay,
+    )
+
+    ve_raw = (visibility_effective or "").strip().lower()
+    if ve_raw == "full":
+        ve_raw = "broadcast"
+    if ve_raw:
+        effective_visibility = VisibilityPolicy(ve_raw)
+    else:
+        effective_visibility = interaction_policy.visibility_policy
+
+    await set_simulation_status(sqlite_path, simulation_id=simulation_id, status="running", current_round=0)
+
+    # Semaphore bounds concurrent LLM calls within a round (Iteration 19).
+    # Cap=1 reproduces sequential behaviour; rounds are always sequential.
+    sem = asyncio.Semaphore(llm_concurrency_cap)
+
+    conv_streak = 0
+    prev_agent_triples: dict[str, tuple[float, float, float]] | None = None
+    patience = max(1, int(convergence_patience)) if convergence_threshold is not None else 0
+    run_in_acc = 0
+    run_out_acc = 0
+    llm_attempt_count = 0
+    llm_error_count = 0
+    first_llm_error: str | None = None
+    importance_audit: dict[str, int] = {}
+    importance_in_acc = 0
+    importance_out_acc = 0
+    reflection_audit: dict[str, int] = {}
+    reflection_in_acc = 0
+    reflection_out_acc = 0
+    reflection_accumulators: dict[str, ReflectionAccumulator] = {}
+    scoring_mode = (importance_scoring_mode or "per_turn").strip().lower()
+    if scoring_mode not in ("per_turn", "per_round_batch"):
+        scoring_mode = "per_turn"
+
+    mem_embed_model = resolve_memory_embedding_model(
+        embedding_model=embedding_model,
+        lmstudio_model=lmstudio_model,
+    )
+    if weighted_retrieval_enabled and not mem_embed_model:
+        raise ValueError(
+            "weighted_retrieval_enabled requires embedding_model or lmstudio_model for memory embeddings"
+        )
+    retrieval_weights = RetrievalWeights(
+        recency=retrieval_weight_recency,
+        importance=retrieval_weight_importance,
+        relevance=retrieval_weight_relevance,
+    )
+    if weighted_retrieval_enabled:
+        reset_memory_embed_api_call_count()
+
+    if round_summary_enabled:
+        agent_roster = [(a.name, a.role) for a in agents]
+        await open_transcript(
+            transcript_dir,
+            simulation_id=simulation_id,
+            scenario_id=scenario_id,
+            agent_names=agent_roster,
+            total_rounds=total_rounds,
+            model_used=model_used,
+        )
+
+    for round_number in range(1, total_rounds + 1):
+        policy_event = _policy_event_for_round(scenario, round_number)
+        round_agents = _agents_for_round(
+            agents,
+            round_number=round_number,
+            simulation_mode=sim_mode,
+            speakers_per_round=speakers_per_round,
+            random_seed=random_seed,
+        )
+
+        # Apply IAD turn order policy (hierarchical sorts by role_level)
+        round_agents = apply_turn_order(round_agents, interaction_policy)
+        spoke_ids = frozenset(a.agent_id for a in round_agents)
+
+        # Pre-assign turn indices BEFORE parallel dispatch so interaction plans are deterministic.
+        turn_assignments: list[tuple[int, AgentInstance]] = list(enumerate(round_agents, start=1))
+        round_start = time.perf_counter()
+        round_importance_pending: list[dict[str, Any]] = []
+
+        states_before_t12: dict[str, tuple[float, float, float]] = {}
+        for ag in round_agents:
+            if ag.fidelity_tier in (1, 2):
+                st0 = agent_states[ag.agent_id]
+                states_before_t12[ag.agent_id] = (
+                    st0.support_level,
+                    st0.resistance_level,
+                    st0.workload_stress,
+                )
+
+        async def _register_observation_for_reflection(
+            *,
+            agent: AgentInstance,
+            turn_id: str,
+            importance_score: int | None,
+            raw_response: str,
+            round_number: int,
+            turn_index: int,
+            tier: int,
+        ) -> None:
+            nonlocal reflection_in_acc, reflection_out_acc
+            if not reflection_enabled or tier == 3:
+                return
+            acc = reflection_accumulators.setdefault(agent.agent_id, ReflectionAccumulator())
+            acc.pending.append(
+                PendingObservation(
+                    turn_id=turn_id,
+                    importance_score=observation_importance_for_reflection(importance_score),
+                    raw_response=raw_response,
+                    round_number=round_number,
+                    turn_index=turn_index,
+                )
+            )
+            if acc.accumulated_importance() < reflection_trigger_threshold:
+                return
+            pending = list(acc.pending)
+            acc.clear()
+            text, sources, src, rin, rout = await synthesize_reflection(
+                agent_name=agent.name,
+                agent_role=agent.role,
+                round_number=round_number,
+                observations=pending,
+                prompt_version=reflection_prompt_version,
+                llm_temperature=llm_temperature,
+                llm_max_tokens=llm_max_tokens,
+                lmstudio_base_url=lmstudio_base_url,
+                lmstudio_model=lmstudio_model,
+                anthropic_api_key=anthropic_api_key,
+                anthropic_model=anthropic_model,
+                openai_compatible_api_key=openai_compatible_api_key,
+                routing_policy=policy,
+                run_llm_extras=run_llm_extras,
+            )
+            reflection_in_acc += rin
+            reflection_out_acc += rout
+            accumulated = sum(o.importance_score for o in pending)
+            reflection_id = await insert_agent_reflection(
+                sqlite_path,
+                simulation_id=simulation_id,
+                agent_id=agent.agent_id,
+                round_number=round_number,
+                reflection_text=text,
+                source_turn_ids=sources,
+                accumulated_importance=accumulated,
+                parse_source=src,
+                reflection_prompt_version=reflection_prompt_version,
+                input_tokens=rin or None,
+                output_tokens=rout or None,
+            )
+            merge_reflection_audit(reflection_audit, source=src)
+            if weighted_retrieval_enabled and mem_embed_model:
+                await embed_turn(
+                    simulation_id=simulation_id,
+                    turn_id=reflection_id,
+                    raw_response=format_self_memory_line(
+                        {"memory_kind": "reflection", "raw_response": text}
+                    ),
+                    lmstudio_base_url=lmstudio_base_url,
+                    embedding_model=mem_embed_model,
+                )
+
+        async def _apply_importance_for_turn(
+            *,
+            turn_id: str,
+            raw_response: str,
+            round_number: int,
+            turn_index: int,
+            agent: AgentInstance,
+            tier: int,
+        ) -> None:
+            nonlocal importance_in_acc, importance_out_acc
+            if not importance_scoring_enabled:
+                return
+            if scoring_mode == "per_round_batch":
+                round_importance_pending.append(
+                    {
+                        "turn_id": turn_id,
+                        "agent_id": agent.agent_id,
+                        "raw_response": raw_response,
+                        "round_number": round_number,
+                        "turn_index": turn_index,
+                        "agent_name": agent.name,
+                        "agent_role": agent.role,
+                        "tier": tier,
+                    }
+                )
+                return
+            if tier == 3:
+                score, src, imp_in, imp_out = FALLBACK_SCORE, "fallback", 0, 0
+            else:
+                score, src, imp_in, imp_out = await score_turn_importance(
+                    raw_response=raw_response,
+                    round_number=round_number,
+                    turn_index=turn_index,
+                    agent_name=agent.name,
+                    agent_role=agent.role,
+                    prompt_version=importance_prompt_version,
+                    llm_temperature=llm_temperature,
+                    llm_max_tokens=llm_max_tokens,
+                    lmstudio_base_url=lmstudio_base_url,
+                    lmstudio_model=lmstudio_model,
+                    anthropic_api_key=anthropic_api_key,
+                    anthropic_model=anthropic_model,
+                    openai_compatible_api_key=openai_compatible_api_key,
+                    routing_policy=policy,
+                    routing_profile_local_id=local_profile_id,
+                    routing_profile_frontier_id=frontier_profile_id,
+                    run_llm_extras=run_llm_extras,
+                )
+            importance_in_acc += imp_in
+            importance_out_acc += imp_out
+            await update_agent_turn_importance(
+                sqlite_path,
+                turn_id=turn_id,
+                importance_score=score,
+                importance_source=src,
+            )
+            merge_importance_audit(importance_audit, score=score, source=src)
+            await _register_observation_for_reflection(
+                agent=agent,
+                turn_id=turn_id,
+                importance_score=score,
+                raw_response=raw_response,
+                round_number=round_number,
+                turn_index=turn_index,
+                tier=tier,
+            )
+
+        async def _run_one_turn(turn_index: int, agent: AgentInstance) -> _TurnOutcome:
+            """Execute one agent turn under the semaphore.
+
+            Captures round_agents, round_number, policy_event, agent_states, and simulation
+            parameters from the enclosing scope. Safe because asyncio.gather awaits all
+            coroutines for the current round before the outer loop advances.
+
+            Parallel turns in the same round see only prior-round context in the DB
+            (correct by design — same-round turns are dispatched before any writes).
+            """
+            async with sem:
+                turn_start = time.perf_counter()
+                interaction_plan = _build_interaction_plan(
+                    round_agents, round_number, turn_index, policy=interaction_policy
+                )
+                state = agent_states[agent.agent_id]
+                tier_raw = agent.fidelity_tier or 1
+                try:
+                    tr = int(tier_raw)
+                except (TypeError, ValueError):
+                    tr = 1
+                tier = tr if tr in (1, 2, 3) else 1
+
+                # Iteration 23-24: Tier 3 — no LLM; transcript marker only; state unchanged (real heuristic in Iter 24).
+                if tier == 3:
+                    raw_response = "[Tier 3 — heuristic state update]"
+                    raw_prompt = (
+                        "[TIER 3] No LLM. State updated after the round via Tier-1/2 mean-delta heuristic.\n"
+                        f"round={round_number} turn={turn_index} agent={agent.agent_id}"
+                    )
+                    turn_id = await insert_agent_turn(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        round_number=round_number,
+                        turn_index=turn_index,
+                        agent_id=agent.agent_id,
+                        agent_role=agent.role,
+                        agent_name=agent.name,
+                        interaction_type=interaction_plan.interaction_type,
+                        target_scope=interaction_plan.target_scope,
+                        target_agent_id=interaction_plan.target_agent_id,
+                        target_agent_name=interaction_plan.target_agent_name,
+                        intent_tag=interaction_plan.intent_tag,
+                        raw_prompt=raw_prompt,
+                        raw_response=raw_response,
+                        latency_ms=0,
+                        group_ids=agent.persona.groups,
+                        effective_provider="heuristic",
+                        effective_model="none",
+                        effective_profile_id=HEURISTIC_PROFILE_SENTINEL,
+                        fidelity_tier=3,
+                        input_tokens=0,
+                        output_tokens=0,
+                    )
+                    await _apply_importance_for_turn(
+                        turn_id=turn_id,
+                        raw_response=raw_response,
+                        round_number=round_number,
+                        turn_index=turn_index,
+                        agent=agent,
+                        tier=3,
+                    )
+                    if weighted_retrieval_enabled and mem_embed_model:
+                        await embed_turn(
+                            simulation_id=simulation_id,
+                            turn_id=turn_id,
+                            raw_response=raw_response,
+                            lmstudio_base_url=lmstudio_base_url,
+                            embedding_model=mem_embed_model,
+                        )
+                    return _TurnOutcome(False, 0, 0)
+
+                if turn_index == 1 and round_number > 1:
+                    # Full round-robin: scale peer window with roster × prior rounds (capped).
+                    # sample_k_per_round: tie window to speaking cohort (Iteration 12).
+                    if sim_mode == "sample_k_per_round":
+                        interaction_last_k = min(
+                            12,
+                            max(
+                                working_memory_last_k * 2,
+                                len(round_agents) * max(1, round_number - 1) * 3,
+                            ),
+                        )
+                    else:
+                        interaction_last_k = min(
+                            12,
+                            max(working_memory_last_k * 2, len(agents) * (round_number - 1)),
+                        )
+                else:
+                    interaction_last_k = working_memory_last_k * 2
+
+                # Tier 2: shorter peer / memory context (Iteration 23).
+                peer_limit = max(1, peer_context_max_chars // 2) if tier == 2 else peer_context_max_chars
+
+                retrieval_signals_by_turn_id: dict[str, dict[str, float]] = {}
+
+                if weighted_retrieval_enabled:
+                    situation_text = build_situation_query(
+                        policy_event=policy_event,
+                        intent_tag=interaction_plan.intent_tag,
+                        interaction_type=interaction_plan.interaction_type,
+                        target_scope=interaction_plan.target_scope,
+                    )
+                    situation_vec = None
+                    if mem_embed_model:
+                        situation_vec = await embed_situation(
+                            simulation_id=simulation_id,
+                            situation_text=situation_text,
+                            lmstudio_base_url=lmstudio_base_url,
+                            embedding_model=mem_embed_model,
+                        )
+
+                    self_cap = self_candidate_cap(working_memory_last_k=working_memory_last_k)
+                    turn_rows = await get_last_agent_turn_rows(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        agent_id=agent.agent_id,
+                        last_k=self_cap,
+                    )
+                    if reflection_enabled:
+                        reflection_rows = await get_agent_reflections_for_agent(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            agent_id=agent.agent_id,
+                        )
+                        self_candidates = merge_self_memory_candidates(turn_rows, reflection_rows)
+                    else:
+                        self_candidates = turn_rows
+                    self_ranked = rank_turns(
+                        self_candidates,
+                        weights=retrieval_weights,
+                        simulation_id=simulation_id,
+                        situation_vector=situation_vec,
+                        top_k=working_memory_last_k,
+                    )
+                    self_turn_rows = [r.turn for r in self_ranked]
+                    self_prompt_turn_ids = {
+                        str(r.turn["id"]) for r in self_ranked if r.turn.get("id")
+                    }
+                    for ranked in self_ranked:
+                        tid = str(ranked.turn.get("id") or "")
+                        if tid:
+                            retrieval_signals_by_turn_id[tid] = ranked.signals_dict()
+
+                    peer_candidate_cap = min(
+                        MEMORY_LOG_EXTENDED_K_CAP,
+                        max(
+                            interaction_last_k * 3,
+                            interaction_last_k + len(round_agents),
+                        ),
+                    )
+                    extended_raw = await get_recent_interactions(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        last_k=peer_candidate_cap,
+                    )
+                    recent_raw = await get_recent_interactions(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        last_k=interaction_last_k,
+                    )
+                    visible_for_log, _ = partition_turns_by_visibility(
+                        extended_raw,
+                        agent,
+                        interaction_policy,
+                        effective_visibility=effective_visibility,
+                        network_neighbors=network_neighbors,
+                        round_speaker_ids=spoke_ids,
+                    )
+                    peer_pool = _peer_turns_for_prompt(
+                        visible_for_log,
+                        observer_agent_id=agent.agent_id,
+                        round_number=round_number,
+                    )
+                    peer_ranked = rank_turns(
+                        peer_pool,
+                        weights=retrieval_weights,
+                        simulation_id=simulation_id,
+                        situation_vector=situation_vec,
+                        top_k=interaction_last_k,
+                    )
+                    recent_interactions = clip_recent_interactions(
+                        [r.turn for r in peer_ranked],
+                        max_chars=peer_limit,
+                    )
+                    peer_prompt_turn_ids = {str(r["id"]) for r in recent_interactions if r.get("id")}
+                    for ranked in peer_ranked:
+                        tid = str(ranked.turn.get("id") or "")
+                        if tid and tid in peer_prompt_turn_ids:
+                            retrieval_signals_by_turn_id[tid] = ranked.signals_dict()
+                else:
+                    if reflection_enabled:
+                        self_cap = self_candidate_cap(working_memory_last_k=working_memory_last_k)
+                        turn_rows = await get_last_agent_turn_rows(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            agent_id=agent.agent_id,
+                            last_k=self_cap,
+                        )
+                        reflection_rows = await get_agent_reflections_for_agent(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            agent_id=agent.agent_id,
+                        )
+                        self_pool = merge_self_memory_candidates(turn_rows, reflection_rows)
+                        self_turn_rows = take_last_k_memory_rows(self_pool, working_memory_last_k)
+                    else:
+                        self_turn_rows = await get_last_agent_turn_rows(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            agent_id=agent.agent_id,
+                            last_k=working_memory_last_k,
+                        )
+                    self_prompt_turn_ids = {str(r["id"]) for r in self_turn_rows if r.get("id")}
+                    extended_last_k = min(
+                        MEMORY_LOG_EXTENDED_K_CAP,
+                        max(interaction_last_k * 2, interaction_last_k + len(round_agents)),
+                    )
+                    if extended_last_k > interaction_last_k:
+                        extended_raw = await get_recent_interactions(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            last_k=extended_last_k,
+                        )
+                        recent_raw = await get_recent_interactions(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            last_k=interaction_last_k,
+                        )
+                    else:
+                        extended_raw = recent_raw = await get_recent_interactions(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            last_k=interaction_last_k,
+                        )
+                    recent_clipped = clip_recent_interactions(
+                        recent_raw,
+                        max_chars=peer_limit,
+                    )
+                    recent_visible = visible_turns_for_agent(
+                        recent_clipped,
+                        agent,
+                        interaction_policy,
+                        effective_visibility=effective_visibility,
+                        network_neighbors=network_neighbors,
+                        round_speaker_ids=spoke_ids,
+                    )
+                    visible_for_log, _ = partition_turns_by_visibility(
+                        extended_raw,
+                        agent,
+                        interaction_policy,
+                        effective_visibility=effective_visibility,
+                        network_neighbors=network_neighbors,
+                        round_speaker_ids=spoke_ids,
+                    )
+                    recent_interactions = _peer_turns_for_prompt(
+                        recent_visible,
+                        observer_agent_id=agent.agent_id,
+                        round_number=round_number,
+                    )
+                    peer_prompt_turn_ids = {str(r["id"]) for r in recent_interactions if r.get("id")}
+
+                inclusion_records = build_memory_context_inclusion_records(
+                    observer_agent_id=agent.agent_id,
+                    round_number=round_number,
+                    extended_candidates=extended_raw,
+                    recency_window=recent_raw,
+                    visible_turns=visible_for_log,
+                    peer_limit=peer_limit,
+                    self_prompt_turn_ids=self_prompt_turn_ids,
+                    peer_prompt_turn_ids=peer_prompt_turn_ids,
+                    retrieval_signals_by_turn_id=retrieval_signals_by_turn_id or None,
+                )
+
+                prior_agent_memory = clip_memory_lines(
+                    [format_self_memory_line(r) for r in self_turn_rows],
+                    max_chars=peer_limit,
+                )
+
+                prior_summaries: list[str] | None = None
+                if round_summary_enabled and round_number > 1:
+                    summary_rows = await get_round_summaries(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        up_to_round=round_number,
+                    )
+                    prior_summaries = [r["summary_text"] for r in summary_rows] if summary_rows else None
+
+                context_snippets: list[dict[str, Any]] | None = None
+                if rag_effective:
+                    try:
+                        q = f"{policy_event}\n{interaction_plan.intent_tag}"
+                        snips = await retrieve_top_k(
+                            query=q,
+                            scenario_id=scenario.scenario_id,
+                            rag_corpus_paths=scenario.rag_corpus_paths,
+                            lmstudio_base_url=lmstudio_base_url,
+                            embedding_model=embedding_model,
+                            top_k=rag_top_k,
+                            chunk_size=rag_chunk_size,
+                            chunk_overlap=rag_chunk_overlap,
+                            max_chars=rag_max_inject_chars,
+                        )
+                        context_snippets = snippets_for_prompt(snips) if snips else None
+                    except Exception as rag_err:
+                        logger.warning("RAG retrieval/embed failed: %s", rag_err)
+
+                state_dict = {
+                    "support_level": state.support_level,
+                    "resistance_level": state.resistance_level,
+                    "workload_stress": state.workload_stress,
+                    "belief_posture": state.belief_posture,
+                }
+                if tier == 2:
+                    system_prompt = simplified_persona_prompt(
+                        scenario_id=scenario_id,
+                        role=agent.role,
+                        name=agent.name,
+                        style_cues=agent.persona.style_cues,
+                        beliefs=agent.persona.beliefs,
+                        state=state_dict,
+                        prompt_version=prompt_version,
+                        organisational_context=scenario.context,
+                    )
+                else:
+                    system_prompt = build_system_prompt(
+                        scenario_id=scenario_id,
+                        role=agent.role,
+                        name=agent.name,
+                        style_cues=agent.persona.style_cues,
+                        beliefs=agent.persona.beliefs,
+                        demographics=agent.context.to_prompt_demographics(),
+                        state=state_dict,
+                        prompt_version=prompt_version,
+                        psychological_profile=agent.persona.psychological_profile,
+                        implementation_profile=agent.persona.implementation_profile,
+                        group_affiliations=_group_labels_for_persona(scenario, agent.persona),
+                        identity=agent.context.identity,
+                        attitudes=agent.context.attitudes,
+                        personal_history=agent.context.personal_history,
+                        organisational_context=scenario.context,
+                    )
+                user_prompt = build_user_prompt(
+                    round_number=round_number,
+                    policy_event=policy_event,
+                    interaction_type=interaction_plan.interaction_type,
+                    target_scope=interaction_plan.target_scope,
+                    target_agent_name=interaction_plan.target_agent_name,
+                    intent_tag=interaction_plan.intent_tag,
+                    prior_agent_memory=prior_agent_memory,
+                    recent_interactions=recent_interactions,
+                    context_snippets=context_snippets,
+                    round_summaries=prior_summaries,
+                )
+                raw_prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
+                effective = resolve_effective_provider(
+                    routing_policy=policy,
+                    round_number=round_number,
+                    turn_index=turn_index,
+                )
+                effective_profile_id = resolve_effective_profile_id(
+                    routing_policy=policy,
+                    turn_index=turn_index,
+                    local_profile_id=local_profile_id,
+                    frontier_profile_id=frontier_profile_id,
+                )
+                logger.info(
+                    "llm_turn simulation_id=%s round=%s turn=%s tier=%s routing_policy=%s effective_provider=%s profile=%s",
+                    simulation_id[:12],
+                    round_number,
+                    turn_index,
+                    tier,
+                    policy,
+                    effective,
+                    effective_profile_id,
+                )
+                in_tok: int | None = None
+                out_tok: int | None = None
+                turn_llm_attempted = False
+                turn_llm_failed = False
+                try:
+                    turn_llm_kw = run_llm_extras.llm_complete_kwargs()
+                    turn_llm_kw["llm_request_context"] = {
+                        "call_site": "agent_turn",
+                        "round_number": round_number,
+                        "turn_index": turn_index,
+                        "agent_id": agent.agent_id,
+                        "tier": tier,
+                    }
+                    completion = await llm_complete(
+                        provider=effective,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        temperature=llm_temperature,
+                        max_tokens=llm_max_tokens,
+                        lmstudio_base_url=lmstudio_base_url,
+                        lmstudio_model=lmstudio_model,
+                        anthropic_api_key=anthropic_api_key,
+                        anthropic_model=anthropic_model,
+                        openai_compatible_api_key=openai_compatible_api_key,
+                        settings=run_settings,
+                        llm_call_site="agent_turn",
+                        **turn_llm_kw,
+                    )
+                    turn_llm_attempted = True
+                    raw_response = completion.text
+                    in_tok, out_tok = completion.input_tokens, completion.output_tokens
+                except Exception as llm_err:
+                    turn_llm_attempted = True
+                    turn_llm_failed = True
+                    raw_response = f"[LLM error] {type(llm_err).__name__}: {llm_err}"
+
+                updated_state, conflict_flag, state_update_source = _apply_state_from_response(
+                    state, raw_response
+                )
+                # Each agent has a unique key — no contention between parallel turns.
+                agent_states[agent.agent_id] = updated_state
+
+                latency_ms = int((time.perf_counter() - turn_start) * 1000)
+                eff_model = effective_model_id(
+                    provider=effective,
+                    lmstudio_model=lmstudio_model,
+                    anthropic_model=anthropic_model,
+                )
+                turn_id = await insert_agent_turn(
+                    sqlite_path,
+                    simulation_id=simulation_id,
+                    round_number=round_number,
+                    turn_index=turn_index,
+                    agent_id=agent.agent_id,
+                    agent_role=agent.role,
+                    agent_name=agent.name,
+                    interaction_type=interaction_plan.interaction_type,
+                    target_scope=interaction_plan.target_scope,
+                    target_agent_id=interaction_plan.target_agent_id,
+                    target_agent_name=interaction_plan.target_agent_name,
+                    intent_tag=interaction_plan.intent_tag,
+                    raw_prompt=raw_prompt,
+                    raw_response=raw_response,
+                    latency_ms=latency_ms,
+                    group_ids=agent.persona.groups,
+                    effective_provider=effective,
+                    effective_model=eff_model,
+                    effective_profile_id=effective_profile_id,
+                    fidelity_tier=tier,
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                    state_update_source=state_update_source,
+                )
+                if inclusion_records:
+                    from dataclasses import asdict
+
+                    try:
+                        await insert_agent_context_inclusion_batch(
+                            sqlite_path,
+                            simulation_id=simulation_id,
+                            records=[asdict(r) for r in inclusion_records],
+                        )
+                    except Exception:
+                        logger.exception(
+                            "memory context inclusion logging failed for sim=%s round=%s agent=%s",
+                            simulation_id,
+                            round_number,
+                            agent.agent_id,
+                        )
+                await _apply_importance_for_turn(
+                    turn_id=turn_id,
+                    raw_response=raw_response,
+                    round_number=round_number,
+                    turn_index=turn_index,
+                    agent=agent,
+                    tier=tier,
+                )
+                if reflection_enabled and not importance_scoring_enabled and tier != 3:
+                    await _register_observation_for_reflection(
+                        agent=agent,
+                        turn_id=turn_id,
+                        importance_score=None,
+                        raw_response=raw_response,
+                        round_number=round_number,
+                        turn_index=turn_index,
+                        tier=tier,
+                    )
+                if weighted_retrieval_enabled and mem_embed_model:
+                    await embed_turn(
+                        simulation_id=simulation_id,
+                        turn_id=turn_id,
+                        raw_response=raw_response,
+                        lmstudio_base_url=lmstudio_base_url,
+                        embedding_model=mem_embed_model,
+                    )
+                return _TurnOutcome(
+                    conflict_flag,
+                    in_tok,
+                    out_tok,
+                    llm_attempted=turn_llm_attempted,
+                    llm_failed=turn_llm_failed,
+                    llm_error_message=raw_response if turn_llm_failed else None,
+                )
+
+        # Dispatch all turns for this round concurrently; collect results for round metrics.
+        # return_exceptions=True isolates per-turn failures — one bad turn does not abort the round.
+        results = await asyncio.gather(
+            *(_run_one_turn(ti, ag) for ti, ag in turn_assignments),
+            return_exceptions=True,
+        )
+
+        round_wall_ms = int((time.perf_counter() - round_start) * 1000)
+        round_conflict_events = 0
+        failed_turns = 0
+        for i, result in enumerate(results):
+            if isinstance(result, BaseException):
+                ti, ag = turn_assignments[i]
+                logger.error(
+                    "turn_failed simulation_id=%s round=%s turn=%s agent=%s error=%s",
+                    simulation_id[:12],
+                    round_number,
+                    ti,
+                    ag.agent_id,
+                    result,
+                )
+                failed_turns += 1
+            else:
+                turn_res: _TurnOutcome = result
+                round_conflict_events += int(turn_res.conflict)
+                if turn_res.llm_attempted:
+                    llm_attempt_count += 1
+                    if turn_res.llm_failed:
+                        llm_error_count += 1
+                        if first_llm_error is None and turn_res.llm_error_message:
+                            first_llm_error = turn_res.llm_error_message
+                if turn_res.input_tokens is not None:
+                    run_in_acc += turn_res.input_tokens
+                if turn_res.output_tokens is not None:
+                    run_out_acc += turn_res.output_tokens
+
+        await update_simulation_token_totals(
+            sqlite_path,
+            simulation_id=simulation_id,
+            total_input_tokens=run_in_acc,
+            total_output_tokens=run_out_acc,
+        )
+
+        if (
+            importance_scoring_enabled
+            and scoring_mode == "per_round_batch"
+            and round_importance_pending
+        ):
+            tier3_pending = [r for r in round_importance_pending if int(r.get("tier") or 1) == 3]
+            llm_pending = [r for r in round_importance_pending if int(r.get("tier") or 1) != 3]
+            for row in tier3_pending:
+                tid = str(row["turn_id"])
+                await update_agent_turn_importance(
+                    sqlite_path,
+                    turn_id=tid,
+                    importance_score=FALLBACK_SCORE,
+                    importance_source="fallback",
+                )
+                merge_importance_audit(importance_audit, score=FALLBACK_SCORE, source="fallback")
+            parsed: dict[str, tuple[int, str]] = {}
+            imp_in = 0
+            imp_out = 0
+            if llm_pending:
+                parsed, imp_in, imp_out = await score_round_importance_batch(
+                    round_number=round_number,
+                    turns=llm_pending,
+                    prompt_version=importance_prompt_version,
+                    llm_temperature=llm_temperature,
+                    llm_max_tokens=llm_max_tokens,
+                    lmstudio_base_url=lmstudio_base_url,
+                    lmstudio_model=lmstudio_model,
+                    anthropic_api_key=anthropic_api_key,
+                    anthropic_model=anthropic_model,
+                    openai_compatible_api_key=openai_compatible_api_key,
+                    routing_policy=policy,
+                    routing_profile_local_id=local_profile_id,
+                    routing_profile_frontier_id=frontier_profile_id,
+                    run_llm_extras=run_llm_extras,
+                )
+            importance_in_acc += imp_in
+            importance_out_acc += imp_out
+            for row in llm_pending:
+                tid = str(row["turn_id"])
+                score, src = parsed.get(tid, (FALLBACK_SCORE, "fallback"))
+                await update_agent_turn_importance(
+                    sqlite_path,
+                    turn_id=tid,
+                    importance_score=score,
+                    importance_source=src,
+                )
+                merge_importance_audit(importance_audit, score=score, source=src)
+            if reflection_enabled:
+                agent_by_id = {a.agent_id: a for a in agents}
+                for row in round_importance_pending:
+                    tier = int(row.get("tier") or 1)
+                    if tier == 3:
+                        continue
+                    tid = str(row["turn_id"])
+                    score, _ = parsed.get(tid, (FALLBACK_SCORE, "fallback"))
+                    agent_obj = agent_by_id.get(str(row.get("agent_id") or ""))
+                    if agent_obj is None:
+                        continue
+                    await _register_observation_for_reflection(
+                        agent=agent_obj,
+                        turn_id=tid,
+                        importance_score=score,
+                        raw_response=str(row.get("raw_response") or ""),
+                        round_number=int(row.get("round_number") or round_number),
+                        turn_index=int(row.get("turn_index") or 0),
+                        tier=tier,
+                    )
+
+        logger.info(
+            "round_complete simulation_id=%s round=%s turns=%d failed=%d wall_ms=%d",
+            simulation_id[:12],
+            round_number,
+            len(turn_assignments),
+            failed_turns,
+            round_wall_ms,
+        )
+
+        # Iteration 24: shift Tier-3 agents toward mean Tier-1/2 state delta (+ noise).
+        # Skip when no Tier-1/2 speakers this round (Tier-3-only runs stay stable; Iteration 23 test).
+        tier3_ids = [a.agent_id for a in agents if a.fidelity_tier == 3]
+        has_t12_speakers = any(a.fidelity_tier in (1, 2) for a in round_agents)
+        if tier3_ids and has_t12_speakers:
+            ds, dr, dw = mean_deltas_tier12_for_round(round_agents, states_before_t12, agent_states)
+            h_rng = tier3_heuristic_rng(random_seed=random_seed, round_number=round_number)
+            apply_tier3_heuristic_to_states(
+                tier3_agent_ids=tier3_ids,
+                agent_states=agent_states,
+                delta_support=ds,
+                delta_resistance=dr,
+                delta_workload=dw,
+                dampening=tier_3_dampening,
+                noise_std=tier_3_noise_std,
+                rng=h_rng,
+            )
+
+        if likert_self_report_enabled:
+            likert_in, likert_out = await _collect_round_end_likert(
+                sqlite_path=sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                agents=agents,
+                agent_states=agent_states,
+                scenario=scenario,
+                scenario_id=scenario_id,
+                prompt_version=prompt_version,
+                indicators=likert_indicators or resolve_likert_indicators(scenario.likert_anchor_labels),
+                interaction_policy=interaction_policy,
+                effective_visibility=effective_visibility,
+                network_neighbors=network_neighbors,
+                spoke_ids=spoke_ids,
+                peer_context_max_chars=peer_context_max_chars,
+                llm_temperature=llm_temperature,
+                llm_max_tokens=llm_max_tokens,
+                lmstudio_base_url=lmstudio_base_url,
+                lmstudio_model=lmstudio_model,
+                anthropic_api_key=anthropic_api_key,
+                anthropic_model=anthropic_model,
+                openai_compatible_api_key=openai_compatible_api_key,
+                routing_policy=policy,
+                routing_profile_local_id=local_profile_id,
+                routing_profile_frontier_id=frontier_profile_id,
+                run_llm_extras=run_llm_extras,
+            )
+            if likert_in or likert_out:
+                run_in_acc += likert_in
+                run_out_acc += likert_out
+
+        state_values = list(agent_states.values())
+        avg_support = sum(s.support_level for s in state_values) / len(state_values)
+        avg_resistance = sum(s.resistance_level for s in state_values) / len(state_values)
+        avg_workload = sum(s.workload_stress for s in state_values) / len(state_values)
+        spread_support = max(s.support_level for s in state_values) - min(s.support_level for s in state_values)
+
+        implementation_readiness = _clamp(avg_support - (0.5 * avg_resistance) + (0.3 * (1.0 - avg_workload)))
+        alignment_index = _clamp(1.0 - spread_support)
+        adoption_momentum: float | None
+        if round_number == 1:
+            adoption_momentum = None
+        else:
+            adoption_momentum = _clamp((implementation_readiness - previous_readiness) + 0.5)
+        consistency_index = _clamp(alignment_index * (1.0 - (0.5 * avg_workload)))
+        previous_readiness = implementation_readiness
+
+        conv_delta: float | None = None
+        if round_number > 1 and prev_agent_triples is not None:
+            conv_delta = _population_convergence_delta(agents, agent_states, prev_agent_triples)
+
+        await insert_global_state_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            round_number=round_number,
+            implementation_readiness=implementation_readiness,
+            alignment_index=alignment_index,
+            convergence_delta=conv_delta,
+        )
+        await insert_round_outcome(
+            sqlite_path,
+            simulation_id=simulation_id,
+            round_number=round_number,
+            adoption_momentum=adoption_momentum,
+            conflict_events=round_conflict_events,
+            consistency_index=consistency_index,
+        )
+
+        for agent in agents:
+            st = agent_states[agent.agent_id]
+            sections = attribute_sections_for_snapshot(agent.context)
+            await insert_agent_state_snapshot(
+                sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                agent_id=agent.agent_id,
+                agent_role=agent.role,
+                agent_name=agent.name,
+                age=agent.demographics.get("age"),
+                sex=agent.demographics.get("sex"),
+                ethnicity=agent.demographics.get("ethnicity"),
+                ses=agent.demographics.get("ses"),
+                support_level=st.support_level,
+                resistance_level=st.resistance_level,
+                workload_stress=st.workload_stress,
+                belief_posture=st.belief_posture,
+                group_ids=agent.persona.groups,
+                spoke_this_round=agent.agent_id in spoke_ids,
+                attribute_sections_json=json.dumps(sections, sort_keys=True),
+            )
+
+        if round_summary_enabled:
+            round_turns = await get_turns_for_round(
+                sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+            )
+            summary_text = build_round_summary(
+                round_number=round_number,
+                policy_event=policy_event,
+                turns=round_turns,
+            )
+            await upsert_round_summary(
+                sqlite_path,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                summary_text=summary_text,
+            )
+            await append_round_to_transcript(
+                transcript_dir,
+                simulation_id=simulation_id,
+                round_number=round_number,
+                policy_event=policy_event,
+                turns=round_turns,
+                round_summary=summary_text,
+            )
+
+        prev_agent_triples = {
+            ag.agent_id: (
+                agent_states[ag.agent_id].support_level,
+                agent_states[ag.agent_id].resistance_level,
+                agent_states[ag.agent_id].workload_stress,
+            )
+            for ag in agents
+        }
+
+        if convergence_threshold is not None and conv_delta is not None:
+            thr = float(convergence_threshold)
+            if conv_delta < thr:
+                conv_streak += 1
+            else:
+                conv_streak = 0
+            if conv_streak >= patience:
+                await merge_simulation_config_snapshot(
+                    sqlite_path,
+                    simulation_id=simulation_id,
+                    updates={"converged_at_round": round_number},
+                )
+                await set_simulation_status(
+                    sqlite_path,
+                    simulation_id=simulation_id,
+                    status="completed",
+                    current_round=round_number,
+                    record_converged_at_round=True,
+                    converged_at_round=round_number,
+                )
+                if round_summary_enabled:
+                    await close_transcript(
+                        transcript_dir,
+                        simulation_id=simulation_id,
+                        completed_rounds=round_number,
+                        status="converged",
+                    )
+                if importance_scoring_enabled and importance_audit:
+                    await merge_simulation_config_snapshot(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        updates={
+                            "importance_scoring_audit": dict(importance_audit),
+                            "importance_scoring_token_totals": {
+                                "input_tokens": importance_in_acc,
+                                "output_tokens": importance_out_acc,
+                            },
+                        },
+                    )
+                if weighted_retrieval_enabled:
+                    await merge_simulation_config_snapshot(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        updates={"weighted_retrieval_embed_api_calls": memory_embed_api_call_count()},
+                    )
+                if reflection_enabled and reflection_audit:
+                    await merge_simulation_config_snapshot(
+                        sqlite_path,
+                        simulation_id=simulation_id,
+                        updates={
+                            "reflection_audit": dict(reflection_audit),
+                            "reflection_token_totals": {
+                                "input_tokens": reflection_in_acc,
+                                "output_tokens": reflection_out_acc,
+                            },
+                        },
+                    )
+                await update_simulation_token_totals(
+                    sqlite_path,
+                    simulation_id=simulation_id,
+                    total_input_tokens=run_in_acc + importance_in_acc + reflection_in_acc,
+                    total_output_tokens=run_out_acc + importance_out_acc + reflection_out_acc,
+                )
+                return
+
+        await set_simulation_status(
+            sqlite_path,
+            simulation_id=simulation_id,
+            status="running",
+            current_round=round_number,
+        )
+
+    if round_summary_enabled:
+        await close_transcript(
+            transcript_dir,
+            simulation_id=simulation_id,
+            completed_rounds=total_rounds,
+            status="completed",
+        )
+    if importance_scoring_enabled and importance_audit:
+        await merge_simulation_config_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            updates={
+                "importance_scoring_audit": dict(importance_audit),
+                "importance_scoring_token_totals": {
+                    "input_tokens": importance_in_acc,
+                    "output_tokens": importance_out_acc,
+                },
+            },
+        )
+    if weighted_retrieval_enabled:
+        await merge_simulation_config_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            updates={"weighted_retrieval_embed_api_calls": memory_embed_api_call_count()},
+        )
+    if reflection_enabled and reflection_audit:
+        await merge_simulation_config_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            updates={
+                "reflection_audit": dict(reflection_audit),
+                "reflection_token_totals": {
+                    "input_tokens": reflection_in_acc,
+                    "output_tokens": reflection_out_acc,
+                },
+            },
+        )
+    await update_simulation_token_totals(
+        sqlite_path,
+        simulation_id=simulation_id,
+        total_input_tokens=run_in_acc + importance_in_acc + reflection_in_acc,
+        total_output_tokens=run_out_acc + importance_out_acc + reflection_out_acc,
+    )
+    if llm_attempt_count > 0 and llm_error_count >= llm_attempt_count:
+        reason = (first_llm_error or "all LLM turns failed")[:2000]
+        await set_simulation_status(
+            sqlite_path,
+            simulation_id=simulation_id,
+            status="failed",
+            current_round=total_rounds,
+            failure_reason=reason,
+        )
+        if round_summary_enabled:
+            await close_transcript(
+                transcript_dir,
+                simulation_id=simulation_id,
+                completed_rounds=total_rounds,
+                status="failed",
+            )
+        return
+    await set_simulation_status(
+        sqlite_path,
+        simulation_id=simulation_id,
+        status="completed",
+        current_round=total_rounds,
+    )
+

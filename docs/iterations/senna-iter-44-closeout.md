@@ -22,7 +22,7 @@
 | iter-43 (prior) | `29c25bf` | Already on study branch |
 | Non-CIEPSS elicitation dry run | `test_arc9_elicitation_dry_run_non_ciepss_study_id` | `study_id=fsbb_dry_run_v1`, `execute=False`, 3 agents |
 | Plausibility packet pipeline | `test_arc9_plausibility_packets_from_non_study_bundle` | Leakage-clean blind packets + key round-trip |
-| Proposal wording | `simulation-study/Proposal.docx` | Replaced “adapted from the open-source MiroFish architecture” → “designed with reference to the open-source MiroFish architecture; independently implemented” |
+| Proposal wording | `simulation-study/Proposal.docx` | Replaced “adapted from the open-source Senna architecture” → “designed with reference to the open-source Senna architecture; independently implemented” |
 | Full Arc 9 suite (mixed tree) | `uv run pytest` | See verification line below |
 
 ## Verification

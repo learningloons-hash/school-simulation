@@ -1,6 +1,6 @@
 # Iteration 11 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Gate date:** 2026-04-02  
 **Theme:** Single **population-table** contract — pool CSV, **weighted** / **stratified** draw, **`AgentContextV1`** alignment, **`config_snapshot` provenance**.
 
@@ -8,7 +8,7 @@
 
 | Item | Detail |
 |------|--------|
-| Schema | `population_schema_version` **`1`** (`POPULATION_SCHEMA_VERSION` in [`population/csv_population.py`](../../backend/src/mirofish_backend/population/csv_population.py)). |
+| Schema | `population_schema_version` **`1`** (`POPULATION_SCHEMA_VERSION` in [`population/csv_population.py`](../../backend/src/senna_backend/population/csv_population.py)). |
 | CSV columns | `persona_id` (required), `sampling_weight`, `stratum`, `age`, `sex`, `ethnicity`, `ses`, `name`, `groups` (pipe-separated). |
 | Draw | Without replacement; `random.Random(random_seed & 0xFFFFFFFF)` dedicated to population draw. Modes: **`weighted`**, **`stratified`** (largest-remainder quotas per `stratum`). |
 | API | `POST /simulations/run`: `population_csv`, `population_sample_mode`. `GET /simulations/population-csv-template`. |

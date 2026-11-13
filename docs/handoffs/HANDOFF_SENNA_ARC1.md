@@ -10,7 +10,7 @@
 
 ## Context
 
-The MiroFish MVP is being renamed and redesigned as **Senna** — a policy simulation platform. MiroFish is an external Chinese research project that inspired this platform; it is not our own and must not appear in the product.
+The Senna is being renamed and redesigned as **Senna** — a policy simulation platform. Senna is an external Chinese research project that inspired this platform; it is not our own and must not appear in the product.
 
 The backend (FastAPI, 29 iterations, 191 tests passing) is feature-complete and stays unchanged for this arc. All work is in `frontend/`.
 
@@ -50,7 +50,7 @@ The backend (FastAPI, 29 iterations, 191 tests passing) is feature-complete and 
 ## Arc 1 Goal
 
 By the end of Arc 1, a user opening the app for the first time will:
-- See **Senna** — not MiroFish — everywhere
+- See **Senna** — not Senna — everywhere
 - Read plain-English labels on every form field and tab
 - Get friendly, readable status messages while a run is in progress
 - See a proper product header with name and tagline
@@ -63,26 +63,26 @@ They will not yet see a redesigned layout, a new visual design, or restructured 
 
 ---
 
-### senna-iter-1 — Rename: MiroFish → Senna
+### senna-iter-1 — Rename: Senna → Senna
 
-**Goal:** Every reference to MiroFish (and "MVP") is replaced with Senna throughout the codebase.
+**Goal:** Every reference to Senna (and "MVP") is replaced with Senna throughout the codebase.
 
 **Scope — files to touch:**
 
 | File | What to change |
 |------|---------------|
-| `frontend/index.html` | `<title>` tag: "MiroFish MVP Simulation" → "Senna" |
+| `frontend/index.html` | `<title>` tag: "Senna Simulation" → "Senna" |
 | `frontend/package.json` | `"name"` field: change to `"senna-frontend"` |
-| `frontend/src/App.tsx` | `<h1>MiroFish MVP Simulation</h1>` → `<h1>Senna</h1>` (interim; Arc 1 Iter 5 will replace with proper header component) |
-| `frontend/src/components/*.tsx` | Grep for "MiroFish" or "mirofish" — replace all occurrences in user-visible strings |
-| `docs/handoffs/HANDOFF_TO_BUILDER.md` | Update bootstrap paragraph: "You are implementing MiroFish MVP" → "You are implementing Senna (formerly MiroFish MVP)" |
-| `docs/SESSION_STATE.md` | Update project name field: MiroFish → Senna |
+| `frontend/src/App.tsx` | `<h1>Senna Simulation</h1>` → `<h1>Senna</h1>` (interim; Arc 1 Iter 5 will replace with proper header component) |
+| `frontend/src/components/*.tsx` | Grep for legacy product strings — replace all occurrences in user-visible strings |
+| `docs/handoffs/HANDOFF_TO_BUILDER.md` | Update bootstrap paragraph: "You are implementing Senna" → "You are implementing Senna (formerly Senna)" |
+| `docs/SESSION_STATE.md` | Update project name field: Senna → Senna |
 
-**Out of scope:** Backend package names (`mirofish_backend`) — leave untouched. The backend rename is a separate future task and would require pyproject.toml / import path changes that risk breaking 191 passing tests.
+**Out of scope:** Backend package names (`senna_backend`) — leave untouched. The backend rename is a separate future task and would require pyproject.toml / import path changes that risk breaking 191 passing tests.
 
 **Definition of done:**
-- [ ] `grep -r "MiroFish" frontend/src/` returns zero results in user-visible strings (comments OK)
-- [ ] `grep -r "MiroFish" frontend/index.html` returns zero results
+- [ ] `grep -r "Senna" frontend/src/` returns zero results in user-visible strings (comments OK)
+- [ ] `grep -r "Senna" frontend/index.html` returns zero results
 - [ ] Browser tab shows "Senna"
 - [ ] App heading shows "Senna"
 - [ ] `npm run build` passes
@@ -263,7 +263,7 @@ Render the tab list in two groups, with a subtle visual separator (a small gap o
 - [ ] `SennaHeader.tsx` created in `frontend/src/components/`
 - [ ] Header renders correctly with logo mark, wordmark, tagline, and status pill
 - [ ] Status pill colour changes correctly across all states (test by starting a run and watching it progress)
-- [ ] Old `<h1>MiroFish MVP Simulation</h1>` (or `<h1>Senna</h1>`) removed from App.tsx
+- [ ] Old `<h1>Senna Simulation</h1>` (or `<h1>Senna</h1>`) removed from App.tsx
 - [ ] `npm run build` passes
 
 **Closeout:** Write `docs/iterations/senna-iter-5-closeout.md`
@@ -283,7 +283,7 @@ For each iteration:
 
 **Builder bootstrap (paste into each new Cursor chat):**
 
-> You are implementing the Senna UX redesign in `mirofish-mvp/frontend/`. Read in order:
+> You are implementing the Senna UX redesign in `school-simulation/frontend/`. Read in order:
 > 1. `docs/SESSION_STATE.md`
 > 2. `docs/handoffs/HANDOFF_SENNA_ARC1.md` (this handoff — full spec for Arc 1)
 > 3. Then jump to the **senna-iter-N** section for the current iteration.
@@ -296,7 +296,7 @@ For each iteration:
 
 All five of the following must be true before handing back to Claude (Cowork) for arc review:
 
-- [ ] `grep -r "MiroFish" frontend/src/` returns zero user-visible string matches
+- [ ] `grep -r "Senna" frontend/src/` returns zero user-visible string matches
 - [ ] Browser tab reads "Senna"
 - [ ] All form field labels are in plain English (no snake_case, no "Iteration N" references)
 - [ ] All 10 tabs have new plain-English labels, in two visual groups

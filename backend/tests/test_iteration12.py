@@ -10,10 +10,10 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_export_bundle, get_simulation_status_with_transcript
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.main import app
-from mirofish_backend.simulation import orchestrator
+from senna_backend.db.repo import create_simulation_run, get_simulation_export_bundle, get_simulation_status_with_transcript
+from senna_backend.db.schema import init_db
+from senna_backend.main import app
+from senna_backend.simulation import orchestrator
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def client_skip_sim(monkeypatch, tmp_path):
         return None
 
     monkeypatch.setattr(
-        "mirofish_backend.api.simulations.run_simulation_task_guarded",
+        "senna_backend.api.simulations.run_simulation_task_guarded",
         skip_run,
     )
     with TestClient(app) as c:

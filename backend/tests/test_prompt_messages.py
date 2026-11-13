@@ -1,4 +1,4 @@
-from mirofish_backend.llm.prompt_templates import build_system_prompt, build_user_prompt
+from senna_backend.llm.prompt_templates import build_system_prompt, build_user_prompt
 
 
 def test_prompt_has_system_message_shape() -> None:

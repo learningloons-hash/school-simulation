@@ -18,10 +18,10 @@ if str(_SCRIPTS) not in sys.path:
 
 import run_sstrf_validity_trials as validity_script  # noqa: E402
 
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.db.repo import get_simulation_export_bundle  # noqa: E402
-from mirofish_backend.db.schema import init_db  # noqa: E402
-from mirofish_backend.diagnostics.sstrf_validity_v2 import (  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.db.repo import get_simulation_export_bundle  # noqa: E402
+from senna_backend.db.schema import init_db  # noqa: E402
+from senna_backend.diagnostics.sstrf_validity_v2 import (  # noqa: E402
     PREREG_FROZEN_CONFIG,
     ValidityTrialProfile,
     assert_fixture_provenance_matches,
@@ -35,8 +35,8 @@ from mirofish_backend.diagnostics.sstrf_validity_v2 import (  # noqa: E402
     profile_snapshot,
     resolve_validity_manifest_write_path,
 )
-from mirofish_backend.scenarios.registry import get_scenario  # noqa: E402
-from mirofish_backend.simulation.network import parse_network_csv  # noqa: E402
+from senna_backend.scenarios.registry import get_scenario  # noqa: E402
+from senna_backend.simulation.network import parse_network_csv  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from simulation_helpers import fake_llm_state_block  # noqa: E402
@@ -217,7 +217,7 @@ async def test_dry_run_leaves_production_manifest_untouched(
 @pytest.mark.asyncio
 async def test_stub_run_reaches_completed_for_one_trial(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "mirofish_backend.simulation.orchestrator.llm_complete",
+        "senna_backend.simulation.orchestrator.llm_complete",
         fake_llm_state_block,
     )
 

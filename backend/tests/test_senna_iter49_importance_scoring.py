@@ -11,12 +11,12 @@ from typing import Any
 
 import pytest
 
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_export_bundle
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.export_bundle import EXPORT_VERSION, build_export_zip
-from mirofish_backend.llm.importance_parse import resolve_batch_importance_scores, resolve_importance_score
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.simulation import orchestrator
+from senna_backend.db.repo import create_simulation_run, get_simulation_export_bundle
+from senna_backend.db.schema import init_db
+from senna_backend.export_bundle import EXPORT_VERSION, build_export_zip
+from senna_backend.llm.importance_parse import resolve_batch_importance_scores, resolve_importance_score
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.simulation import orchestrator
 
 import sys
 from pathlib import Path
@@ -111,11 +111,11 @@ async def _run_short_sim(
 ) -> dict[str, Any]:
     if patch_llm:
         monkeypatch.setattr(
-            "mirofish_backend.simulation.orchestrator.llm_complete",
+            "senna_backend.simulation.orchestrator.llm_complete",
             _fake_llm_turn_and_importance,
         )
         monkeypatch.setattr(
-            "mirofish_backend.simulation.importance_scoring.llm_complete",
+            "senna_backend.simulation.importance_scoring.llm_complete",
             _fake_llm_turn_and_importance,
         )
     await init_db(db_path)
@@ -164,8 +164,8 @@ async def test_flag_off_no_importance_columns_or_scorer_calls(
         calls.append(system[:80])
         return await real(**kwargs)
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _track)
-    monkeypatch.setattr("mirofish_backend.simulation.importance_scoring.llm_complete", _track)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _track)
+    monkeypatch.setattr("senna_backend.simulation.importance_scoring.llm_complete", _track)
 
     with tempfile.TemporaryDirectory() as tmp:
         db_path = os.path.join(tmp, "off.sqlite")

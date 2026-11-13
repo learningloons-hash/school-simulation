@@ -7,10 +7,10 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
-from mirofish_backend.scenarios.registry import get_scenario
-from mirofish_backend.roster.csv_roster import (
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
+from senna_backend.scenarios.registry import get_scenario
+from senna_backend.roster.csv_roster import (
     merge_persona_for_slot,
     parse_roster_csv,
 )
@@ -104,7 +104,7 @@ def test_llm_fill_endpoint_returns_section_dicts(monkeypatch, tmp_path) -> None:
             })
         )
 
-    monkeypatch.setattr("mirofish_backend.api.scenario_catalog.llm_complete", fake_llm_complete)
+    monkeypatch.setattr("senna_backend.api.scenario_catalog.llm_complete", fake_llm_complete)
 
     with TestClient(app) as client:
         r = client.post(

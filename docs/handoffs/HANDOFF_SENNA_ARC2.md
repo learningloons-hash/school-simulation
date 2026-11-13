@@ -534,7 +534,7 @@ Work through iterations **sequentially**: senna-iter-6 → 7 → 8 → 9 → 10.
 
 **Builder bootstrap (paste into each new Cursor Builder chat):**
 
-> You are implementing the Senna UX redesign in `mirofish-mvp/frontend/`. Read in order:
+> You are implementing the Senna UX redesign in `school-simulation/frontend/`. Read in order:
 > 1. `docs/SESSION_STATE.md`
 > 2. `docs/handoffs/HANDOFF_SENNA_ARC1.md` — for design palette and patterns established in Arc 1
 > 3. `docs/handoffs/HANDOFF_SENNA_ARC2.md` — full spec for Arc 2 (this file)

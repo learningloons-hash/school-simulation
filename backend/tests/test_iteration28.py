@@ -9,9 +9,9 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
+from senna_backend.db.schema import init_db
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def client_i28(monkeypatch, tmp_path):
         }
         return LLMCompletion(text="OK.\n\n<state>\n" + json.dumps(state) + "\n</state>", input_tokens=10, output_tokens=5)
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     with TestClient(app) as c:
         yield c, db
@@ -156,7 +156,7 @@ def test_convergence_streak_resets_then_requires_fresh_patience(monkeypatch, tmp
         }
         return LLMCompletion(text="OK.\n\n<state>\n" + json.dumps(state) + "\n</state>", input_tokens=4, output_tokens=4)
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm_varying)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm_varying)
 
     with TestClient(app) as client:
         r = client.post(
@@ -192,7 +192,7 @@ def test_experiment_create_passes_convergence_to_child_runs(monkeypatch, tmp_pat
         }
         return LLMCompletion(text="OK.\n\n<state>\n" + json.dumps(state) + "\n</state>", input_tokens=10, output_tokens=5)
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     with TestClient(app) as client:
         r = client.post(
@@ -233,13 +233,13 @@ def test_experiment_create_passes_convergence_to_child_runs(monkeypatch, tmp_pat
 
 
 def test_agent_plan_accepts_convergence_fields() -> None:
-    from mirofish_backend.agent.orchestrator import (
+    from senna_backend.agent.orchestrator import (
         ExecutionPlan,
         PlanRunStep,
         PlanSimulationParams,
         validate_plan_against_capabilities,
     )
-    from mirofish_backend.api.capabilities import build_capabilities_dict
+    from senna_backend.api.capabilities import build_capabilities_dict
 
     cap = build_capabilities_dict()
     plan = ExecutionPlan(
