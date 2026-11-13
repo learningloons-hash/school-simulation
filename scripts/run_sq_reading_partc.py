@@ -504,7 +504,7 @@ async def assert_anthropic_key_from_backend_env(settings) -> None:
     """One-turn ping so a stale shell key fails before 12-run spend."""
     import httpx
 
-    from mirofish_backend.llm.claude_client import chat_completion_anthropic
+    from mirofish_backend.llm.router import llm_complete
 
     api_key = (settings.anthropic_api_key or "").strip()
     if not api_key:
@@ -512,14 +512,20 @@ async def assert_anthropic_key_from_backend_env(settings) -> None:
             "ANTHROPIC_API_KEY missing after loading backend/.env — add to backend/.env"
         )
     try:
-        await chat_completion_anthropic(
-            api_key=api_key,
-            model=settings.anthropic_model,
-            system_prompt="Reply with OK",
-            user_prompt="ping",
+        await llm_complete(
+            provider="anthropic",
+            messages=[
+                {"role": "system", "content": "Reply with OK"},
+                {"role": "user", "content": "ping"},
+            ],
             temperature=0.0,
             max_tokens=8,
-            timeout_s=30.0,
+            lmstudio_base_url=settings.lmstudio_base_url,
+            lmstudio_model=settings.lmstudio_model,
+            anthropic_api_key=api_key,
+            anthropic_model=settings.anthropic_model,
+            settings=settings,
+            llm_call_site="sq_reading_partc_anthropic_preflight",
         )
     except httpx.HTTPStatusError as exc:
         status = exc.response.status_code if exc.response is not None else "?"

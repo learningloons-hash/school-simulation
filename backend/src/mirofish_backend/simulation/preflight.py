@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from mirofish_backend.llm.model_profiles import ModelProfile, RunProfileResolution
+from mirofish_backend.llm.model_profiles import ModelProfile, RunProfileResolution, resolve_anthropic_pricing_key
 from mirofish_backend.llm.routing_policies import (
     llm_provider_to_routing_policy,
     routing_policy_from_mode,
@@ -167,12 +167,16 @@ def estimate_run_preflight(
     est_out = llm_turns * avg_out
 
     local_pricing = profile_resolution.local_profile.pricing_key
+    anthropic_model = profile_resolution.frontier_profile.model_id
+    if profile_resolution.primary_profile.provider_type == "anthropic":
+        anthropic_model = profile_resolution.primary_profile.model_id
+    anthropic_pricing = resolve_anthropic_pricing_key(anthropic_model)
     cost = 0.0
     if anthropic_llm > 0:
         cost += anthropic_llm * estimate_cost_usd(
             input_tokens=avg_in,
             output_tokens=avg_out,
-            provider_key="anthropic",
+            provider_key=anthropic_pricing,
         )
     if openai_compat_llm > 0:
         cost += openai_compat_llm * estimate_cost_usd(

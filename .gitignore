@@ -15,7 +15,9 @@ backend/data/*.sqlite
 backend/data/**/*.sqlite
 backend/data/transcripts/
 backend/data/exports/
+backend/data/llm_requests/
 data/
+data/llm_requests/
 *.sqlite
 
 # Node (frontend)
@@ -46,6 +48,7 @@ docs/research/
 !docs/research/SSTRF_RATER_CALIBRATION_SET.md
 !docs/research/PREREG_SSTRF_RQ1_V2.md
 !docs/research/SSTRF_RQ1_SCORING_SYSTEM_V2.md
+!docs/research/M3_SONNET55_PIN.md
 !docs/research/runs/ciepss_school_b/validity_v2/scoring/validity_v2_scoring_manifest.json
 !docs/research/runs/ciepss_school_b/validity_v2/scoring/SSTRF_RQ1_RESULT_V2.md
 articles/

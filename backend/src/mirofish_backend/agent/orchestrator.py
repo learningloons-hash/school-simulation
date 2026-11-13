@@ -25,7 +25,7 @@ from mirofish_backend.simulation.interaction_policy import VisibilityPolicy
 from mirofish_backend.simulation.sampling_strategy import SAMPLING_STRATEGY_VALUES
 from mirofish_backend.config import Settings
 from mirofish_backend.db.repo import upsert_user_scenario
-from mirofish_backend.llm.model_profiles import BUILTIN_PROFILE_IDS
+from mirofish_backend.llm.model_profiles import SELECTABLE_PROFILE_IDS
 from mirofish_backend.llm.router import llm_complete
 
 logger = logging.getLogger("mirofish_backend.agent.orchestrator")
@@ -103,9 +103,9 @@ class PlanSimulationParams(BaseModel):
         s = v.strip()
         if not s:
             return None
-        if s not in BUILTIN_PROFILE_IDS:
+        if s not in SELECTABLE_PROFILE_IDS:
             raise ValueError(
-                f"model_profile_id must be one of: {sorted(BUILTIN_PROFILE_IDS)}; got {s!r}"
+                f"model_profile_id must be one of: {sorted(SELECTABLE_PROFILE_IDS)}; got {s!r}"
             )
         return s
 
@@ -323,6 +323,8 @@ async def llm_build_execution_plan(
             lmstudio_model=settings.lmstudio_model,
             anthropic_api_key=settings.anthropic_api_key,
             anthropic_model=settings.anthropic_model,
+            settings=settings,
+            llm_call_site="agent_plan",
         )
         raw = comp.text
     except Exception as e:

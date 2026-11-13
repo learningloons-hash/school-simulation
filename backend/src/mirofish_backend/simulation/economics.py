@@ -11,17 +11,28 @@ import os
 from typing import Any
 
 from mirofish_backend.config import Settings
-from mirofish_backend.llm.model_profiles import get_builtin_profile, resolve_anthropic_pricing_key
+from mirofish_backend.llm.model_profiles import get_selectable_profile, resolve_anthropic_pricing_key
 from mirofish_backend.llm.routing_policies import HEURISTIC_PROFILE_SENTINEL
 
 # Date associated with default ``PROVIDER_PRICE_MAP`` values (cite in thesis appendices).
 PRICE_MAP_DATE = "2026-08-25"
+SONNET_55_PRICE_MAP_DATE = "2026-11-12"
 
-PROVIDER_PRICE_MAP: dict[str, dict[str, float]] = {
+PROVIDER_PRICE_MAP: dict[str, dict[str, float | str]] = {
     # Sonnet-tier fallback for unknown Anthropic model ids.
     "anthropic": {"input_per_mtok": 3.00, "output_per_mtok": 15.00},
     "anthropic_haiku_3_5": {"input_per_mtok": 0.80, "output_per_mtok": 4.00},
     "anthropic_haiku_4_5": {"input_per_mtok": 1.00, "output_per_mtok": 5.00},
+    # Exact id ``claude-sonnet-5-5`` — Anthropic list prices fetched 2026-11-12 (M3).
+    "anthropic_sonnet_5_5": {
+        "input_per_mtok": 2.00,
+        "output_per_mtok": 10.00,
+        "cache_read_per_mtok": 0.10,
+        "cache_write_5m_per_mtok": 2.50,
+        "cache_write_1h_per_mtok": 4.00,
+        "price_map_date": SONNET_55_PRICE_MAP_DATE,
+        "source": "Anthropic pricing, fetched 2026-11-12",
+    },
     "anthropic_sonnet": {"input_per_mtok": 3.00, "output_per_mtok": 15.00},
     "anthropic_opus_4": {"input_per_mtok": 15.00, "output_per_mtok": 75.00},
     "anthropic_opus_5": {"input_per_mtok": 5.00, "output_per_mtok": 25.00},
@@ -34,6 +45,16 @@ PROVIDER_PRICE_MAP: dict[str, dict[str, float]] = {
     # tokens at frontier rates) without duplicating numbers; run-level payloads use per-turn sums instead.
     "hybrid": {"input_per_mtok": 3.00, "output_per_mtok": 15.00},
 }
+
+
+def price_map_date_for_key(provider_key: str | None) -> str:
+    """Citation date for a ``PROVIDER_PRICE_MAP`` entry (per-model when recorded)."""
+    pk = (provider_key or "").strip()
+    row = PROVIDER_PRICE_MAP.get(pk) or {}
+    dated = row.get("price_map_date")
+    if isinstance(dated, str) and dated.strip():
+        return dated.strip()
+    return PRICE_MAP_DATE
 
 
 def _per_mtok_rates(provider_key: str) -> tuple[float, float]:
@@ -70,7 +91,7 @@ def estimate_cost_usd(*, input_tokens: int, output_tokens: int, provider_key: st
 
 def _builtin_profile_pricing_key(profile_id: str) -> str | None:
     """Built-in profile ``pricing_key`` for post-run billing (no API keys)."""
-    profile = get_builtin_profile(profile_id, Settings())
+    profile = get_selectable_profile(profile_id, Settings())
     if profile is None:
         return None
     if profile.provider_type == "anthropic":
@@ -96,7 +117,7 @@ def resolve_billing_provider_key(
             return "lmstudio"
         pk = _builtin_profile_pricing_key(pid)
         if pk is not None:
-            profile = get_builtin_profile(pid, Settings())
+            profile = get_selectable_profile(pid, Settings())
             if profile is not None and profile.provider_type == "anthropic":
                 model_id = (effective_model or profile.model_id or "").strip()
                 if model_id:

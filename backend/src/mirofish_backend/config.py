@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     llm_provider: str = "lmstudio"
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-haiku-5-5"
+    # Sonnet 5.5 study pin (used when model id or anthropic_sonnet_5_5 profile is selected).
+    anthropic_thinking_type: str = ""
+    anthropic_effort: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4o-mini"
     openai_api_key_env: str = "OPENAI_API_KEY"
@@ -91,6 +94,8 @@ class Settings(BaseSettings):
     # Senna Arc 6: per-round LLM context bounding + optional transcript (iter-28+)
     round_summary_enabled: bool = True
     transcript_dir: str = "./data/transcripts"
+    # Non-simulation LLM calls (analyze, agent plan, scenario tools, rubric judge).
+    llm_request_log_dir: str = "./data/llm_requests"
 
     @field_validator("llm_provider", mode="before")
     @classmethod
