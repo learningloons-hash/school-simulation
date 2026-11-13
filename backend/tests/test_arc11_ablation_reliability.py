@@ -32,8 +32,8 @@ from run_arc11_ablation import (  # noqa: E402
     write_ablation_artifacts,
 )
 
-from mirofish_backend.diagnostics.arc11_ablation import AblationRunProfile  # noqa: E402
-from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID  # noqa: E402
+from senna_backend.diagnostics.arc11_ablation import AblationRunProfile  # noqa: E402
+from senna_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID  # noqa: E402
 
 
 class _FakeSettings:
@@ -340,7 +340,7 @@ async def test_preflight_skips_anthropic_when_profiles_are_local() -> None:
                 return_value=[[0.1]],
             ):
                 with patch(
-                    "mirofish_backend.llm.claude_client.chat_completion_anthropic",
+                    "senna_backend.llm.claude_client.chat_completion_anthropic",
                     new_callable=AsyncMock,
                 ) as mock_anthropic:
                     await run_ablation_preflight(
@@ -369,7 +369,7 @@ async def test_preflight_anthropic_401_gives_actionable_message() -> None:
                 return_value=[[0.1]],
             ):
                 with patch(
-                    "mirofish_backend.llm.claude_client.chat_completion_anthropic",
+                    "senna_backend.llm.claude_client.chat_completion_anthropic",
                     new_callable=AsyncMock,
                     side_effect=httpx.HTTPStatusError("401", request=request, response=response),
                 ):
@@ -426,7 +426,7 @@ async def test_preflight_anthropic_success_passes_silently() -> None:
                 return_value=[[0.1]],
             ):
                 with patch(
-                    "mirofish_backend.llm.claude_client.chat_completion_anthropic",
+                    "senna_backend.llm.claude_client.chat_completion_anthropic",
                     new_callable=AsyncMock,
                     return_value=("OK", 1, 1),
                 ):
@@ -579,7 +579,7 @@ def _write_artifacts(records, tmp_path, **overrides):
 
 
 def _fake_record(condition: str, seed: int, sim_id: str):
-    from mirofish_backend.diagnostics.arc11_ablation import AblationRunRecord
+    from senna_backend.diagnostics.arc11_ablation import AblationRunRecord
 
     return AblationRunRecord(
         condition=condition,

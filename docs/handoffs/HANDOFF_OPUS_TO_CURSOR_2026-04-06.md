@@ -124,7 +124,7 @@ If Iterations 21–26 are done before October, the demo is solid. Iteration 27 (
 
 ## 7. Session Protocol
 
-Going forward, Opus will read `HANDOFF_CURSOR_TO_OPUS_[latest-date].md` at the start of each MiroFish strategic session. For major roadmap changes, write a `HANDOFF_CURSOR_TO_OPUS` file as you did today — that's exactly the right communication pattern. Iteration closeout docs + `SESSION_STATE.md` remain the source of truth for build status.
+Going forward, Opus will read `HANDOFF_CURSOR_TO_OPUS_[latest-date].md` at the start of each Senna strategic session. For major roadmap changes, write a `HANDOFF_CURSOR_TO_OPUS` file as you did today — that's exactly the right communication pattern. Iteration closeout docs + `SESSION_STATE.md` remain the source of truth for build status.
 
 ---
 

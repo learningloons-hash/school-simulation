@@ -60,11 +60,11 @@ Rename the local-only mental model. The existing LM Studio client is already Ope
 #### Backend
 
 - Add a generic OpenAI-compatible adapter module, preferably:
-  - `backend/src/mirofish_backend/llm/openai_compatible_client.py`
+  - `backend/src/senna_backend/llm/openai_compatible_client.py`
 - Move or wrap the current logic from:
-  - `backend/src/mirofish_backend/llm/lmstudio_client.py`
+  - `backend/src/senna_backend/llm/lmstudio_client.py`
 - Keep `lmstudio_client.py` as a thin compatibility wrapper if that creates the smallest diff.
-- Update `backend/src/mirofish_backend/llm/router.py` so the local path calls the generic adapter.
+- Update `backend/src/senna_backend/llm/router.py` so the local path calls the generic adapter.
 - Keep `LLM_PROVIDER_VALUES` unchanged for this iteration: `lmstudio`, `anthropic`, `hybrid`.
 
 ### Definition of Done
@@ -96,7 +96,7 @@ Introduce a profile layer so runs can choose a model profile instead of hardcodi
 
 Add a small profile module, for example:
 
-- `backend/src/mirofish_backend/llm/model_profiles.py`
+- `backend/src/senna_backend/llm/model_profiles.py`
 
 Suggested model:
 
@@ -162,7 +162,7 @@ Expose model profiles to agents and the UI, then replace hardcoded frontend LLM 
 
 #### Backend
 
-- Extend `backend/src/mirofish_backend/api/capabilities.py` with a `model_profiles` block.
+- Extend `backend/src/senna_backend/api/capabilities.py` with a `model_profiles` block.
 - Include:
   - `profile_id`
   - `label`

@@ -1,7 +1,7 @@
 import json
 
-from mirofish_backend.simulation.likert import compute_divergence
-from mirofish_backend.llm.likert_parse import (
+from senna_backend.simulation.likert import compute_divergence
+from senna_backend.llm.likert_parse import (
     LIKERT_ORDINAL_FLOAT_MAP,
     extract_all_likert_blocks,
     float_to_nearest_ordinal,
@@ -58,7 +58,7 @@ def test_parse_likert_payload_label_match() -> None:
 
 
 def test_resolve_likert_per_indicator_covers_all_indicators() -> None:
-    from mirofish_backend.llm.likert_parse import resolve_likert_per_indicator
+    from senna_backend.llm.likert_parse import resolve_likert_per_indicator
 
     raw = "Done.\n<likert>\n" + json.dumps({"support": "support"}) + "\n</likert>"
     per = resolve_likert_per_indicator(

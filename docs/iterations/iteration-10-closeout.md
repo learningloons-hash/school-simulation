@@ -1,6 +1,6 @@
 # Iteration 10 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Gate date:** 2026-04-02  
 **Theme:** Thin **AgentContext v1** + interaction **simulation_mode** (`full_round_robin` | `sample_k_per_round`).
 
@@ -8,7 +8,7 @@
 
 | Item | Detail |
 |------|--------|
-| `AgentContextV1` | [`simulation/agent_context.py`](../../backend/src/mirofish_backend/simulation/agent_context.py) — `version`, `slot_index`, `demographics`, `group_ids`; `to_prompt_demographics()`. |
+| `AgentContextV1` | [`simulation/agent_context.py`](../../backend/src/senna_backend/simulation/agent_context.py) — `version`, `slot_index`, `demographics`, `group_ids`; `to_prompt_demographics()`. |
 | `AgentInstance` | Holds `context`; `demographics` property for compatibility. |
 | Interaction v2 (MVP) | `_agents_for_round` — seed-stable subset for `sample_k_per_round`; orchestrator runs turns only for that subset per round. |
 | API | `POST /simulations/run`: `simulation_mode`, `speakers_per_round` (1–50); `config_snapshot` adds `agent_context_version`, `simulation_mode`, `speakers_per_round` (**`null`** when `full_round_robin` so unused K default does not mislead analysts). |

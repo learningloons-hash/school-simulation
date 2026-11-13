@@ -1,4 +1,4 @@
-# MiroFish MVP — Frontend user guide
+# Senna — Frontend user guide
 
 This guide explains the **web UI** in everyday language: what each **tab** is for, and what each **field or control** does. You do **not** need to be a programmer to use the Run tab and watch results; some tabs (Agent, Experiments, Scenarios) assume you are comfortable with concepts like “simulation run ID” or optional CSV data.
 
@@ -289,4 +289,4 @@ Exact buttons (generate from brief, LLM-fill persona, export YAML) depend on ser
 
 ## Document history
 
-- **2026-04-09** — First version (matches MiroFish MVP frontend tabs and fields as implemented).
+- **2026-04-09** — First version (matches Senna frontend tabs and fields as implemented).

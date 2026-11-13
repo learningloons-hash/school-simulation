@@ -4,9 +4,9 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.config import Settings
-from mirofish_backend.api.capabilities import build_capabilities_dict
-from mirofish_backend.llm.model_profiles import (
+from senna_backend.config import Settings
+from senna_backend.api.capabilities import build_capabilities_dict
+from senna_backend.llm.model_profiles import (
     ANTHROPIC_DEFAULT_ID,
     BUILTIN_PROFILE_IDS,
     LOCAL_LMSTUDIO_DEFAULT_ID,
@@ -27,7 +27,7 @@ from mirofish_backend.llm.model_profiles import (
     run_llm_credentials,
     run_openai_compatible_api_key,
 )
-from mirofish_backend.main import app
+from senna_backend.main import app
 
 
 def _settings() -> Settings:
@@ -228,7 +228,7 @@ def test_run_llm_credentials_explicit_local_profile() -> None:
 
 
 def test_simulation_run_request_rejects_unknown_profile() -> None:
-    from mirofish_backend.api.simulations import SimulationRunRequest
+    from senna_backend.api.simulations import SimulationRunRequest
 
     with pytest.raises(ValueError, match="model_profile_id must be one of"):
         SimulationRunRequest(model_profile_id="does_not_exist")
@@ -242,8 +242,8 @@ def _discard_create_task(coro: object, *_args: object, **_kwargs: object) -> Non
 
 @pytest.mark.asyncio
 async def test_queue_run_persists_model_profile_in_config_snapshot(tmp_path) -> None:
-    from mirofish_backend.api import simulations as sim_api
-    from mirofish_backend.api.simulations import SimulationRunRequest, queue_simulation_run
+    from senna_backend.api import simulations as sim_api
+    from senna_backend.api.simulations import SimulationRunRequest, queue_simulation_run
 
     db_path = str(tmp_path / "test.sqlite")
     settings = Settings(sqlite_path=db_path, lmstudio_model="snap-model", anthropic_model="snap-claude")
@@ -284,7 +284,7 @@ async def test_queue_run_persists_model_profile_in_config_snapshot(tmp_path) -> 
 
 
 def _minimal_scenario():
-    from mirofish_backend.scenarios.registry import PersonaTemplate, ScenarioConfig
+    from senna_backend.scenarios.registry import PersonaTemplate, ScenarioConfig
 
     return ScenarioConfig(
         scenario_id="psle_reform_mvp",

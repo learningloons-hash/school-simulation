@@ -1,7 +1,7 @@
 # Review request — Iteration 4
 
-**For:** Opus / architect (mirofish-code-reviewer or equivalent)  
-**Repo folder:** `mirofish-mvp` (this project)  
+**For:** Opus / architect (code-reviewer skill or equivalent)  
+**Repo folder:** `school-simulation` (this project)  
 **Iteration:** 4 (complete; includes follow-on hardening from LM Studio runs)
 
 ## Low-token retry (if the model hit usage limits)
@@ -25,9 +25,9 @@ Iteration 4 closed the Iteration 2 review gap list (structured state, tokens, Cl
 
 1. `docs/SESSION_STATE.md` — current status and completed-work index  
 2. `docs/iterations/iteration-4-closeout.md` — full file map and evidence  
-3. `backend/src/mirofish_backend/simulation/orchestrator.py`  
-4. `backend/src/mirofish_backend/llm/prompt_templates.py`  
-5. `backend/src/mirofish_backend/llm/context_clip.py` + `state_parse.py`  
+3. `backend/src/senna_backend/simulation/orchestrator.py`  
+4. `backend/src/senna_backend/llm/prompt_templates.py`  
+5. `backend/src/senna_backend/llm/context_clip.py` + `state_parse.py`  
 6. `backend/tests/` — all `test_*.py`
 
 ## Output

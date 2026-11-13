@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mirofish-backend"
+name = "senna-backend"
 version = "0.1.0"
 license = "Apache-2.0"
 requires-python = ">=3.11,<3.13"
@@ -24,7 +24,9 @@ dev = [
 ]
 
 [project.scripts]
-mirofish-backend = "mirofish_backend.main:run_dev"
+senna-backend = "senna_backend.main:run_dev"
+# Legacy alias — kept for existing muscle memory (emits DeprecationWarning).
+mirofish-backend = "senna_backend._deprecated_cli:run_dev_deprecated"
 
 [tool.setuptools.package-dir]
 "" = "src"
@@ -34,7 +36,7 @@ where = ["src"]
 
 # Ship scenario YAML + corpus text with the wheel/sdist (otherwise only embedded fallback IDs exist at runtime).
 [tool.setuptools.package-data]
-mirofish_backend = [
+senna_backend = [
   "scenarios/data/*.yaml",
   "scenarios/data/corpus/*/*.txt",
 ]

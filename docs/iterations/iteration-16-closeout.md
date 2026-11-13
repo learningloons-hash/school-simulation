@@ -7,7 +7,7 @@
 
 ### 1. `POST /scenarios/generate-from-brief`
 
-- **Module:** `backend/src/mirofish_backend/api/scenarios_generate.py`
+- **Module:** `backend/src/senna_backend/api/scenarios_generate.py`
 - Plain-English **`brief`** (20–16k chars) → LLM → **`validate_scenario_document`** (same path as catalog CRUD).
 - **200:** `{ document, warnings[] }`
 - **422:** `detail` includes **`errors`**, **`warnings`**, optional **`raw_llm_text`** (validation failure or unparseable JSON).
@@ -16,7 +16,7 @@
 
 ### 2. `GET /capabilities`
 
-- **Module:** `backend/src/mirofish_backend/api/capabilities.py`
+- **Module:** `backend/src/senna_backend/api/capabilities.py`
 - **`export_version`:** `4`; **`agent_context_version`** from `agent_context.AGENT_CONTEXT_VERSION`; **`population_schema_version`** from `POPULATION_SCHEMA_VERSION`; **`interaction_policy_version`** from `interaction_policy.INTERACTION_POLICY_VERSION`.
 - **`interaction_policy`:** enum **values** from `ChannelType`, `TurnOrderPolicy`, `VisibilityPolicy`, `InteractionOverlay` at runtime. OpenAPI docstring notes **`bundled_rag_paths`** is filesystem / install dependent.
 - **`simulation_run`:** `simulation_modes`, `population_sample_modes`, `llm_providers` from **`SIMULATION_MODE_VALUES`** / **`POPULATION_SAMPLE_MODE_VALUES`** / **`LLM_PROVIDER_VALUES`** in `api/simulations.py` (shared with Pydantic validators — no duplicate string lists).

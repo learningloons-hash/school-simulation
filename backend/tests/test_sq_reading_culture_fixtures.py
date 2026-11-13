@@ -7,8 +7,8 @@ from typing import Any
 
 import pytest
 
-from mirofish_backend.scenarios.registry import PersonaTemplate, get_scenario, scenario_from_mapping
-from mirofish_backend.scenarios.serialize import scenario_config_to_document
+from senna_backend.scenarios.registry import PersonaTemplate, get_scenario, scenario_from_mapping
+from senna_backend.scenarios.serialize import scenario_config_to_document
 
 BASELINE_ID = "sq_reading_culture"
 ADVERSE_ID = "sq_reading_culture_adverse"

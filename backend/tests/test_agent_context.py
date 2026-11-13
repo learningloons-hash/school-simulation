@@ -1,4 +1,4 @@
-from mirofish_backend.simulation.agent_context import (
+from senna_backend.simulation.agent_context import (
     AGENT_CONTEXT_VERSION,
     attribute_sections_for_snapshot,
     build_agent_context_v1,

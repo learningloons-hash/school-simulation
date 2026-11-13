@@ -3,13 +3,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from mirofish_backend.llm import openai_compatible_client
-from mirofish_backend.llm.lmstudio_client import (
+from senna_backend.llm import openai_compatible_client
+from senna_backend.llm.lmstudio_client import (
     _format_lm_studio_error_body,
     chat_completion_openai_compatible as lmstudio_chat_completion,
 )
-from mirofish_backend.llm.openai_compatible_client import _format_openai_compatible_error_body
-from mirofish_backend.llm.router import llm_complete, resolve_effective_provider
+from senna_backend.llm.openai_compatible_client import _format_openai_compatible_error_body
+from senna_backend.llm.router import llm_complete, resolve_effective_provider
 
 
 def test_format_error_body_parses_openai_json_message() -> None:
@@ -39,7 +39,7 @@ async def test_chat_completion_parses_prompt_and_completion_tokens() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("mirofish_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("senna_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
         text, inp, out = await openai_compatible_client.chat_completion_openai_compatible(
             base_url="http://127.0.0.1:1234/v1",
             model="test-model",
@@ -68,7 +68,7 @@ async def test_chat_completion_parses_input_and_output_token_aliases() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("mirofish_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("senna_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
         text, inp, out = await openai_compatible_client.chat_completion_openai_compatible(
             base_url="http://127.0.0.1:1234/v1",
             model="test-model",
@@ -92,7 +92,7 @@ async def test_chat_completion_http_error_includes_server_message() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("mirofish_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("senna_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
         with pytest.raises(RuntimeError, match="context length exceeded"):
             await openai_compatible_client.chat_completion_openai_compatible(
                 base_url="http://127.0.0.1:1234/v1",
@@ -109,7 +109,7 @@ def test_lmstudio_provider_resolves_to_openai_compatible_path() -> None:
 @pytest.mark.asyncio
 async def test_llm_complete_lmstudio_uses_openai_compatible_adapter() -> None:
     with patch(
-        "mirofish_backend.llm.router.chat_completion_openai_compatible",
+        "senna_backend.llm.router.chat_completion_openai_compatible",
         new_callable=AsyncMock,
         return_value=("reply", 5, 2),
     ) as mock_chat:
@@ -149,7 +149,7 @@ async def test_chat_completion_sends_bearer_when_api_key_set() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("mirofish_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("senna_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
         await openai_compatible_client.chat_completion_openai_compatible(
             base_url="https://api.openai.com/v1",
             model="gpt-4o-mini",
@@ -175,7 +175,7 @@ async def test_chat_completion_omits_auth_header_for_local_lm_studio() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("mirofish_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("senna_backend.llm.openai_compatible_client.httpx.AsyncClient", return_value=mock_client):
         await openai_compatible_client.chat_completion_openai_compatible(
             base_url="http://127.0.0.1:1234/v1",
             model="local-model",
@@ -192,7 +192,7 @@ async def test_chat_completion_omits_auth_header_for_local_lm_studio() -> None:
 @pytest.mark.asyncio
 async def test_llm_complete_forwards_openai_compatible_api_key() -> None:
     with patch(
-        "mirofish_backend.llm.router.chat_completion_openai_compatible",
+        "senna_backend.llm.router.chat_completion_openai_compatible",
         new_callable=AsyncMock,
         return_value=("reply", 1, 1),
     ) as mock_chat:

@@ -14,21 +14,21 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.config import Settings
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.export_bundle import EXPORT_VERSION
-from mirofish_backend.llm.model_profiles import (
+from senna_backend.config import Settings
+from senna_backend.db.schema import init_db
+from senna_backend.export_bundle import EXPORT_VERSION
+from senna_backend.llm.model_profiles import (
     ANTHROPIC_DEFAULT_ID,
     LOCAL_LMSTUDIO_DEFAULT_ID,
     OPENAI_DEFAULT_ID,
 )
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.llm.routing_policies import HEURISTIC_PROFILE_SENTINEL
-from mirofish_backend.main import app
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.llm.routing_policies import HEURISTIC_PROFILE_SENTINEL
+from senna_backend.main import app
 
 
 def _minimal_scenario():
-    from mirofish_backend.scenarios.registry import PersonaTemplate, ScenarioConfig
+    from senna_backend.scenarios.registry import PersonaTemplate, ScenarioConfig
 
     return ScenarioConfig(
         scenario_id="psle_reform_mvp",
@@ -128,7 +128,7 @@ def client_arc8(monkeypatch, tmp_path):
     db = tmp_path / "arc8.sqlite"
     monkeypatch.setenv("SQLITE_PATH", str(db))
     asyncio.run(init_db(str(db)))
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm_clean)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _fake_llm_clean)
     with TestClient(app) as c:
         yield c
 
@@ -173,7 +173,7 @@ def test_openai_compatible_profile_mock_path(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("SQLITE_PATH", str(db))
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-not-real")
     asyncio.run(init_db(str(db)))
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm_clean)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _fake_llm_clean)
 
     with TestClient(app) as client:
         r = client.post(
@@ -220,7 +220,7 @@ def test_keyword_fallback_provenance(monkeypatch, tmp_path) -> None:
     db = tmp_path / "arc8-kw.sqlite"
     monkeypatch.setenv("SQLITE_PATH", str(db))
     asyncio.run(init_db(str(db)))
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm_no_state)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _fake_llm_no_state)
 
     with TestClient(app) as client:
         r = client.post(
@@ -241,7 +241,7 @@ def test_repaired_duplicate_state_provenance(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("SQLITE_PATH", str(db))
     asyncio.run(init_db(str(db)))
     monkeypatch.setattr(
-        "mirofish_backend.simulation.orchestrator.llm_complete",
+        "senna_backend.simulation.orchestrator.llm_complete",
         _fake_llm_duplicate_state,
     )
 
@@ -284,8 +284,8 @@ def test_tier3_heuristic_profile_provenance(client_arc8: TestClient) -> None:
 
 @pytest.mark.asyncio
 async def test_preflight_warnings_on_queue(tmp_path) -> None:
-    from mirofish_backend.api import simulations as sim_api
-    from mirofish_backend.api.simulations import SimulationRunRequest, queue_simulation_run
+    from senna_backend.api import simulations as sim_api
+    from senna_backend.api.simulations import SimulationRunRequest, queue_simulation_run
 
     settings = Settings(sqlite_path=str(tmp_path / "pf.sqlite"), llm_provider="hybrid")
     captured: dict[str, object] = {}

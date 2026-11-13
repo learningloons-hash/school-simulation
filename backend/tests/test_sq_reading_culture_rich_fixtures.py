@@ -9,15 +9,15 @@ from typing import Any
 import pytest
 import yaml
 
-from mirofish_backend.scenarios.registry import PersonaTemplate, get_scenario
-from mirofish_backend.scenarios.serialize import scenario_config_to_document
+from senna_backend.scenarios.registry import PersonaTemplate, get_scenario
+from senna_backend.scenarios.serialize import scenario_config_to_document
 
 POSITIVE_RICH_ID = "sq_reading_culture_rich"
 ADVERSE_RICH_ID = "sq_reading_culture_adverse_rich"
 BASELINE_ID = "sq_reading_culture"
 ADVERSE_ID = "sq_reading_culture_adverse"
 
-_DATA_DIR = Path(__file__).resolve().parents[1] / "src/mirofish_backend/scenarios/data"
+_DATA_DIR = Path(__file__).resolve().parents[1] / "src/senna_backend/scenarios/data"
 
 
 def _persona_roster(personas: list[PersonaTemplate]) -> list[dict[str, Any]]:

@@ -6,13 +6,13 @@ import zipfile
 
 import pytest
 
-from mirofish_backend.db.repo import (
+from senna_backend.db.repo import (
     create_simulation_run,
     get_simulation_export_bundle,
     insert_agent_state_snapshot,
 )
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.export_bundle import build_export_zip
+from senna_backend.db.schema import init_db
+from senna_backend.export_bundle import build_export_zip
 
 
 def test_build_export_zip_contains_expected_csvs() -> None:

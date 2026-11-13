@@ -210,8 +210,8 @@ def build_round_summary(
 ### Definition of done
 
 - `pytest` green
-- `rg 'round_summaries' backend/src/mirofish_backend/db/schema.py` — matches
-- `rg 'build_round_summary' backend/src/mirofish_backend/llm/round_summary.py` — matches
+- `rg 'round_summaries' backend/src/senna_backend/db/schema.py` — matches
+- `rg 'build_round_summary' backend/src/senna_backend/llm/round_summary.py` — matches
 - Unit test: `build_round_summary()` with 2 turns (one with valid `<state>` block, one without) — both produce non-empty output, no exception
 
 ---
@@ -297,8 +297,8 @@ return (
 **1. New imports (top of file):**
 
 ```python
-from mirofish_backend.llm.round_summary import build_round_summary
-from mirofish_backend.db.repo import (
+from senna_backend.llm.round_summary import build_round_summary
+from senna_backend.db.repo import (
     ...,          # existing imports
     upsert_round_summary,
     get_round_summaries,
@@ -373,8 +373,8 @@ transcript_dir=settings.transcript_dir,
 ### Definition of done
 
 - `pytest` green
-- `rg 'round_summaries' backend/src/mirofish_backend/simulation/orchestrator.py` — matches
-- `rg 'prior_summaries' backend/src/mirofish_backend/simulation/orchestrator.py` — matches
+- `rg 'round_summaries' backend/src/senna_backend/simulation/orchestrator.py` — matches
+- `rg 'prior_summaries' backend/src/senna_backend/simulation/orchestrator.py` — matches
 - Manual check: `interaction_last_k` cap value is `12` not `120`
 - Build prompt output check: when `round_summaries` is non-empty, the string "Prior rounds" appears in the returned prompt
 
@@ -489,7 +489,7 @@ async def close_transcript(
 
 **Import:**
 ```python
-from mirofish_backend.simulation.transcript_writer import (
+from senna_backend.simulation.transcript_writer import (
     open_transcript,
     append_round_to_transcript,
     close_transcript,
@@ -543,7 +543,7 @@ Also call `close_transcript` in the convergence-early-exit path with `status="co
 - `pytest` green
 - After a short test run (2 rounds, 2 agents), a `.md` file exists at `data/transcripts/{simulation_id}.md`
 - File contains header, both round sections, and footer
-- `rg 'open_transcript' backend/src/mirofish_backend/simulation/orchestrator.py` — matches
+- `rg 'open_transcript' backend/src/senna_backend/simulation/orchestrator.py` — matches
 
 ---
 
@@ -567,7 +567,7 @@ Confirm `round_summary_enabled` and `transcript_dir` are read from `settings` an
 Add to `tests/` (new file `test_round_summary.py`):
 
 ```python
-from mirofish_backend.llm.round_summary import build_round_summary
+from senna_backend.llm.round_summary import build_round_summary
 
 def test_build_round_summary_with_state():
     turns = [
@@ -603,7 +603,7 @@ Add to `tests/` (new file `test_transcript_writer.py`) — a sync test that call
 - `pytest` green (all existing + new tests)
 - `rg 'round_summary_enabled' backend/src` — appears in `config.py`, `simulations.py`, `orchestrator.py`
 - `rg 'transcript_dir' backend/src` — appears in `config.py`, `simulations.py`, `orchestrator.py`
-- `rg 'transcript_writer' backend/src/mirofish_backend/simulation/orchestrator.py` — matches
+- `rg 'transcript_writer' backend/src/senna_backend/simulation/orchestrator.py` — matches
 
 ---
 
@@ -615,7 +615,7 @@ Add to `tests/` (new file `test_transcript_writer.py`) — a sync test that call
 4. Transcript file written to `data/transcripts/`
 5. `SELECT round_number, summary_text FROM round_summaries WHERE simulation_id = '<id>';` returns one row per completed round
 6. Prompt for round 3 (inspected via `raw_prompt` column) contains "Prior rounds — compact summaries"
-7. `interaction_last_k` cap is 12 (verify via `rg '12' backend/src/mirofish_backend/simulation/orchestrator.py` and visual check)
+7. `interaction_last_k` cap is 12 (verify via `rg '12' backend/src/senna_backend/simulation/orchestrator.py` and visual check)
 
 ---
 

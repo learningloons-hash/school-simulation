@@ -8,17 +8,17 @@
 
 ## Shipped
 
-- `backend/src/mirofish_backend/db/schema.py` — `round_summaries` table in `init_db()` after `round_outcomes`
-- `backend/src/mirofish_backend/db/repo.py` — `upsert_round_summary`, `get_round_summaries`, `get_turns_for_round`
-- `backend/src/mirofish_backend/llm/round_summary.py` — `build_round_summary()` (deterministic, no LLM)
+- `backend/src/senna_backend/db/schema.py` — `round_summaries` table in `init_db()` after `round_outcomes`
+- `backend/src/senna_backend/db/repo.py` — `upsert_round_summary`, `get_round_summaries`, `get_turns_for_round`
+- `backend/src/senna_backend/llm/round_summary.py` — `build_round_summary()` (deterministic, no LLM)
 - `backend/tests/test_round_summary.py` — two turns (with/without `<state>`) + empty turns
 
 ## Verification
 
-- `rg 'round_summaries' backend/src/mirofish_backend/db/schema.py` — matches
-- `rg 'build_round_summary' backend/src/mirofish_backend/llm/round_summary.py` — matches
+- `rg 'round_summaries' backend/src/senna_backend/db/schema.py` — matches
+- `rg 'build_round_summary' backend/src/senna_backend/llm/round_summary.py` — matches
 - `uv run pytest` (from `backend/`): **193 passed, 1 skipped** (after post-26 hardening)
-- **Post-26 hardening (2026-04-26):** `tests/test_iteration17.py::test_agent_plan_mock_llm` now patches `mirofish_backend.api.agent.llm_build_execution_plan` (the symbol `/agent/plan` uses), matching `test_agent_ask_json_mock`. Full suite green; see § *Post-senna-iter-26 hardening* in [`HANDOFF_TO_BUILDER.md`](../handoffs/HANDOFF_TO_BUILDER.md).
+- **Post-26 hardening (2026-04-26):** `tests/test_iteration17.py::test_agent_plan_mock_llm` now patches `senna_backend.api.agent.llm_build_execution_plan` (the symbol `/agent/plan` uses), matching `test_agent_ask_json_mock`. Full suite green; see § *Post-senna-iter-26 hardening* in [`HANDOFF_TO_BUILDER.md`](../handoffs/HANDOFF_TO_BUILDER.md).
 
 ## Not in this gate
 

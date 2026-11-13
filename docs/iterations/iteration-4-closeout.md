@@ -1,6 +1,6 @@
 # Iteration 4 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Gate date:** 2026-04-02  
 **Status:** Implementation complete; ready for architect (Opus) review.
 
@@ -15,7 +15,7 @@ This document records **all** Iteration 4 scope: the original review-gap batch p
 | **C3** | Structured state: `<state>{...json...}</state>` in user prompt; `llm/state_parse.py`; `_apply_state_from_response` with keyword fallback (`_apply_state_update_keyword`). |
 | **C2** | Default `llm_max_tokens=1024`; `POST /simulations/run` optional `max_tokens` (64–8192); threaded into orchestrator and `config_snapshot`. |
 | **C5** | `llm/router.py` + `llm/claude_client.py`: `lmstudio` \| `anthropic` (Anthropic Messages API via httpx). Settings: `llm_provider`, `anthropic_api_key`, `anthropic_model`. |
-| **I2** | YAML scenarios under `backend/src/mirofish_backend/scenarios/data/*.yaml`; `registry.py` loads YAML over minimal embedded fallback. |
+| **I2** | YAML scenarios under `backend/src/senna_backend/scenarios/data/*.yaml`; `registry.py` loads YAML over minimal embedded fallback. |
 | **I4** | `backend/pyproject.toml`: `requires-python = ">=3.11,<3.13"`; dependency `pyyaml`. |
 | **I3** | `backend/.gitignore` for `venv/`, `.venv/`, sqlite, caches. |
 | **Tests** | Prompt shape, state parse + orchestrator path, simulation failure guard, YAML registry, context clipping; state engine mocks `llm_complete` with `<state>` JSON. |
@@ -38,16 +38,16 @@ This document records **all** Iteration 4 scope: the original review-gap batch p
 
 | Area | Paths |
 |------|--------|
-| Orchestrator | `backend/src/mirofish_backend/simulation/orchestrator.py` |
-| Prompts | `backend/src/mirofish_backend/llm/prompt_templates.py` |
-| State parse | `backend/src/mirofish_backend/llm/state_parse.py` |
-| Context clip | `backend/src/mirofish_backend/llm/context_clip.py` |
-| LM Studio | `backend/src/mirofish_backend/llm/lmstudio_client.py` |
-| Router / Claude | `backend/src/mirofish_backend/llm/router.py`, `llm/claude_client.py` |
-| API | `backend/src/mirofish_backend/api/simulations.py` |
-| Config | `backend/src/mirofish_backend/config.py` |
-| DB / memory queries | `backend/src/mirofish_backend/db/repo.py` (`get_recent_interactions`, …) |
-| Scenarios | `backend/src/mirofish_backend/scenarios/registry.py`, `scenarios/data/psle_reform_mvp.yaml` |
+| Orchestrator | `backend/src/senna_backend/simulation/orchestrator.py` |
+| Prompts | `backend/src/senna_backend/llm/prompt_templates.py` |
+| State parse | `backend/src/senna_backend/llm/state_parse.py` |
+| Context clip | `backend/src/senna_backend/llm/context_clip.py` |
+| LM Studio | `backend/src/senna_backend/llm/lmstudio_client.py` |
+| Router / Claude | `backend/src/senna_backend/llm/router.py`, `llm/claude_client.py` |
+| API | `backend/src/senna_backend/api/simulations.py` |
+| Config | `backend/src/senna_backend/config.py` |
+| DB / memory queries | `backend/src/senna_backend/db/repo.py` (`get_recent_interactions`, …) |
+| Scenarios | `backend/src/senna_backend/scenarios/registry.py`, `scenarios/data/psle_reform_mvp.yaml` |
 | Frontend | `frontend/src/App.tsx`, `frontend/src/lib/api.ts` |
 | Tests | `backend/tests/test_*.py` (see Gate Evidence) |
 
@@ -66,7 +66,7 @@ Manual: LM Studio on `127.0.0.1:1234`, model id must match `GET /v1/models`; opt
 
 ## For Opus / architect review
 
-1. Use skill **mirofish-code-reviewer** (or equivalent deep pass).  
+1. Use skill **code-reviewer** (or equivalent deep pass).  
 2. Read `docs/SESSION_STATE.md` and this file.  
 3. Skim `docs/reviews/REVIEW_REQUEST_iteration-4.md` for scope checklist.  
 4. Write findings to **`docs/reviews/review-iteration-4.md`** (create on review).

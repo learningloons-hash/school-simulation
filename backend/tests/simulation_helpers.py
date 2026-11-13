@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from mirofish_backend.llm.router import LLMCompletion
+from senna_backend.llm.router import LLMCompletion
 
 
 async def fake_llm_state_block(**kwargs: Any) -> LLMCompletion:

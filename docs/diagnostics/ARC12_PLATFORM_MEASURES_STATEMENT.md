@@ -4,7 +4,7 @@
 
 **Audience:** GM-F (scoring criterion author). **Not** a scoring rubric, proposition list, threshold, or judge protocol.
 
-**Product state:** `export_version` **14** (`backend/src/mirofish_backend/export_bundle.py`); platform closeout through **senna-iter-56** (`adb2763`).
+**Product state:** `export_version` **14** (`backend/src/senna_backend/export_bundle.py`); platform closeout through **senna-iter-56** (`adb2763`).
 
 **Scoring system (GM-F delivered):** [`SSTRF_RQ1_SCORING_SYSTEM_V2.md`](../research/SSTRF_RQ1_SCORING_SYSTEM_V2.md) — supersedes the misread in §1 below.
 

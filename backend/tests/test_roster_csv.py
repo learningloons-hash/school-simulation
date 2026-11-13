@@ -1,12 +1,12 @@
 import pytest
 
-from mirofish_backend.roster.csv_roster import (
+from senna_backend.roster.csv_roster import (
     ParsedRosterRow,
     merge_persona_for_slot,
     parse_roster_csv,
     personas_for_run,
 )
-from mirofish_backend.scenarios.registry import get_scenario
+from senna_backend.scenarios.registry import get_scenario
 
 
 def test_parse_roster_empty_returns_empty_slots() -> None:

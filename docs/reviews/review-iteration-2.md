@@ -11,29 +11,29 @@ Verdict: NEEDS_WORK
 
 ### C1: Prompt is a debug string, not a persona prompt
 - Severity: CRITICAL
-- Files: `backend/src/mirofish_backend/simulation/orchestrator.py` (lines 195-220)
+- Files: `backend/src/senna_backend/simulation/orchestrator.py` (lines 195-220)
 - Problem: The prompt sent to the LLM is a flat key=value dump (`AgentRole=principal`, `PersonaBeliefs={'trust_in_moe_policy': 0.55}`) with no system message. No persona identity separation from task instruction.- Fix: Refactor into two-message architecture. Create a `system` message containing persona identity (name, role, style_cues, beliefs written as natural prose, psychological profile, school context). Create a `user` message containing round context (round number, policy event, interaction task, other agents' recent actions, working memory). Add response format guidance requesting structured output. Update `lmstudio_client.py` to accept and send both `system` and `user` messages.
 
 ### C2: max_tokens=64 truncates agent responses
 - Severity: CRITICAL
-- Files: `backend/src/mirofish_backend/llm/lmstudio_client.py` (line 16)
+- Files: `backend/src/senna_backend/llm/lmstudio_client.py` (line 16)
 - Problem: 64 tokens produces 1-2 sentences. Agents cannot express nuanced policy positions, deliberate on implementation challenges, or respond meaningfully to other agents.
 - Fix: Change default `max_tokens` to 1024. Make it configurable via `Settings` in `config.py`. Add a `max_tokens` field to `SimulationRunRequest` so it can be set per-run.
 
 ### C3: Keyword-counting state update is methodologically invalid
 - Severity: CRITICAL
-- Files: `backend/src/mirofish_backend/simulation/orchestrator.py` (`_apply_state_update()`, lines 98-120)
+- Files: `backend/src/senna_backend/simulation/orchestrator.py` (`_apply_state_update()`, lines 98-120)
 - Problem: State updates count keyword occurrences ("support", "concern", "workload"). "I do not support this" increases support score. This is a bag-of-words heuristic applied where LLM-driven analysis is required. An examiner would reject this as invalid for a simulation validity study.- Fix: Replace `_apply_state_update()` entirely. After getting the LLM response, make a second LLM call asking the model to extract belief state as structured JSON: `{"support_level": 0.0-1.0, "resistance_level": 0.0-1.0, "workload_stress": 0.0-1.0, "belief_posture": "supportive|resistant|mixed", "reasoning": "..."}`. Use this JSON to update agent state. Alternatively, instruct the agent to include a `<state>` block in its response that is parsed out.
 
 ### C4: No error handling on simulation failure
 - Severity: CRITICAL
-- Files: `backend/src/mirofish_backend/api/simulations.py` (line 62)
+- Files: `backend/src/senna_backend/api/simulations.py` (line 62)
 - Problem: `asyncio.create_task()` is fire-and-forget with no error handling. A crash mid-run leaves status as "running" forever. Frontend polls for 8 minutes then shows "timeout".
 - Fix: Wrap `run_simulation_task` in a try/except. On exception, call `set_simulation_status(..., status="failed")` and log the error. Add an `error_message` column to `simulation_runs` table to surface the reason.
 
 ### C5: No Claude API connector
 - Severity: CRITICAL
-- Files: `backend/src/mirofish_backend/llm/` (missing)
+- Files: `backend/src/senna_backend/llm/` (missing)
 - Problem: Only LM Studio (local) is connected. Phase 1 research requires frontier model runs on Claude Sonnet/Opus for comparison. The `all_frontier` and `comparison` LLM Router modes don't exist yet.
 - Fix: Add `claude_client.py` using the `anthropic` SDK (`pip install anthropic`). Implement `chat_completion_anthropic(*, model, system, messages, max_tokens, temperature) -> str`. Add `anthropic_model` and `anthropic_api_key` fields to `Settings`. Then add a `LLMRouter` class in `llm/router.py` that dispatches based on a `model_mode` enum.
 
@@ -41,15 +41,15 @@ Verdict: NEEDS_WORK
 
 ### I1: No config snapshot per run
 - Severity: IMPORTANT
-- Files: `backend/src/mirofish_backend/db/schema.py`, `backend/src/mirofish_backend/api/simulations.py`
+- Files: `backend/src/senna_backend/db/schema.py`, `backend/src/senna_backend/api/simulations.py`
 - Problem: No way to prove a run is reproducible without knowing its exact config. Thesis requires reproducibility.
 - Fix: Add `config_snapshot TEXT` column to `simulation_runs`. At run creation, serialize the full config dict (scenario_id, agent_limit, total_rounds, random_seed, model_mode, model_used, prompt_version, llm_temperature, max_tokens) as JSON and store it.
 
 ### I2: Personas hardcoded in Python, no YAML files
 - Severity: IMPORTANT
-- Files: `backend/src/mirofish_backend/scenarios/registry.py`
+- Files: `backend/src/senna_backend/scenarios/registry.py`
 - Problem: Personas and scenarios are Python dataclasses. Architecture spec requires YAML files so examiners can read them directly and they can be versioned independently.
-- Fix: Create `backend/src/mirofish_backend/scenarios/psle_reform.yaml` with persona templates using the full psychological profile schema (openness_to_change, policy_compliance_tendency, professional_identity_strength, risk_aversion, workload_sensitivity). Add a YAML loader in `registry.py`.
+- Fix: Create `backend/src/senna_backend/scenarios/psle_reform.yaml` with persona templates using the full psychological profile schema (openness_to_change, policy_compliance_tendency, professional_identity_strength, risk_aversion, workload_sensitivity). Add a YAML loader in `registry.py`.
 
 ### I3: Duplicate virtual environments
 - Severity: IMPORTANT

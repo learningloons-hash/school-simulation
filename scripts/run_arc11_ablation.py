@@ -33,15 +33,15 @@ sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
 from run_arc10_diagnostics import run_arc10_diagnostics
 
-from mirofish_backend.api.simulations import (
+from senna_backend.api.simulations import (
     SimulationRunRequest,
     queue_simulation_run,
     wait_for_simulation_terminal,
 )
-from mirofish_backend.config import get_settings
-from mirofish_backend.db.repo import get_simulation_export_bundle
-from mirofish_backend.db.schema import init_db as schema_init
-from mirofish_backend.diagnostics.arc11_ablation import (
+from senna_backend.config import get_settings
+from senna_backend.db.repo import get_simulation_export_bundle
+from senna_backend.db.schema import init_db as schema_init
+from senna_backend.diagnostics.arc11_ablation import (
     ABLATION_CONDITIONS,
     DEFAULT_ABLATION_SEEDS,
     AblationRunProfile,
@@ -56,9 +56,9 @@ from mirofish_backend.diagnostics.arc11_ablation import (
     generate_ablation_markdown,
     load_measured_baseline_summary,
 )
-from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
-from mirofish_backend.llm.openai_compatible_client import chat_completion_openai_compatible
-from mirofish_backend.rag.embeddings import embed_texts_openai_compatible
+from senna_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.llm.openai_compatible_client import chat_completion_openai_compatible
+from senna_backend.rag.embeddings import embed_texts_openai_compatible
 
 _DEFAULT_FIXTURES = _REPO_ROOT / "backend/tests/fixtures/membench"
 _DEFAULT_BASELINE = _REPO_ROOT / "backend/tests/fixtures/arc11/measured_baseline_summary.json"
@@ -133,8 +133,8 @@ async def run_ablation_preflight(
     """
     import httpx
 
-    from mirofish_backend.llm.model_profiles import get_builtin_profile
-    from mirofish_backend.llm.router import llm_complete
+    from senna_backend.llm.model_profiles import get_builtin_profile
+    from senna_backend.llm.router import llm_complete
 
     base_url = settings.lmstudio_base_url
     lm_model = settings.lmstudio_model

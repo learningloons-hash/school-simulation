@@ -1,10 +1,10 @@
-# MiroFish MVP — architecture pointers
+# Senna — architecture pointers
 
 High-level orientation for reviewers. Detailed iteration logs live under `docs/iterations/`.
 
 ## Backend
 
-- **FastAPI** app in `backend/src/mirofish_backend/main.py`; simulation routes in `api/simulations.py`.
+- **FastAPI** app in `backend/src/senna_backend/main.py`; simulation routes in `api/simulations.py`.
 - **SQLite** via `aiosqlite`; schema and migrations in `db/schema.py`; persistence in `db/repo.py`.
 - **Simulation loop** in `simulation/orchestrator.py`: deterministic interaction plan, prompts, LLM call, state parse, round/global snapshots.
 - **LLM routing** (`llm/router.py`): `lmstudio` (OpenAI-compatible local), `anthropic`, **`hybrid`** (frontier on **first turn of each round**, local for other turns — see `resolve_effective_provider`).

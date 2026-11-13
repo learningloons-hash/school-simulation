@@ -10,10 +10,10 @@ import aiosqlite
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.main import app
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.simulation import orchestrator
+from senna_backend.db.schema import init_db
+from senna_backend.main import app
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.simulation import orchestrator
 
 
 def _fake_state_json() -> str:
@@ -40,7 +40,7 @@ def client_skip_sim(monkeypatch, tmp_path):
     async def _noop_task(**_kwargs):
         return None
 
-    monkeypatch.setattr("mirofish_backend.api.simulations.run_simulation_task_guarded", _noop_task)
+    monkeypatch.setattr("senna_backend.api.simulations.run_simulation_task_guarded", _noop_task)
     with TestClient(app) as c:
         yield c, db
 
@@ -109,7 +109,7 @@ def test_adoption_momentum_null_on_round_one(monkeypatch, tmp_path) -> None:
     orchestrator.llm_complete = _fake_llm_instant
 
     async def _run() -> None:
-        from mirofish_backend.db.repo import create_simulation_run
+        from senna_backend.db.repo import create_simulation_run
 
         sim_id = await create_simulation_run(
             str(db),
@@ -147,7 +147,7 @@ def test_adoption_momentum_null_on_round_one(monkeypatch, tmp_path) -> None:
             rag_chunk_overlap=40,
             rag_max_inject_chars=800,
         )
-        from mirofish_backend.db.repo import get_simulation_export_bundle
+        from senna_backend.db.repo import get_simulation_export_bundle
 
         bundle = await get_simulation_export_bundle(str(db), simulation_id=sim_id)
         assert bundle is not None

@@ -4,7 +4,7 @@ Copy this into a **new Cursor chat** when starting work on an iteration or slice
 
 ## Bootstrap (paste first message)
 
-You are implementing Senna (formerly MiroFish MVP) in `mirofish-mvp`. Read in order:
+You are implementing Senna (formerly Senna) in `school-simulation`. Read in order:
 
 1. `docs/SESSION_STATE.md`
 2. **`docs/handoffs/BRIEF_FOR_JOAN.md`** — architect briefing (scale, UX sequencing, iterations 8–12 outline); read before deep UX or large-N work.
@@ -42,7 +42,7 @@ You are implementing Senna (formerly MiroFish MVP) in `mirofish-mvp`. Read in or
 ### senna-iter-35 starter (pre-filled — paste into a new Builder chat)
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md` (GM / Architect / Builder ritual)
@@ -64,7 +64,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-36 starter (Architect seeds only after senna-iter-35 PASS)
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -80,7 +80,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-37 starter (Architect seeds only after senna-iter-36 PASS)
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -96,7 +96,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-38 starter (Architect seeds only after senna-iter-37 PASS)
 
 ```markdown
-You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **full-stack** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -112,7 +112,7 @@ You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-39 starter (Architect seeds only after senna-iter-38 PASS)
 
 ```markdown
-You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **full-stack** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -130,20 +130,20 @@ You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
 **GM issue:** Post-run economics bill only `effective_provider == "anthropic"`. Completed `openai_default` / `openrouter_default` runs show **$0** in Run Details and exports while preflight estimates paid cost correctly.
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
 4. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Arc 8 follow-up — profile-aware post-run economics**
 5. `docs/iterations/senna-iter-39-closeout.md` (Arc 8 integration baseline)
-6. Skim `backend/src/mirofish_backend/simulation/economics.py` and `backend/src/mirofish_backend/llm/model_profiles.py` (`pricing_key` on profiles)
+6. Skim `backend/src/senna_backend/simulation/economics.py` and `backend/src/senna_backend/llm/model_profiles.py` (`pricing_key` on profiles)
 
 **Scope (Arc 8 GM follow-up only — no new features):**
 
 Fix post-run / export economics to bill from **`effective_profile_id` → profile `pricing_key`** where available, not only `effective_provider`.
 
 **Implementation guidance:**
-- Primary touch: `backend/src/mirofish_backend/simulation/economics.py`
+- Primary touch: `backend/src/senna_backend/simulation/economics.py`
   - Extend `_turn_cost_usd` / `estimated_run_cost_usd_from_transcript` to accept transcript row fields `effective_profile_id` and `effective_provider`.
   - Resolve billing `provider_key` for `estimate_cost_usd`:
     - `local_lmstudio_default` → `lmstudio` ($0)
@@ -201,7 +201,7 @@ Fix post-run / export economics to bill from **`effective_profile_id` → profil
 ### senna-iter-30 starter (pre-filled — paste into a new Builder chat)
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md` (GM / Architect / Builder ritual)
@@ -210,10 +210,10 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 6. `docs/iterations/senna-iter-29-closeout.md` (prior Senna gate; Arc 6 complete)
 
 **Scope (senna-iter-30 only):**
-- Add a generic OpenAI-compatible adapter module, preferably `backend/src/mirofish_backend/llm/openai_compatible_client.py`.
-- Move or wrap the current logic from `backend/src/mirofish_backend/llm/lmstudio_client.py`.
+- Add a generic OpenAI-compatible adapter module, preferably `backend/src/senna_backend/llm/openai_compatible_client.py`.
+- Move or wrap the current logic from `backend/src/senna_backend/llm/lmstudio_client.py`.
 - Keep `lmstudio_client.py` as a compatibility wrapper if that is the smallest safe diff.
-- Update `backend/src/mirofish_backend/llm/router.py` so the local path calls the generic adapter.
+- Update `backend/src/senna_backend/llm/router.py` so the local path calls the generic adapter.
 - Keep public provider values unchanged: `lmstudio`, `anthropic`, `hybrid`.
 - Add tests required by `HANDOFF_SENNA_ARC7.md` § senna-iter-30.
 
@@ -225,7 +225,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-31 starter (Architect seeds only after senna-iter-30 PASS)
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -241,7 +241,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-32 starter (Architect seeds only after senna-iter-31 PASS)
 
 ```markdown
-You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **full-stack** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -257,7 +257,7 @@ You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-33 starter (Architect seeds only after senna-iter-32 PASS)
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -273,7 +273,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-34 starter (Architect seeds only after senna-iter-33 PASS)
 
 ```markdown
-You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **full-stack** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -310,7 +310,7 @@ You are the Senna **full-stack** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-26 starter (pre-filled — paste into a new Builder chat)
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 6 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
@@ -318,9 +318,9 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 5. `docs/iterations/senna-iter-25-closeout.md` (prior Senna UX gate; Arc 5 complete)
 
 **Scope (iter-26 only — do not implement iter-27+):**
-- `backend/src/mirofish_backend/db/schema.py` — `round_summaries` table in `init_db()` per handoff
-- `backend/src/mirofish_backend/db/repo.py` — `upsert_round_summary`, `get_round_summaries`, `get_turns_for_round` per handoff
-- `backend/src/mirofish_backend/llm/round_summary.py` — **new** — `build_round_summary()` per handoff
+- `backend/src/senna_backend/db/schema.py` — `round_summaries` table in `init_db()` per handoff
+- `backend/src/senna_backend/db/repo.py` — `upsert_round_summary`, `get_round_summaries`, `get_turns_for_round` per handoff
+- `backend/src/senna_backend/llm/round_summary.py` — **new** — `build_round_summary()` per handoff
 - **Tests** — `uv run pytest` from `backend/` green; add a unit test for `build_round_summary()` as in handoff Definition of done (two turns: one with valid `<state>`, one without; both non-empty, no exception)
 
 **Out of scope:** `build_user_prompt` / orchestrator / transcript writer / API surface (**senna-iter-27**+), `frontend/`.
@@ -330,20 +330,20 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 
 ### Post-senna-iter-26 hardening (pre-filled — run before senna-iter-27)
 
-> **Status:** **Done** (2026-04-26) — `test_agent_plan_mock_llm` now patches `mirofish_backend.api.agent.llm_build_execution_plan` (evidence: [`senna-iter-26-closeout.md`](../iterations/senna-iter-26-closeout.md) § Verification). The block below is retained as a paper trail.
+> **Status:** **Done** (2026-04-26) — `test_agent_plan_mock_llm` now patches `senna_backend.api.agent.llm_build_execution_plan` (evidence: [`senna-iter-26-closeout.md`](../iterations/senna-iter-26-closeout.md) § Verification). The block below is retained as a paper trail.
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. This is a short hardening slice before `senna-iter-27`.
+You are the Senna **backend** Builder in `school-simulation`. This is a short hardening slice before `senna-iter-27`.
 
 Read in order:
 1. `docs/SESSION_STATE.md`
 2. `docs/handoffs/HANDOFF_TO_ARCHITECT.md` → **Senna Arc 6** row for `senna-iter-26`
 3. `docs/iterations/senna-iter-26-closeout.md`
-4. `backend/tests/test_iteration17.py` and `backend/src/mirofish_backend/api/agent.py`
+4. `backend/tests/test_iteration17.py` and `backend/src/senna_backend/api/agent.py`
 
-**Problem:** Architect review of `senna-iter-26` found `uv run pytest` from `backend/` fails at `tests/test_iteration17.py::test_agent_plan_mock_llm`. The test patches `mirofish_backend.agent.orchestrator.llm_build_execution_plan`, but `/agent/plan` calls the symbol imported into `mirofish_backend.api.agent`, so the mock does not intercept and the test attempts a real LLM connection.
+**Problem:** Architect review of `senna-iter-26` found `uv run pytest` from `backend/` fails at `tests/test_iteration17.py::test_agent_plan_mock_llm`. The test patches `senna_backend.agent.orchestrator.llm_build_execution_plan`, but `/agent/plan` calls the symbol imported into `senna_backend.api.agent`, so the mock does not intercept and the test attempts a real LLM connection.
 
-**Scope:** Fix this test/harness mismatch only. Prefer the smallest clear fix (for example, patch `mirofish_backend.api.agent.llm_build_execution_plan` in that test, or adjust the API import pattern if you choose that route and all tests stay green). Do **not** implement `senna-iter-27` yet.
+**Scope:** Fix this test/harness mismatch only. Prefer the smallest clear fix (for example, patch `senna_backend.api.agent.llm_build_execution_plan` in that test, or adjust the API import pattern if you choose that route and all tests stay green). Do **not** implement `senna-iter-27` yet.
 
 **Deliver:** `uv run pytest` from `backend/` green; update `docs/SESSION_STATE.md` and add a short note under `docs/iterations/senna-iter-26-closeout.md` or a post-26 closeout note explaining the hardening. Then proceed to **senna-iter-27**.
 ```
@@ -353,7 +353,7 @@ Read in order:
 Use this when starting **senna-iter-27** only. **Post-senna-iter-26 hardening** is **done** (2026-04-26); full `uv run pytest` from `backend/` is green. Full spec: [`HANDOFF_SENNA_ARC6.md`](./HANDOFF_SENNA_ARC6.md) **`## senna-iter-27`** (orchestrator, `prompt_templates`, `api/simulations` per that section; **no** `.md` transcript file — **senna-iter-28**).
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 6 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
@@ -370,7 +370,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 Use this when starting **senna-iter-28** only. Full spec: [`HANDOFF_SENNA_ARC6.md`](./HANDOFF_SENNA_ARC6.md) **`## senna-iter-28`** (incremental `transcript_writer` + orchestrator; depends on `transcript_dir` + `round_summary_enabled` from config).
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 6 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md`
@@ -387,7 +387,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 Last Arc 6 gate: confirm `config` / `api` greps, add any missing tests from **`## senna-iter-29`** in [`HANDOFF_SENNA_ARC6.md`](./HANDOFF_SENNA_ARC6.md) (arc may duplicate tests already landed in **senna-iter-26** — align, do not double-file).
 
 ```markdown
-You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **backend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 6 — Cursor Builder** + `SENNA_AGENT_CYCLE.md`
@@ -415,7 +415,7 @@ You are the Senna **backend** Builder in `mirofish-mvp`. Read in order:
 ### Minimal first message (paste into a new Builder chat)
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna UX — Cursor Builder**
@@ -444,7 +444,7 @@ Earlier arcs (reference only if backfilling): [`HANDOFF_SENNA_ARC1.md`](./HANDOF
 Use this **instead** of the generic minimal block when starting **senna-iter-18** only. Full label table, intro text, and Definition of done live in [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) `### senna-iter-18` — do not fork the spec into chat.
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna UX — Cursor Builder**
@@ -461,7 +461,7 @@ You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
 Use this when starting **senna-iter-19** only. The spec is long — follow every bullet and the **Definition of done** in [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) `### senna-iter-19` (intro, step labels, load/clone, Steps 0–5, message wrappers, borders, step active state `#EEF3FA` / `#4A6FA5`).
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna UX — Cursor Builder**
@@ -478,7 +478,7 @@ You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
 Use this when starting **senna-iter-20** only — **Arc 4 final sweep**. Canonical checklist: [`HANDOFF_SENNA_ARC4.md`](./HANDOFF_SENNA_ARC4.md) `### senna-iter-20` (ConversationView label, run list experiment hint, remove redundant tab `<h2>`s, palette colour replacements, **CLAUDE.md** Arc 4 → closed).
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root) — you will **edit** this file for the Arc status line per § senna-iter-20
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna UX — Cursor Builder**
@@ -512,7 +512,7 @@ You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-21 starter (pre-filled — paste into a new Builder chat)
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder**
@@ -527,7 +527,7 @@ You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-22 starter (pre-filled — paste into a new Builder chat)
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
@@ -547,7 +547,7 @@ You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-23 starter (pre-filled — paste into a new Builder chat)
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
@@ -565,7 +565,7 @@ You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-24 starter (pre-filled — paste into a new Builder chat)
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root)
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
@@ -586,7 +586,7 @@ You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
 ### senna-iter-25 starter (pre-filled — paste into a new Builder chat)
 
 ```markdown
-You are the Senna **frontend** Builder in `mirofish-mvp`. Read in order:
+You are the Senna **frontend** Builder in `school-simulation`. Read in order:
 1. `docs/SESSION_STATE.md`
 2. `CLAUDE.md` (repo root) — you will set **Arc 5 → CLOSED** when Definition of done requires it
 3. `docs/handoffs/HANDOFF_TO_BUILDER.md` → **§ Senna Arc 5 — Cursor Builder** + `docs/handoffs/SENNA_AGENT_CYCLE.md` (who updates what)
@@ -772,7 +772,7 @@ Copy the block below into a **new** Cursor chat when starting Iteration 11. Repl
 
 ### Key files (hints)
 
-`backend/src/mirofish_backend/simulation/agent_context.py`, `orchestrator.py`, `api/simulations.py`, roster/csv modules, export builders, `frontend` Run tab if new controls.
+`backend/src/senna_backend/simulation/agent_context.py`, `orchestrator.py`, `api/simulations.py`, roster/csv modules, export builders, `frontend` Run tab if new controls.
 
 ### Decisions already made
 
@@ -907,7 +907,7 @@ Use after architect signs off **Iteration 12** and defines the first **13+** sli
 
 ### Key files (hints)
 
-`backend/src/mirofish_backend/api/` (new files: `scenarios_generate.py`, `capabilities.py`; extend `simulations.py` for `/analyze`), `backend/src/mirofish_backend/main.py` (router registration), `frontend/src/components/ScenarioWizard.tsx`, `frontend/src/lib/api.ts`.
+`backend/src/senna_backend/api/` (new files: `scenarios_generate.py`, `capabilities.py`; extend `simulations.py` for `/analyze`), `backend/src/senna_backend/main.py` (router registration), `frontend/src/components/ScenarioWizard.tsx`, `frontend/src/lib/api.ts`.
 
 ### Decisions already made
 
@@ -966,7 +966,7 @@ Use after architect signs off **Iteration 12** and defines the first **13+** sli
 
 ### Key files (hints)
 
-New: `backend/src/mirofish_backend/agent/orchestrator.py`, `backend/src/mirofish_backend/api/agent.py`. Existing: `llm/router.py`, `api/simulations.py`, `api/scenarios_generate.py`, `api/capabilities.py`, `main.py` (router registration).
+New: `backend/src/senna_backend/agent/orchestrator.py`, `backend/src/senna_backend/api/agent.py`. Existing: `llm/router.py`, `api/simulations.py`, `api/scenarios_generate.py`, `api/capabilities.py`, `main.py` (router registration).
 
 ### Decisions already made *(design intent)*
 
@@ -1086,7 +1086,7 @@ New: `backend/src/mirofish_backend/agent/orchestrator.py`, `backend/src/mirofish
 
 ### Key files (hints)
 
-`backend/src/mirofish_backend/simulation/orchestrator.py` (turn execution loop), `api/simulations.py` (new config fields), `db/repo.py` (concurrent writes), tests.
+`backend/src/senna_backend/simulation/orchestrator.py` (turn execution loop), `api/simulations.py` (new config fields), `db/repo.py` (concurrent writes), tests.
 
 ### Decisions already made
 
@@ -1143,7 +1143,7 @@ New: `backend/src/mirofish_backend/agent/orchestrator.py`, `backend/src/mirofish
 
 ### Key files (hints)
 
-`backend/src/mirofish_backend/simulation/orchestrator.py`, `api/simulations.py`, `export_bundle.py`, `population/csv_population.py`, `frontend` Live/State tabs if aggregation changes display, tests.
+`backend/src/senna_backend/simulation/orchestrator.py`, `api/simulations.py`, `export_bundle.py`, `population/csv_population.py`, `frontend` Live/State tabs if aggregation changes display, tests.
 
 ### Decisions already made
 
@@ -1353,7 +1353,7 @@ New: `backend/src/mirofish_backend/agent/orchestrator.py`, `backend/src/mirofish
 
 > **Context (from architect):** This plan was developed after a strategic session between the project lead (Mark), Opus (architect-reviewer), and Cursor (architect). Read `docs/handoffs/HANDOFF_OPUS_TO_CURSOR_2026-04-06.md` for the research motivation (agent sampling for GABM, MOE grant study).
 >
-> **Critical design principle:** MiroFish is a **domain-agnostic** GABM simulation engine. The school/education use case (PSLE, FSBB, Trinidad's model) is one scenario pack — not baked into the engine. Any policy domain (healthcare, urban planning, public opinion) must be expressible through scenario YAML + interaction overlays without touching engine code. Iteration 21 enforces this before the sampling work begins.
+> **Critical design principle:** Senna is a **domain-agnostic** GABM simulation engine. The school/education use case (PSLE, FSBB, Trinidad's model) is one scenario pack — not baked into the engine. Any policy domain (healthcare, urban planning, public opinion) must be expressible through scenario YAML + interaction overlays without touching engine code. Iteration 21 enforces this before the sampling work begins.
 >
 > **Dependency chain:** 20 → 21 → 22 → 23 → 24 → 26 → 25 → 27. (Opus priority: `hybrid_core_remainder` first, then `posture_maxvar` for October 2026 MOE conference demo, then network.)
 >
@@ -1406,12 +1406,12 @@ New: `backend/src/mirofish_backend/agent/orchestrator.py`, `backend/src/mirofish
 
 ### Key files (hints)
 
-- `backend/src/mirofish_backend/simulation/orchestrator.py` — `_initial_state_for_role()` (delete), `_build_demographics()` (rewrite), `_build_agent_instances()` (read `initial_state` from persona)
-- `backend/src/mirofish_backend/scenarios/registry.py` — `PersonaTemplate` (add `initial_state` field), `_persona_from_mapping()` (parse it from YAML)
-- `backend/src/mirofish_backend/scenarios/data/psle_reform_mvp.yaml`, `fsbb_comparator.yaml` — add `initial_state` blocks
-- `backend/src/mirofish_backend/api/scenarios_generate.py` — rewrite `_GENERATE_SYSTEM_TEMPLATE`
-- `backend/src/mirofish_backend/scenarios/validate.py` — relax `role_level` warning
-- `backend/src/mirofish_backend/simulation/interaction_policy.py` — docstring updates only
+- `backend/src/senna_backend/simulation/orchestrator.py` — `_initial_state_for_role()` (delete), `_build_demographics()` (rewrite), `_build_agent_instances()` (read `initial_state` from persona)
+- `backend/src/senna_backend/scenarios/registry.py` — `PersonaTemplate` (add `initial_state` field), `_persona_from_mapping()` (parse it from YAML)
+- `backend/src/senna_backend/scenarios/data/psle_reform_mvp.yaml`, `fsbb_comparator.yaml` — add `initial_state` blocks
+- `backend/src/senna_backend/api/scenarios_generate.py` — rewrite `_GENERATE_SYSTEM_TEMPLATE`
+- `backend/src/senna_backend/scenarios/validate.py` — relax `role_level` warning
+- `backend/src/senna_backend/simulation/interaction_policy.py` — docstring updates only
 
 ### Decisions already made
 
@@ -1528,7 +1528,7 @@ hierarchical (lowest role_level first → highest, i.e. highest authority speaks
 
 ### Key files (hints)
 
-New: `backend/src/mirofish_backend/simulation/sampling_strategy.py`. Existing: `api/simulations.py`, `api/capabilities.py`, `agent/orchestrator.py` (`PlanSimulationParams`), `roster/csv_roster.py`, `simulation/orchestrator.py` (`AgentInstance`).
+New: `backend/src/senna_backend/simulation/sampling_strategy.py`. Existing: `api/simulations.py`, `api/capabilities.py`, `agent/orchestrator.py` (`PlanSimulationParams`), `roster/csv_roster.py`, `simulation/orchestrator.py` (`AgentInstance`).
 
 ### Risks / watch
 
@@ -1667,7 +1667,7 @@ New: `simulation/heuristic.py`. Existing: `simulation/sampling_strategy.py`, `si
      - **Next Iteration Focus:** state clearly that **Iteration 25** (network adjacency + visibility) is next; **remove** any remaining text that says “build Iteration **26** before **25**”.
   2. **Integration test (recommended):** In `backend/tests/test_iteration26.py` (or a dedicated test module), add one test that **queues** a simulation with **`sampling_strategy=posture_maxvar`**, completes under **fake LLM** (minimal rounds / small `agent_limit`), then asserts **`config_snapshot.sampling_audit`** and **`GET /simulations/{id}/sampling-report`** reflect expected posture / tier breakdown.
   3. **Frontend (optional):** On **Run** or **Run metadata** UI, add a way to open or fetch **`GET /simulations/{id}/sampling-report`** for a **completed** loaded run (link, button, or collapsible JSON). If skipped, add a **one-line** hint in the UI or keep API-only and rely on docs.
-  4. **Roster template (minor):** In `backend/src/mirofish_backend/api/simulations.py`, extend **`ROSTER_CSV_TEMPLATE`** comment text: an **empty** or whitespace-only **`implementation_posture`** cell does **not** override away a persona’s YAML posture — only a **non-empty** cell overrides (`merge_persona_for_slot` behavior).
+  4. **Roster template (minor):** In `backend/src/senna_backend/api/simulations.py`, extend **`ROSTER_CSV_TEMPLATE`** comment text: an **empty** or whitespace-only **`implementation_posture`** cell does **not** override away a persona’s YAML posture — only a **non-empty** cell overrides (`merge_persona_for_slot` behavior).
 - **Out of scope:** Changing **`posture_maxvar`** tier rules, ADR-002, or Iteration **25** network features (except bundling in same PR).
 
 ### Definition of done
@@ -1683,7 +1683,7 @@ New: `simulation/heuristic.py`. Existing: `simulation/sampling_strategy.py`, `si
 - `docs/SESSION_STATE.md`
 - `backend/tests/test_iteration26.py` (integration test)
 - `frontend/src/` — whichever tab shows run id / metadata (discover via search for `sampling-report` or export links)
-- `backend/src/mirofish_backend/api/simulations.py` — `ROSTER_CSV_TEMPLATE`
+- `backend/src/senna_backend/api/simulations.py` — `ROSTER_CSV_TEMPLATE`
 
 ---
 
@@ -1796,10 +1796,10 @@ New: `simulation/network.py`. Existing: `simulation/sampling_strategy.py`, `simu
 ### Key files (hints)
 
 - `backend/tests/test_iteration25.py` (integration test)
-- `backend/src/mirofish_backend/api/simulations.py` — `network_node_count` line, `network_csv` description
-- `backend/src/mirofish_backend/simulation/interaction_policy.py` — `VisibilityPolicy` enum, `round_participants_only` branch
-- `backend/src/mirofish_backend/api/capabilities.py` — `_enum_values` or filter
-- `backend/src/mirofish_backend/simulation/network.py` — docstring on duplicate edges
+- `backend/src/senna_backend/api/simulations.py` — `network_node_count` line, `network_csv` description
+- `backend/src/senna_backend/simulation/interaction_policy.py` — `VisibilityPolicy` enum, `round_participants_only` branch
+- `backend/src/senna_backend/api/capabilities.py` — `_enum_values` or filter
+- `backend/src/senna_backend/simulation/network.py` — docstring on duplicate edges
 - `docs/SESSION_STATE.md`
 
 ---
@@ -1840,8 +1840,8 @@ New: `simulation/network.py`. Existing: `simulation/sampling_strategy.py`, `simu
 ### Key files (hints)
 
 - `backend/tests/test_iteration27.py` (failure test)
-- `backend/src/mirofish_backend/api/experiments.py` — `_series_key`, `_series_key_for_link`, `create_experiment_endpoint`
-- `backend/src/mirofish_backend/db/repo.py` — `set_experiment_status`, `list_experiments`
+- `backend/src/senna_backend/api/experiments.py` — `_series_key`, `_series_key_for_link`, `create_experiment_endpoint`
+- `backend/src/senna_backend/db/repo.py` — `set_experiment_status`, `list_experiments`
 - `frontend/src/components/ExperimentConsole.tsx` — cancel/abort, elapsed timer, multi-metric view
 - `frontend/src/lib/api.ts` — `createExperiment` (add `AbortSignal` support)
 
@@ -1924,12 +1924,12 @@ New: `simulation/network.py`. Existing: `simulation/sampling_strategy.py`, `simu
 
 ### Key files (hints)
 
-- `backend/src/mirofish_backend/api/experiments.py` — `ExperimentCreateRequest`
-- `backend/src/mirofish_backend/agent/orchestrator.py` — `PlanSimulationParams`, `_simulation_run_request`, `validate_plan_against_capabilities`
+- `backend/src/senna_backend/api/experiments.py` — `ExperimentCreateRequest`
+- `backend/src/senna_backend/agent/orchestrator.py` — `PlanSimulationParams`, `_simulation_run_request`, `validate_plan_against_capabilities`
 - `backend/tests/test_iteration28.py` — streak-reset test
-- `backend/src/mirofish_backend/db/repo.py` — `get_merged_round_metrics`
-- `backend/src/mirofish_backend/api/experiments.py` — `_build_comparison_table`, `_flatten_comparison_for_csv`
-- `backend/src/mirofish_backend/export_bundle.py` — `experiment_comparison_csv_bytes`
+- `backend/src/senna_backend/db/repo.py` — `get_merged_round_metrics`
+- `backend/src/senna_backend/api/experiments.py` — `_build_comparison_table`, `_flatten_comparison_for_csv`
+- `backend/src/senna_backend/export_bundle.py` — `experiment_comparison_csv_bytes`
 - `frontend/src/components/ExperimentConsole.tsx` — per-run `converged_at_round`
 
 ---
@@ -1969,11 +1969,11 @@ New: `simulation/network.py`. Existing: `simulation/sampling_strategy.py`, `simu
 
 ### Key files (hints)
 
-- `backend/src/mirofish_backend/simulation/orchestrator.py` — round loop, post-gather convergence check
-- `backend/src/mirofish_backend/db/schema.py` — `_ensure_column` for `convergence_delta` on `global_state_snapshots`, `converged_at_round` on `simulation_runs`
-- `backend/src/mirofish_backend/db/repo.py` — update `insert_global_state_snapshot`, `get_simulation_export_bundle`, `get_merged_round_metrics`
-- `backend/src/mirofish_backend/api/simulations.py` — new request fields, `config_snapshot`, poll API response
-- `backend/src/mirofish_backend/api/capabilities.py` — document new parameters
+- `backend/src/senna_backend/simulation/orchestrator.py` — round loop, post-gather convergence check
+- `backend/src/senna_backend/db/schema.py` — `_ensure_column` for `convergence_delta` on `global_state_snapshots`, `converged_at_round` on `simulation_runs`
+- `backend/src/senna_backend/db/repo.py` — update `insert_global_state_snapshot`, `get_simulation_export_bundle`, `get_merged_round_metrics`
+- `backend/src/senna_backend/api/simulations.py` — new request fields, `config_snapshot`, poll API response
+- `backend/src/senna_backend/api/capabilities.py` — document new parameters
 - `frontend/src/components/LiveRunDashboard.tsx` — convergence delta display, convergence banner
 
 ### Decisions already made
@@ -2044,12 +2044,12 @@ New: `simulation/network.py`. Existing: `simulation/sampling_strategy.py`, `simu
 
 ### Key files (hints)
 
-New: `backend/src/mirofish_backend/simulation/economics.py`. Existing:
-- `backend/src/mirofish_backend/simulation/orchestrator.py` — capture usage per turn, accumulate after gather
-- `backend/src/mirofish_backend/db/schema.py` + `db/repo.py` — new columns, accumulate totals, expose in export
-- `backend/src/mirofish_backend/api/simulations.py` — `SimulationStatusResponse` economics field, poll API
-- `backend/src/mirofish_backend/api/experiments.py` — experiment detail + per-run economics
-- `backend/src/mirofish_backend/export_bundle.py` — run metadata + CSV columns + `comparison.csv`
+New: `backend/src/senna_backend/simulation/economics.py`. Existing:
+- `backend/src/senna_backend/simulation/orchestrator.py` — capture usage per turn, accumulate after gather
+- `backend/src/senna_backend/db/schema.py` + `db/repo.py` — new columns, accumulate totals, expose in export
+- `backend/src/senna_backend/api/simulations.py` — `SimulationStatusResponse` economics field, poll API
+- `backend/src/senna_backend/api/experiments.py` — experiment detail + per-run economics
+- `backend/src/senna_backend/export_bundle.py` — run metadata + CSV columns + `comparison.csv`
 - `frontend/src/components/ExperimentConsole.tsx` — cost column in comparison table + experiment total
 - `frontend/src/App.tsx` — Run metadata section economics block
 

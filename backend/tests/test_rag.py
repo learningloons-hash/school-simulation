@@ -1,9 +1,9 @@
 import pytest
 
-from mirofish_backend.llm.prompt_templates import build_user_prompt
-from mirofish_backend.rag.chunk import chunk_text
-from mirofish_backend.rag.retrieve import clear_rag_index_cache, retrieve_top_k
-from mirofish_backend.rag.similarity import cosine_similarity
+from senna_backend.llm.prompt_templates import build_user_prompt
+from senna_backend.rag.chunk import chunk_text
+from senna_backend.rag.retrieve import clear_rag_index_cache, retrieve_top_k
+from senna_backend.rag.similarity import cosine_similarity
 
 
 def test_chunk_text_overlap() -> None:

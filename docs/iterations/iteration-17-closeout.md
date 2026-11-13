@@ -5,7 +5,7 @@
 
 ## Shipped
 
-### 1. In-process orchestration (`mirofish_backend/agent/orchestrator.py`)
+### 1. In-process orchestration (`senna_backend/agent/orchestrator.py`)
 
 - **`llm_build_execution_plan`** — planner LLM receives **`build_capabilities_dict()`** JSON (same as `GET /capabilities`); returns **`ExecutionPlan`**; validates with **`validate_plan_against_capabilities`** before accept.
 - **`execute_plan`** — for each **`PlanRunStep`**: optional **`generate_scenario_from_brief`** + **`upsert_user_scenario`**; **`queue_simulation_run`**; **`wait_for_simulation_terminal`**; on **`completed`**, **`analyze_simulation_export`**. Optional **`emit`** hook for SSE progress.

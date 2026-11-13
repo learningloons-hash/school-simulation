@@ -8,7 +8,7 @@ import tempfile
 
 import pytest
 
-from mirofish_backend.simulation.transcript_writer import (
+from senna_backend.simulation.transcript_writer import (
     append_round_to_transcript,
     close_transcript,
     open_transcript,

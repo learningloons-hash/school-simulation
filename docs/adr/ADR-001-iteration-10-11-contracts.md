@@ -37,7 +37,7 @@ The brief also specifies:
 
 ## Interface — `AgentContextV1` (Iterations 10 + 13)
 
-Implementation: [`backend/src/mirofish_backend/simulation/agent_context.py`](../../backend/src/mirofish_backend/simulation/agent_context.py). The type name stays **`AgentContextV1`**; **`AGENT_CONTEXT_VERSION`** is **`"2"`** (Iteration 13).
+Implementation: [`backend/src/senna_backend/simulation/agent_context.py`](../../backend/src/senna_backend/simulation/agent_context.py). The type name stays **`AgentContextV1`**; **`AGENT_CONTEXT_VERSION`** is **`"2"`** (Iteration 13).
 
 | Field | Type | Notes |
 |-------|------|--------|
@@ -55,11 +55,11 @@ Implementation: [`backend/src/mirofish_backend/simulation/agent_context.py`](../
 
 **Persistence:** `agent_state_snapshots.attribute_sections_json` stores the three maps per snapshot row; poll **`state_timeline`** agents may include **`attribute_sections`** when non-empty. **`export.json` `export_version`** **`4`** adds nested / CSV-serialized snapshot fields (see Iteration 13 closeout).
 
-**`export.json` `export_version` (additive changelog):** **`1`** base; **`2`** +`validity_notes`; **`3`** + per-turn **`effective_provider`** / **`effective_model`**; **`4`** + snapshot **`attribute_sections`**; **`5`** + **`cohort_summary`**; **`6`** + per-turn **`fidelity_tier`** (Iteration 23); **`7`** + **`convergence_delta`** on global snapshots + **`converged_at_round`** on run (Iteration 28). See module docstring on [`export_bundle.py`](../../backend/src/mirofish_backend/export_bundle.py).
+**`export.json` `export_version` (additive changelog):** **`1`** base; **`2`** +`validity_notes`; **`3`** + per-turn **`effective_provider`** / **`effective_model`**; **`4`** + snapshot **`attribute_sections`**; **`5`** + **`cohort_summary`**; **`6`** + per-turn **`fidelity_tier`** (Iteration 23); **`7`** + **`convergence_delta`** on global snapshots + **`converged_at_round`** on run (Iteration 28). See module docstring on [`export_bundle.py`](../../backend/src/senna_backend/export_bundle.py).
 
 ## Population table contract — **v1** (Iteration 11) + **v2** extensions (Iteration 13)
 
-Implementation: [`backend/src/mirofish_backend/population/csv_population.py`](../../backend/src/mirofish_backend/population/csv_population.py).
+Implementation: [`backend/src/senna_backend/population/csv_population.py`](../../backend/src/senna_backend/population/csv_population.py).
 
 - **Version:** `population_schema_version` **`2`** (`POPULATION_SCHEMA_VERSION`) — **backward compatible**: v1-style rows (without JSON columns) still parse; optional columns add overlays only.
 - **Import:** Single CSV dialect; extensions bump version — **no** parallel format.

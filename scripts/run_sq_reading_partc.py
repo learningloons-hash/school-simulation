@@ -35,16 +35,16 @@ from run_arc11_ablation import (  # noqa: E402
     print_config_banner,
 )
 
-from mirofish_backend.api.simulations import (  # noqa: E402
+from senna_backend.api.simulations import (  # noqa: E402
     SimulationRunRequest,
     build_preflight_response,
     queue_simulation_run,
     wait_for_simulation_terminal,
 )
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.db.repo import get_simulation_export_bundle  # noqa: E402
-from mirofish_backend.db.schema import init_db as schema_init  # noqa: E402
-from mirofish_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.db.repo import get_simulation_export_bundle  # noqa: E402
+from senna_backend.db.schema import init_db as schema_init  # noqa: E402
+from senna_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
     DEFAULT_NETWORK_CSV_REL,
     build_expected_run_agent_ids,
     count_context_length_failures,
@@ -53,8 +53,8 @@ from mirofish_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
     load_documented_network_csv,
     state_update_source_counts,
 )
-from mirofish_backend.export_bundle import build_export_zip  # noqa: E402
-from mirofish_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
+from senna_backend.export_bundle import build_export_zip  # noqa: E402
+from senna_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
 
 AGENT_LIMIT = 8
 TOTAL_ROUNDS = 10
@@ -504,7 +504,7 @@ async def assert_anthropic_key_from_backend_env(settings) -> None:
     """One-turn ping so a stale shell key fails before 12-run spend."""
     import httpx
 
-    from mirofish_backend.llm.router import llm_complete
+    from senna_backend.llm.router import llm_complete
 
     api_key = (settings.anthropic_api_key or "").strip()
     if not api_key:

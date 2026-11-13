@@ -18,30 +18,30 @@ if str(_SCRIPTS) not in sys.path:
 from membench_adapter import run_membench_suite  # noqa: E402
 from run_arc10_diagnostics import run_arc10_diagnostics  # noqa: E402
 
-from mirofish_backend.db.repo import (
+from senna_backend.db.repo import (
     create_simulation_run,
     get_simulation_export_bundle,
     insert_architectural_interview_response,
     insert_architectural_interview_score,
 )
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.diagnostics import architectural_interview as ai_mod
-from mirofish_backend.diagnostics.arc10_baseline import (
+from senna_backend.db.schema import init_db
+from senna_backend.diagnostics import architectural_interview as ai_mod
+from senna_backend.diagnostics.arc10_baseline import (
     evaluate_arc11_hypothesis,
     generate_baseline_markdown,
 )
-from mirofish_backend.diagnostics.arc10_canonical import (
+from senna_backend.diagnostics.arc10_canonical import (
     load_canonical_bundle,
     recompute_summary_from_canonical_bundle,
     summary_from_canonical_bundle,
 )
-from mirofish_backend.diagnostics.architectural_interview import (
+from senna_backend.diagnostics.architectural_interview import (
     INTERVIEW_CATEGORIES,
     run_architectural_interview_for_simulation,
 )
-from mirofish_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.simulation import orchestrator
+from senna_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.simulation import orchestrator
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from simulation_helpers import fake_llm_state_block, memory_context_run_kwargs  # noqa: E402
@@ -54,7 +54,7 @@ def _judge_block(score: int) -> str:
 
 
 async def _seed_completed_sim_with_memory(db_path: str, monkeypatch: pytest.MonkeyPatch) -> str:
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm_state_block)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm_state_block)
     sim_id = await create_simulation_run(
         db_path,
         name="arc10 baseline",
@@ -217,7 +217,7 @@ def test_regenerate_baseline_from_canonical_bundle(monkeypatch: pytest.MonkeyPat
         return run_membench_suite(**kwargs)
 
     monkeypatch.setattr(
-        "mirofish_backend.diagnostics.arc10_canonical._import_membench",
+        "senna_backend.diagnostics.arc10_canonical._import_membench",
         lambda: _track_membench,
     )
     bundle = load_canonical_bundle()

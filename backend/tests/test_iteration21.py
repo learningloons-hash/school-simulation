@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from mirofish_backend.scenarios.registry import PersonaTemplate, get_scenario
-from mirofish_backend.scenarios.validate import validate_scenario_document
-from mirofish_backend.simulation.orchestrator import (
+from senna_backend.scenarios.registry import PersonaTemplate, get_scenario
+from senna_backend.scenarios.validate import validate_scenario_document
+from senna_backend.simulation.orchestrator import (
     _build_demographics,
     _initial_state_from_persona,
     _neutral_initial_state,

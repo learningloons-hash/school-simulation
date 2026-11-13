@@ -14,16 +14,16 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.config import Settings
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.export_bundle import EXPORT_VERSION
-from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
+from senna_backend.config import Settings
+from senna_backend.db.schema import init_db
+from senna_backend.export_bundle import EXPORT_VERSION
+from senna_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
 
 
 def _minimal_scenario():
-    from mirofish_backend.scenarios.registry import PersonaTemplate, ScenarioConfig
+    from senna_backend.scenarios.registry import PersonaTemplate, ScenarioConfig
 
     return ScenarioConfig(
         scenario_id="psle_reform_mvp",
@@ -141,7 +141,7 @@ def client_arc7(monkeypatch, tmp_path):
     db = tmp_path / "arc7.sqlite"
     monkeypatch.setenv("SQLITE_PATH", str(db))
     asyncio.run(init_db(str(db)))
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _fake_llm)
     with TestClient(app) as c:
         yield c
 
@@ -177,8 +177,8 @@ async def test_queue_run_request_shapes_persist_arc7_metadata(
     expected_llm_provider: str,
     expected_routing_policy: str,
 ) -> None:
-    from mirofish_backend.api import simulations as sim_api
-    from mirofish_backend.api.simulations import SimulationRunRequest, queue_simulation_run
+    from senna_backend.api import simulations as sim_api
+    from senna_backend.api.simulations import SimulationRunRequest, queue_simulation_run
 
     settings = Settings(
         sqlite_path=str(tmp_path / "q.sqlite"),
@@ -231,8 +231,8 @@ def test_post_run_omitted_llm_provider_uses_server_default(client_arc7: TestClie
 
 @pytest.mark.asyncio
 async def test_queue_anthropic_profile_only_overrides_server_default_lmstudio(tmp_path) -> None:
-    from mirofish_backend.api import simulations as sim_api
-    from mirofish_backend.api.simulations import SimulationRunRequest, queue_simulation_run
+    from senna_backend.api import simulations as sim_api
+    from senna_backend.api.simulations import SimulationRunRequest, queue_simulation_run
 
     settings = Settings(
         sqlite_path=str(tmp_path / "anthropic-only.sqlite"),
@@ -269,8 +269,8 @@ async def test_queue_anthropic_profile_only_overrides_server_default_lmstudio(tm
 
 @pytest.mark.asyncio
 async def test_queue_explicit_llm_provider_wins_over_profile_id(tmp_path) -> None:
-    from mirofish_backend.api import simulations as sim_api
-    from mirofish_backend.api.simulations import SimulationRunRequest, queue_simulation_run
+    from senna_backend.api import simulations as sim_api
+    from senna_backend.api.simulations import SimulationRunRequest, queue_simulation_run
 
     settings = Settings(sqlite_path=str(tmp_path / "explicit-wins.sqlite"), llm_provider="hybrid")
     created: dict[str, object] = {}
@@ -304,7 +304,7 @@ async def test_queue_explicit_llm_provider_wins_over_profile_id(tmp_path) -> Non
 
 
 def test_resolve_run_llm_provider_inference() -> None:
-    from mirofish_backend.llm.model_profiles import resolve_run_llm_provider
+    from senna_backend.llm.model_profiles import resolve_run_llm_provider
 
     s = Settings(llm_provider="lmstudio")
     assert (
@@ -346,7 +346,7 @@ def test_post_run_anthropic_profile_only_infers_provider(monkeypatch, tmp_path) 
     monkeypatch.setenv("SQLITE_PATH", str(db))
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-not-real")
     asyncio.run(init_db(str(db)))
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", _fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", _fake_llm)
 
     with TestClient(app) as client:
         r = client.post(
@@ -438,7 +438,7 @@ def test_post_run_anthropic_profile_id(client_arc7: TestClient) -> None:
 
 
 def test_capabilities_model_profiles_after_arc7() -> None:
-    from mirofish_backend.api.capabilities import build_capabilities_dict
+    from senna_backend.api.capabilities import build_capabilities_dict
 
     cap = build_capabilities_dict()
     mp = cap.get("model_profiles") or {}

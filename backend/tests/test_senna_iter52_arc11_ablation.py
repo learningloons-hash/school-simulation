@@ -19,10 +19,10 @@ if str(_SCRIPTS) not in sys.path:
 
 from run_arc10_diagnostics import run_arc10_diagnostics  # noqa: E402
 
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.db.repo import get_simulation_export_bundle
-from mirofish_backend.diagnostics import architectural_interview as ai_mod
-from mirofish_backend.diagnostics.arc11_ablation import (
+from senna_backend.db.schema import init_db
+from senna_backend.db.repo import get_simulation_export_bundle
+from senna_backend.diagnostics import architectural_interview as ai_mod
+from senna_backend.diagnostics.arc11_ablation import (
     ABLATION_CONDITIONS,
     AblationRunProfile,
     build_ablation_results_payload,
@@ -33,7 +33,7 @@ from mirofish_backend.diagnostics.arc11_ablation import (
     generate_ablation_markdown,
     load_measured_baseline_summary,
 )
-from mirofish_backend.llm.router import LLMCompletion
+from senna_backend.llm.router import LLMCompletion
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from simulation_helpers import fake_llm_state_block  # noqa: E402
@@ -87,15 +87,15 @@ async def _fake_embed(*, texts: list[str], **kwargs: Any) -> list[list[float]]:
 
 def _patch_ablation_llm_stack(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "mirofish_backend.simulation.orchestrator.llm_complete",
+        "senna_backend.simulation.orchestrator.llm_complete",
         _fake_llm_ablation,
     )
     monkeypatch.setattr(
-        "mirofish_backend.simulation.importance_scoring.llm_complete",
+        "senna_backend.simulation.importance_scoring.llm_complete",
         _fake_llm_ablation,
     )
     monkeypatch.setattr(
-        "mirofish_backend.simulation.reflection.llm_complete",
+        "senna_backend.simulation.reflection.llm_complete",
         _fake_llm_ablation,
     )
     monkeypatch.setattr(ai_mod, "_llm_complete", _fake_llm_ablation)
@@ -104,11 +104,11 @@ def _patch_ablation_llm_stack(monkeypatch: pytest.MonkeyPatch) -> None:
         return await _fake_embed(texts=texts, **kwargs)
 
     monkeypatch.setattr(
-        "mirofish_backend.rag.memory_index.embed_texts_openai_compatible",
+        "senna_backend.rag.memory_index.embed_texts_openai_compatible",
         _count_embed,
     )
     monkeypatch.setattr(
-        "mirofish_backend.rag.embeddings.embed_texts_openai_compatible",
+        "senna_backend.rag.embeddings.embed_texts_openai_compatible",
         _count_embed,
     )
 

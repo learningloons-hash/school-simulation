@@ -1,6 +1,6 @@
 # Iteration 5 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Gate date:** 2026-04-02  
 **Status:** Implementation complete; ready for architect review.
 
@@ -16,8 +16,8 @@
 
 ### Scenarios
 
-- `backend/src/mirofish_backend/scenarios/data/fsbb_comparator.yaml` — `rag_enabled: true`, `rag_corpus_paths` list.
-- `backend/src/mirofish_backend/scenarios/data/corpus/fsbb_comparator/brief.txt` — stub reference corpus for retrieval.
+- `backend/src/senna_backend/scenarios/data/fsbb_comparator.yaml` — `rag_enabled: true`, `rag_corpus_paths` list.
+- `backend/src/senna_backend/scenarios/data/corpus/fsbb_comparator/brief.txt` — stub reference corpus for retrieval.
 - `registry.py` — `ScenarioConfig.rag_enabled`, `rag_corpus_paths`; YAML loader backward compatible.
 
 ### RAG package

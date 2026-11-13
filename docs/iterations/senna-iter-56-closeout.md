@@ -26,14 +26,14 @@ Standing constraint honoured: iter-56 docs analyse **mechanics only** from iter-
 
 **Shipped:**
 
-- **`backend/src/mirofish_backend/simulation/economics.py`**
+- **`backend/src/senna_backend/simulation/economics.py`**
   - Granular keys: `anthropic_haiku_3_5`, `anthropic_haiku_4_5`, `anthropic_sonnet`, `anthropic_opus_4`, `anthropic_opus_5`
   - Generic `anthropic` retained as Sonnet-tier fallback for unknown model ids
   - `PRICE_MAP_DATE` → `2026-08-25`
   - Env overrides (`ANTHROPIC_*_PRICE_PER_MTOK`) apply only to generic fallback; granular keys use map defaults
   - `resolve_billing_provider_key` accepts `effective_model` for per-turn Anthropic billing
 
-- **`backend/src/mirofish_backend/llm/model_profiles.py`**
+- **`backend/src/senna_backend/llm/model_profiles.py`**
   - `resolve_anthropic_pricing_key(model_id)` — Haiku / Sonnet / Opus resolution from model id string
   - `anthropic_default` sets `pricing_key` from `settings.anthropic_model`
 

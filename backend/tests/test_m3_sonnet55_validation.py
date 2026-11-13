@@ -9,13 +9,13 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.config import Settings
-from mirofish_backend.llm.anthropic_request import (
+from senna_backend.config import Settings
+from senna_backend.llm.anthropic_request import (
     SONNET_55_MODEL_ID,
     resolve_anthropic_request_config,
     validate_sonnet_55_thinking_effort,
 )
-from mirofish_backend.main import app
+from senna_backend.main import app
 
 
 # ---------------------------------------------------------------------------

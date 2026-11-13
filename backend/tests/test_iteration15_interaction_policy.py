@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from mirofish_backend.simulation.interaction_policy import (
+from senna_backend.simulation.interaction_policy import (
     ChannelType,
     InteractionOverlay,
     InteractionPolicy,
@@ -274,13 +274,13 @@ def test_trinidad_overlay_hod_middle_turn_is_direct() -> None:
 # ---------------------------------------------------------------------------
 
 def test_scenario_registry_defaults_interaction_overlay_to_none() -> None:
-    from mirofish_backend.scenarios.registry import get_scenario
+    from senna_backend.scenarios.registry import get_scenario
     cfg = get_scenario("psle_reform_mvp")
     assert cfg.interaction_overlay == "none"
 
 
 def test_scenario_from_mapping_reads_interaction_overlay() -> None:
-    from mirofish_backend.scenarios.registry import scenario_from_mapping
+    from senna_backend.scenarios.registry import scenario_from_mapping
     cfg = scenario_from_mapping({
         "scenario_id": "test_overlay",
         "name": "Test overlay",
@@ -306,7 +306,7 @@ def test_scenario_from_mapping_reads_interaction_overlay() -> None:
 
 def test_simulation_run_request_defaults(monkeypatch, tmp_path) -> None:
     from fastapi.testclient import TestClient
-    from mirofish_backend.main import app
+    from senna_backend.main import app
     db = tmp_path / "iter15_test.sqlite"
     monkeypatch.setenv("SQLITE_PATH", str(db))
     with TestClient(app) as client:
@@ -330,7 +330,7 @@ def test_simulation_run_request_defaults(monkeypatch, tmp_path) -> None:
 
 def test_simulation_run_request_hierarchical_accepted(monkeypatch, tmp_path) -> None:
     from fastapi.testclient import TestClient
-    from mirofish_backend.main import app
+    from senna_backend.main import app
     db = tmp_path / "iter15_test2.sqlite"
     monkeypatch.setenv("SQLITE_PATH", str(db))
     with TestClient(app) as client:

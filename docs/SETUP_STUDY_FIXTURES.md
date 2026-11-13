@@ -4,7 +4,7 @@ The CIEPSS study scenario (`ciepss_school_b`) lives in the private study repo, n
 
 ## Prerequisites
 
-- Platform repo cloned (`mirofish-mvp`)
+- Platform repo cloned (`school-simulation`)
 - Study repo cloned: `https://github.com/learningloons-hash/senna-sstrf-study.git`
 - Backend dependencies installed (`cd backend && uv sync`)
 
@@ -27,7 +27,7 @@ From the platform repo root:
 ```bash
 python3 scripts/seed_scenario_from_study_repo.py \
   --study-repo-path /path/to/senna-sstrf-study \
-  --yaml-rel-path backend/src/mirofish_backend/scenarios/data/ciepss_school_b.yaml \
+  --yaml-rel-path backend/src/senna_backend/scenarios/data/ciepss_school_b.yaml \
   --scenario-id ciepss_school_b
 ```
 
@@ -50,8 +50,8 @@ Example (adjust paths and flags to your environment):
 ```bash
 cd backend && uv run python3 -c "
 import asyncio
-from mirofish_backend.config import get_settings
-from mirofish_backend.api.simulations import SimulationRunRequest, queue_simulation_run, wait_for_simulation_terminal
+from senna_backend.config import get_settings
+from senna_backend.api.simulations import SimulationRunRequest, queue_simulation_run, wait_for_simulation_terminal
 
 async def main():
     s = get_settings()

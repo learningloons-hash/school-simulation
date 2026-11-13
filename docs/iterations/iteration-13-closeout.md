@@ -68,8 +68,8 @@
 
 ## References
 
-- `backend/src/mirofish_backend/simulation/agent_context.py`
-- `backend/src/mirofish_backend/scenarios/registry.py`, `validate.py`, `serialize.py`
-- `backend/src/mirofish_backend/population/csv_population.py`
-- `backend/src/mirofish_backend/db/schema.py`, `db/repo.py`
+- `backend/src/senna_backend/simulation/agent_context.py`
+- `backend/src/senna_backend/scenarios/registry.py`, `validate.py`, `serialize.py`
+- `backend/src/senna_backend/population/csv_population.py`
+- `backend/src/senna_backend/db/schema.py`, `db/repo.py`
 - `docs/adr/ADR-001-iteration-10-11-contracts.md`

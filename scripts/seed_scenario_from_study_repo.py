@@ -18,10 +18,10 @@ import yaml
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT / "backend" / "src"))
 
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.db.repo import upsert_user_scenario, user_scenario_exists  # noqa: E402
-from mirofish_backend.db.schema import init_db  # noqa: E402
-from mirofish_backend.scenarios.validate import (  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.db.repo import upsert_user_scenario, user_scenario_exists  # noqa: E402
+from senna_backend.db.schema import init_db  # noqa: E402
+from senna_backend.scenarios.validate import (  # noqa: E402
     list_allowed_corpus_paths,
     validate_scenario_document,
 )
@@ -32,7 +32,7 @@ class SeedScenarioError(Exception):
 
 
 def default_scenarios_data_dir() -> Path:
-    return _REPO_ROOT / "backend/src/mirofish_backend/scenarios/data"
+    return _REPO_ROOT / "backend/src/senna_backend/scenarios/data"
 
 
 def default_manifest_path(*, scenario_id: str) -> Path:

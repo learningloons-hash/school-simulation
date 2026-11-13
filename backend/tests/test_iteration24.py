@@ -9,13 +9,13 @@ from typing import Any
 
 import pytest
 
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.scenarios.registry import get_scenario
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.simulation import orchestrator
-from mirofish_backend.simulation.remainder import build_synthetic_remainder_personas, is_synthetic_remainder_persona
-from mirofish_backend.simulation.sampling_strategy import compute_fidelity_tiers
+from senna_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
+from senna_backend.db.schema import init_db
+from senna_backend.scenarios.registry import get_scenario
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.simulation import orchestrator
+from senna_backend.simulation.remainder import build_synthetic_remainder_personas, is_synthetic_remainder_persona
+from senna_backend.simulation.sampling_strategy import compute_fidelity_tiers
 
 
 def test_hybrid_core_remainder_synthetic_always_tier3() -> None:

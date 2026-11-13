@@ -18,8 +18,8 @@
 
 ## Verification (Definition of done)
 
-- `rg 'round_summaries' backend/src/mirofish_backend/simulation/orchestrator.py` — matches (`round_summaries=prior_summaries`)
-- `rg 'prior_summaries' backend/src/mirofish_backend/simulation/orchestrator.py` — matches
+- `rg 'round_summaries' backend/src/senna_backend/simulation/orchestrator.py` — matches (`round_summaries=prior_summaries`)
+- `rg 'prior_summaries' backend/src/senna_backend/simulation/orchestrator.py` — matches
 - `interaction_last_k` uses **`12`** not `120` in `min(12, …)` for `turn_index == 1 and round_number > 1`
 - `uv run pytest` (from `backend/`): **194 passed, 1 skipped**
 

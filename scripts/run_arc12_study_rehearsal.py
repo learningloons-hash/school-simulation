@@ -24,15 +24,15 @@ sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
 from run_arc11_ablation import load_dotenv_if_present, print_config_banner  # noqa: E402
 
-from mirofish_backend.api.simulations import (  # noqa: E402
+from senna_backend.api.simulations import (  # noqa: E402
     SimulationRunRequest,
     queue_simulation_run,
     wait_for_simulation_terminal,
 )
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.db.repo import get_simulation_export_bundle, user_scenario_exists  # noqa: E402
-from mirofish_backend.db.schema import init_db as schema_init  # noqa: E402
-from mirofish_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.db.repo import get_simulation_export_bundle, user_scenario_exists  # noqa: E402
+from senna_backend.db.schema import init_db as schema_init  # noqa: E402
+from senna_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
     DEFAULT_AGENT_LIMIT,
     DEFAULT_NETWORK_CSV_REL,
     DEFAULT_RQ1_ROUND_COUNTS,
@@ -48,7 +48,7 @@ from mirofish_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
     generate_rehearsal_markdown,
     load_documented_network_csv,
 )
-from mirofish_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
+from senna_backend.scenarios.loader import load_scenario_for_run  # noqa: E402
 
 _DEFAULT_JSON_OUT = _REPO_ROOT / "docs/diagnostics/arc12_study_rehearsal_results.json"
 _DEFAULT_MD_OUT = _REPO_ROOT / "docs/diagnostics/ARC12_STUDY_REHEARSAL_RESULTS.md"
@@ -61,7 +61,7 @@ _RQ2_DEFER_NOTE = (
 
 
 def check_transcript_qa(bundle: dict, *, simulation_id: str, label: str, seed: int) -> None:
-    from mirofish_backend.diagnostics.arc12_study_rehearsal import (
+    from senna_backend.diagnostics.arc12_study_rehearsal import (
         count_context_length_failures,
         count_llm_errors,
     )
@@ -225,7 +225,7 @@ async def _main_async(args: argparse.Namespace) -> dict:
         network_csv = args.network_csv_text.strip()
         if not network_csv.endswith("\n"):
             network_csv += "\n"
-        from mirofish_backend.simulation.network import parse_network_csv
+        from senna_backend.simulation.network import parse_network_csv
 
         net_parse = parse_network_csv(network_csv, known_agent_ids=expected_ids)
         if not net_parse.edges:

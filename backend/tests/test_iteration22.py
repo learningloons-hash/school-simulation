@@ -5,11 +5,11 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.main import app
-from mirofish_backend.roster.csv_roster import parse_roster_csv
-from mirofish_backend.scenarios.registry import get_scenario
-from mirofish_backend.simulation.orchestrator import _build_agent_instances
-from mirofish_backend.simulation.sampling_strategy import (
+from senna_backend.main import app
+from senna_backend.roster.csv_roster import parse_roster_csv
+from senna_backend.scenarios.registry import get_scenario
+from senna_backend.simulation.orchestrator import _build_agent_instances
+from senna_backend.simulation.sampling_strategy import (
     SAMPLING_STRATEGY_VALUES,
     build_sampling_audit_extended,
     compute_fidelity_tiers,
@@ -136,7 +136,7 @@ def client_skip_sim(monkeypatch, tmp_path):
         return None
 
     monkeypatch.setattr(
-        "mirofish_backend.api.simulations.run_simulation_task_guarded",
+        "senna_backend.api.simulations.run_simulation_task_guarded",
         skip_run,
     )
     with TestClient(app) as c:

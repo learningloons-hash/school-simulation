@@ -11,9 +11,9 @@
 
 ## Files touched
 
-- `backend/src/mirofish_backend/simulation/preflight.py` (new)
-- `backend/src/mirofish_backend/simulation/economics.py`
-- `backend/src/mirofish_backend/api/simulations.py`
+- `backend/src/senna_backend/simulation/preflight.py` (new)
+- `backend/src/senna_backend/simulation/economics.py`
+- `backend/src/senna_backend/api/simulations.py`
 - `backend/tests/test_senna_iter38_preflight.py` (new)
 - `frontend/src/lib/api.ts`
 - `frontend/src/App.tsx`

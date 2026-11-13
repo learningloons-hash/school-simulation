@@ -812,7 +812,7 @@ For each iteration:
 
 **Builder bootstrap (paste into each new Cursor chat):**
 
-> You are implementing the Senna UX redesign in `mirofish-mvp/frontend/`. Read in order:
+> You are implementing the Senna UX redesign in `school-simulation/frontend/`. Read in order:
 > 1. `CLAUDE.md` (project context and design system)
 > 2. `docs/handoffs/HANDOFF_SENNA_ARC5.md` (this handoff — full spec for Arc 5)
 > 3. Then jump to the **senna-iter-N** section for the current iteration.

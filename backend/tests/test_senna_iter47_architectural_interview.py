@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.db.repo import (
+from senna_backend.db.repo import (
     count_architectural_interview_responses,
     create_simulation_run,
     delete_architectural_interview_for_simulation,
@@ -22,20 +22,20 @@ from mirofish_backend.db.repo import (
     insert_architectural_interview_score,
     set_simulation_status,
 )
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.diagnostics import architectural_interview as ai_mod
-from mirofish_backend.diagnostics.architectural_interview import (
+from senna_backend.db.schema import init_db
+from senna_backend.diagnostics import architectural_interview as ai_mod
+from senna_backend.diagnostics.architectural_interview import (
     INTERVIEW_CATEGORIES,
     build_judge_prompts,
     load_rubric_category_excerpt,
     run_architectural_interview_for_simulation,
     score_interview_response,
 )
-from mirofish_backend.diagnostics.judge_score_parse import resolve_judge_score
-from mirofish_backend.export_bundle import EXPORT_VERSION, build_export_zip
-from mirofish_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
+from senna_backend.diagnostics.judge_score_parse import resolve_judge_score
+from senna_backend.export_bundle import EXPORT_VERSION, build_export_zip
+from senna_backend.llm.model_profiles import ANTHROPIC_DEFAULT_ID, LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
 
 
 async def _seed_completed_sim(db_path: str) -> str:
@@ -375,7 +375,7 @@ def client_arch(monkeypatch, tmp_path):
         return None
 
     monkeypatch.setattr(
-        "mirofish_backend.api.simulations.run_simulation_task_guarded",
+        "senna_backend.api.simulations.run_simulation_task_guarded",
         skip_run,
     )
     with TestClient(app) as c:
@@ -405,7 +405,7 @@ async def test_architectural_interview_report_endpoint(client_arch: TestClient, 
 
 
 def test_validate_interview_partial_grid_raises() -> None:
-    from mirofish_backend.diagnostics.architectural_interview import (
+    from senna_backend.diagnostics.architectural_interview import (
         INTERVIEW_CATEGORIES,
         validate_interview_completeness,
     )
@@ -436,7 +436,7 @@ def test_validate_interview_partial_grid_raises() -> None:
 
 
 def test_validate_interview_wrong_agent_count_from_snapshots_raises() -> None:
-    from mirofish_backend.diagnostics.architectural_interview import (
+    from senna_backend.diagnostics.architectural_interview import (
         INTERVIEW_CATEGORIES,
         validate_interview_completeness,
     )

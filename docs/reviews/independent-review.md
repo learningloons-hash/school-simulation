@@ -23,7 +23,7 @@ The gate fix forces Tier 1 but still uses a one-round parallel run. Every speake
 
 - `backend/tests/test_senna_iter45_memory_context.py:187-215`
 - `backend/tests/simulation_helpers.py:26-50`
-- `backend/src/mirofish_backend/simulation/orchestrator.py:790-868`
+- `backend/src/senna_backend/simulation/orchestrator.py:790-868`
 
 Fix: make the integration test use at least two rounds and assert deterministic prior-round candidates. Define whether same-round turns may ever enter context under parallel execution and enforce that contract.
 
@@ -33,9 +33,9 @@ Instrumentation adds a 10,000-row candidate read and awaited SQLite batch write 
 
 Self turns are marked visible/included before being removed from `recent_interactions`; only a separate, shorter `prior_agent_memory` window is actually placed in the prompt. Older self turns can therefore be reported as included when absent. The label `network_filtered` also covers every non-broadcast visibility policy, not only network filtering.
 
-- `backend/src/mirofish_backend/simulation/orchestrator.py:812-868`
-- `backend/src/mirofish_backend/simulation/memory_context.py:26-93`
-- `backend/src/mirofish_backend/simulation/interaction_policy.py:336-372`
+- `backend/src/senna_backend/simulation/orchestrator.py:812-868`
+- `backend/src/senna_backend/simulation/memory_context.py:26-93`
+- `backend/src/senna_backend/simulation/interaction_policy.py:336-372`
 
 Fix: derive records from the final prompt inputs, distinguish visibility-policy reasons, and make diagnostic persistence non-fatal or explicitly gated. Add scale/row-volume coverage.
 
@@ -55,8 +55,8 @@ Fix: vendor complete trajectories or a minimal evidence-preserving subset contai
 
 When no score can be parsed or inferred, `resolve_judge_score()` returns `0, "keyword_fallback"`. Baseline means include that zero without a parse-quality gate. An empty/error response is therefore indistinguishable in the headline result from a genuine rubric score of inadequate.
 
-- `backend/src/mirofish_backend/diagnostics/judge_score_parse.py:82-127`
-- `backend/src/mirofish_backend/diagnostics/arc10_baseline.py:32-39`
+- `backend/src/senna_backend/diagnostics/judge_score_parse.py:82-127`
+- `backend/src/senna_backend/diagnostics/arc10_baseline.py:32-39`
 
 Fix: represent unscorable output as invalid/missing, retry or fail the diagnostic, and report parse-source counts. Do not average invalid judge rows.
 
@@ -64,7 +64,7 @@ Fix: represent unscorable output as invalid/missing, retry or fail the diagnosti
 
 Each response is committed before its judge score. Interruption can leave an unmatched response, while the combined runner accepts any non-zero response count and summarizes whatever rows exist.
 
-- `backend/src/mirofish_backend/diagnostics/architectural_interview.py:467-560`
+- `backend/src/senna_backend/diagnostics/architectural_interview.py:467-560`
 - `scripts/run_arc10_diagnostics.py:87-113`
 
 Fix: validate exact `agents × 5` response and score counts with one-to-one IDs before baseline generation; use per-item transactions or resumable completeness checks.

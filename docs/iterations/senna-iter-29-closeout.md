@@ -22,7 +22,7 @@
 - `uv run pytest` — **198 passed, 1 skipped**
 - `rg 'round_summary_enabled' backend/src` — `config.py`, `simulations.py`, `orchestrator.py`
 - `rg 'transcript_dir' backend/src` — same three (+ `transcript_writer.py` docstrings/params)
-- `rg 'transcript_writer' …/orchestrator.py` — import from `mirofish_backend.simulation.transcript_writer`
+- `rg 'transcript_writer' …/orchestrator.py` — import from `senna_backend.simulation.transcript_writer`
 - `npm run build` in `frontend/` — **PASS** (no frontend code changes; regression check for Arc 6 overall DoD)
 
 ## Arc 6

@@ -15,30 +15,30 @@ sys.path.insert(0, str(_REPO_ROOT / "backend" / "src"))
 sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
 from membench_adapter import run_membench_suite
-from mirofish_backend.config import get_settings
-from mirofish_backend.db.repo import (
+from senna_backend.config import get_settings
+from senna_backend.db.repo import (
     count_architectural_interview_responses,
     delete_architectural_interview_for_simulation,
     get_simulation_export_bundle,
     insert_architectural_interview_response,
     insert_architectural_interview_score,
 )
-from mirofish_backend.db.schema import init_db as schema_init
-from mirofish_backend.diagnostics.arc10_baseline import (
+from senna_backend.db.schema import init_db as schema_init
+from senna_backend.diagnostics.arc10_baseline import (
     build_combined_arc10_summary,
     generate_baseline_markdown,
 )
-from mirofish_backend.diagnostics.arc10_canonical import (
+from senna_backend.diagnostics.arc10_canonical import (
     load_canonical_bundle,
     recompute_summary_from_canonical_bundle,
 )
-from mirofish_backend.diagnostics.architectural_interview import (
+from senna_backend.diagnostics.architectural_interview import (
     agents_from_snapshots,
     run_architectural_interview_for_simulation,
     summarize_interview_results,
     validate_interview_completeness,
 )
-from mirofish_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
+from senna_backend.llm.model_profiles import LOCAL_LMSTUDIO_DEFAULT_ID
 
 _DEFAULT_FIXTURES = _REPO_ROOT / "backend/tests/fixtures/membench"
 _DEFAULT_BASELINE_MD = _REPO_ROOT / "docs/diagnostics/ARC10_BASELINE.md"

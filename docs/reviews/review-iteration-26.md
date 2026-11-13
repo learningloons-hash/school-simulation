@@ -42,7 +42,7 @@ _None._ No incorrect tier assignment or audit shape was found on code review; ba
 ### M1: Roster cannot clear a YAML posture with an empty cell
 
 - Severity: MINOR  
-- Files: `backend/src/mirofish_backend/roster/csv_roster.py` (`merge_persona_for_slot`)  
+- Files: `backend/src/senna_backend/roster/csv_roster.py` (`merge_persona_for_slot`)  
 - Problem: Empty or whitespace `implementation_posture` in CSV leaves base persona posture unchanged — reasonable default, but worth one line in roster template comment so authors are not surprised.
 
 ## Architecture Alignment

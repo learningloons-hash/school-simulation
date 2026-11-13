@@ -12,11 +12,11 @@ from io import BytesIO
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.export_bundle import EXPORT_VERSION
-from mirofish_backend.llm.router import LLMCompletion
-from mirofish_backend.main import app
-from mirofish_backend.simulation.economics import (
+from senna_backend.db.schema import init_db
+from senna_backend.export_bundle import EXPORT_VERSION
+from senna_backend.llm.router import LLMCompletion
+from senna_backend.main import app
+from senna_backend.simulation.economics import (
     build_run_economics_payload,
     estimate_cost_usd,
     estimated_run_cost_usd_from_transcript,
@@ -44,7 +44,7 @@ def client_i29(monkeypatch, tmp_path):
             output_tokens=20,
         )
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     with TestClient(app) as c:
         yield c
@@ -165,7 +165,7 @@ def test_get_simulation_anthropic_provider_positive_estimated_cost(monkeypatch, 
             output_tokens=20,
         )
 
-    monkeypatch.setattr("mirofish_backend.simulation.orchestrator.llm_complete", fake_llm)
+    monkeypatch.setattr("senna_backend.simulation.orchestrator.llm_complete", fake_llm)
 
     with TestClient(app) as client:
         r = client.post(

@@ -25,7 +25,16 @@ VALIDITY_V2_MANIFEST_PATH = ROOT / "docs/diagnostics/sstrf_validity_v2_manifest.
 VALIDITY_V2_SCORING_DIR = ROOT / "docs/research/runs/ciepss_school_b/validity_v2/scoring"
 VALIDITY_V2_SCORING_MANIFEST = VALIDITY_V2_SCORING_DIR / "validity_v2_scoring_manifest.json"
 VALIDITY_V2_TRIAL_LABEL_MAP = VALIDITY_V2_SCORING_DIR / "trial_label_map.json"
-DEFAULT_VALIDITY_SQLITE = ROOT / "backend/data/mirofish.sqlite"
+def _resolve_default_validity_sqlite() -> Path:
+    """Prefer explicit paths; else legacy mirofish.sqlite if present; else senna.sqlite."""
+    legacy = ROOT / "backend/data/mirofish.sqlite"
+    new_default = ROOT / "backend/data/senna.sqlite"
+    if legacy.is_file() and not new_default.is_file():
+        return legacy
+    return new_default
+
+
+DEFAULT_VALIDITY_SQLITE = _resolve_default_validity_sqlite()
 
 FORBIDDEN_RATER_KEYS = frozenset(
     {
@@ -335,7 +344,7 @@ async def assemble_trial_evidence(
     sqlite_path: Path,
     get_bundle,
 ) -> TrialEvidence:
-    from mirofish_backend.db.repo import get_simulation_export_bundle
+    from senna_backend.db.repo import get_simulation_export_bundle
 
     bundle_fn = get_bundle or get_simulation_export_bundle
     bundle = None

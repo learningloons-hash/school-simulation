@@ -6,7 +6,7 @@
 - After each arc: verdict, what landed well, issues found, follow-up actions. Max ~8 lines.
 
 ## Project Context
-- Codebase is `mirofish-mvp/`; the product is called **Senna** (renamed from MiroFish MVP)
+- Codebase is `school-simulation/`; the product is called **Senna** (see root `README.md` / `NOTICE` for attribution)
 - Backend (FastAPI, port 8100); **Arcs 1–5** left the API surface stable for UX work — **Arc 6** (`HANDOFF_SENNA_ARC6.md`) intentionally changes the backend (round summaries, transcripts, prompt caps) — no frontend in that arc unless a later handoff says so
 - Frontend (React/TypeScript/Vite, port 3100) — Arcs 1–5 UX redesign complete
 - Arc workflow: Claude designs handoff → Cursor Architect seeds → Cursor Builder implements → Cursor reviews → Claude reviews arc
@@ -29,3 +29,5 @@
 | 8 | Model Ecosystem and Guardrails | ✅ CLOSED (GM PASS) — [`docs/handoffs/HANDOFF_SENNA_ARC8.md`](docs/handoffs/HANDOFF_SENNA_ARC8.md) (`senna-iter-35`–`39`) |
 | 11 | Memory Architecture | ✅ CLOSED (GM PASS WITH ISSUES, 2026-08-24) — [`docs/handoffs/HANDOFF_SENNA_ARC11.md`](docs/handoffs/HANDOFF_SENNA_ARC11.md) / [`senna-iter-53-closeout.md`](docs/iterations/senna-iter-53-closeout.md) (`senna-iter-49`–`53`) |
 | 12 | Freeze and Study Readiness | ✅ CLOSED — [`HANDOFF_SENNA_ARC12.md`](docs/handoffs/HANDOFF_SENNA_ARC12.md) / [`senna-iter-58-closeout.md`](docs/iterations/senna-iter-58-closeout.md) (pre-reg signed 2026-08-25; validity trials may proceed) |
+
+**Research milestones (not numbered Arcs):** M-RENAME — package `senna_backend`, dist `senna-backend`; see [`HANDOFF_SENNA_M_RENAME.md`](docs/handoffs/HANDOFF_SENNA_M_RENAME.md).

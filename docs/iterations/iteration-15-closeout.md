@@ -7,7 +7,7 @@
 
 ### 1. `interaction_policy.py` — named policy objects (new module)
 
-New file: `backend/src/mirofish_backend/simulation/interaction_policy.py`
+New file: `backend/src/senna_backend/simulation/interaction_policy.py`
 
 Encodes the IAD/Trinidad theoretical framework as versioned, named enums and policy objects:
 
@@ -62,9 +62,9 @@ Full documentation: `docs/adr/ADR-002-interaction-policy-contract.md` (to be wri
 
 ## References
 
-- `backend/src/mirofish_backend/simulation/interaction_policy.py` (new)
-- `backend/src/mirofish_backend/simulation/orchestrator.py`
-- `backend/src/mirofish_backend/scenarios/registry.py`
-- `backend/src/mirofish_backend/scenarios/serialize.py`
-- `backend/src/mirofish_backend/api/simulations.py`
+- `backend/src/senna_backend/simulation/interaction_policy.py` (new)
+- `backend/src/senna_backend/simulation/orchestrator.py`
+- `backend/src/senna_backend/scenarios/registry.py`
+- `backend/src/senna_backend/scenarios/serialize.py`
+- `backend/src/senna_backend/api/simulations.py`
 - `backend/tests/test_iteration15_interaction_policy.py`

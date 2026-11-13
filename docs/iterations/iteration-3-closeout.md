@@ -20,7 +20,7 @@
 
 ## Evidence
 
-- Code: `backend/src/mirofish_backend/api/simulations.py`, `db/repo.py`, `export_bundle.py`.
+- Code: `backend/src/senna_backend/api/simulations.py`, `db/repo.py`, `export_bundle.py`.
 - UI: `frontend/src/App.tsx`, `frontend/src/lib/api.ts`.
 
 ## Next Actions

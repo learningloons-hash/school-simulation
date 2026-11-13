@@ -1,4 +1,4 @@
-from mirofish_backend.llm.round_summary import build_round_summary
+from senna_backend.llm.round_summary import build_round_summary
 
 
 def test_build_round_summary_with_state():

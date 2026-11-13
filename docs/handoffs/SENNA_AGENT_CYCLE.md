@@ -2,7 +2,7 @@
 
 **Purpose:** Single place for **GrandMaster**, **Cursor Architect**, **Cursor Builder**, and humans to learn the full gate loop without re-explaining it each session.
 
-**Product:** Senna (`mirofish-mvp/`). **Arcs 1–5** UX work was **`frontend/`**-only; **Arc 6** and later arcs may touch **`backend/`** when their `HANDOFF_SENNA_ARC*.md` says so.
+**Product:** Senna (`school-simulation/`). **Arcs 1–5** UX work was **`frontend/`**-only; **Arc 6** and later arcs may touch **`backend/`** when their `HANDOFF_SENNA_ARC*.md` says so.
 
 **Arc rule:** One arc is a bounded package of **at most five iterations**. GrandMaster plans the arc; Architect sequences and reviews each iteration; Builder implements one iteration at a time.
 
@@ -96,7 +96,7 @@ git commit -m "Senna Arc N: <short theme> (GM PASS, senna-iter-…)"
 git push origin main
 ```
 
-**Remote:** `https://github.com/learningloons-hash/mirofish-mvp` (private). Product name Senna; repo name may still be `mirofish-mvp`.
+**Remote:** `https://github.com/learningloons-hash/school-simulation` (private). Product name Senna; repo name may still be `school-simulation`.
 
 ---
 

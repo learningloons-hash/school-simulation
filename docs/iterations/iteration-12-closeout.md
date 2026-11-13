@@ -47,8 +47,8 @@
 
 ## References
 
-- `backend/src/mirofish_backend/llm/router.py` — `effective_model_id`
-- `backend/src/mirofish_backend/db/schema.py`, `db/repo.py`
-- `backend/src/mirofish_backend/simulation/orchestrator.py`
-- `backend/src/mirofish_backend/api/simulations.py`
+- `backend/src/senna_backend/llm/router.py` — `effective_model_id`
+- `backend/src/senna_backend/db/schema.py`, `db/repo.py`
+- `backend/src/senna_backend/simulation/orchestrator.py`
+- `backend/src/senna_backend/api/simulations.py`
 - `docs/adr/ADR-001-iteration-10-11-contracts.md` (Iteration 12 subsection)

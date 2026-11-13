@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from mirofish_backend.llm.anthropic_request import sonnet_55_max_tokens_manifest
-from mirofish_backend.llm.model_profiles import ANTHROPIC_SONNET_55_ID
-from mirofish_backend.main import app
+from senna_backend.llm.anthropic_request import sonnet_55_max_tokens_manifest
+from senna_backend.llm.model_profiles import ANTHROPIC_SONNET_55_ID
+from senna_backend.main import app
 from sonnet55_test_support import (  # noqa: F401 -- fixture referenced by name in test signatures
     FakeAnthropicTransport,
     anthropic_transport,

@@ -1,4 +1,4 @@
-# MiroFish MVP — 500-Agent Scale Feasibility Note
+# Senna — 500-Agent Scale Feasibility Note
 
 *Iteration 20 addendum. Companion to `SCALE_LIMITS_AND_COST.md`.*
 

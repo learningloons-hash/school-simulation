@@ -6,17 +6,17 @@ import tempfile
 
 import pytest
 
-from mirofish_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
-from mirofish_backend.db.schema import init_db
-from mirofish_backend.population import csv_population
-from mirofish_backend.population.csv_population import (
+from senna_backend.db.repo import create_simulation_run, get_simulation_status_with_transcript
+from senna_backend.db.schema import init_db
+from senna_backend.population import csv_population
+from senna_backend.population.csv_population import (
     build_personas_and_demographic_overrides,
     parse_population_csv,
     select_population_draw,
 )
-from mirofish_backend.roster.csv_roster import merge_persona_for_slot, parse_roster_csv
-from mirofish_backend.scenarios.registry import get_scenario
-from mirofish_backend.simulation import orchestrator
+from senna_backend.roster.csv_roster import merge_persona_for_slot, parse_roster_csv
+from senna_backend.scenarios.registry import get_scenario
+from senna_backend.simulation import orchestrator
 
 
 def _pool_psle(n: int) -> str:

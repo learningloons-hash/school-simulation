@@ -1,6 +1,6 @@
 # Iteration 26 closeout
 
-**Project:** `mirofish-mvp`  
+**Project:** `school-simulation`  
 **Feature gate:** 2026-04-06  
 **Post–architect hardening gate:** 2026-04-07  
 

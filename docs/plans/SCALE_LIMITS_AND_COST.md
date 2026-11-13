@@ -1,4 +1,4 @@
-# MiroFish MVP — scale limits & rough cost model
+# Senna — scale limits & rough cost model
 
 Operational reference for runs on the Mac mini + LM Studio / optional Anthropic. Not a SLA.
 

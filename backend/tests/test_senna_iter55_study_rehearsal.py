@@ -16,16 +16,16 @@ if str(_SCRIPTS) not in sys.path:
 
 import run_arc12_study_rehearsal as rehearsal_script  # noqa: E402
 
-from mirofish_backend.config import get_settings  # noqa: E402
-from mirofish_backend.db.repo import get_simulation_export_bundle  # noqa: E402
-from mirofish_backend.db.schema import init_db  # noqa: E402
-from mirofish_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
+from senna_backend.config import get_settings  # noqa: E402
+from senna_backend.db.repo import get_simulation_export_bundle  # noqa: E402
+from senna_backend.db.schema import init_db  # noqa: E402
+from senna_backend.diagnostics.arc12_study_rehearsal import (  # noqa: E402
     build_expected_run_agent_ids,
     extract_mechanics_metrics,
     load_documented_network_csv,
 )
-from mirofish_backend.scenarios.registry import get_scenario  # noqa: E402
-from mirofish_backend.simulation.network import parse_network_csv  # noqa: E402
+from senna_backend.scenarios.registry import get_scenario  # noqa: E402
+from senna_backend.simulation.network import parse_network_csv  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from simulation_helpers import fake_llm_state_block  # noqa: E402
@@ -75,7 +75,7 @@ def test_load_documented_network_csv_raises_on_unknown_agents(tmp_path: Path) ->
 @pytest.mark.asyncio
 async def test_rehearsal_run_applies_documented_network_csv(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "mirofish_backend.simulation.orchestrator.llm_complete",
+        "senna_backend.simulation.orchestrator.llm_complete",
         fake_llm_state_block,
     )
 
