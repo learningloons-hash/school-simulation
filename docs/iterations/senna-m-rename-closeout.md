@@ -3,14 +3,15 @@
 ## 1. Branch
 
 - **Base (post-#16 `main`):** `161cbacde3ca933c91d756f16e008eddea2ba7b0`
-- **Branch:** `m-rename-mirofish` (tip SHA recorded at PR open)
+- **Branch:** `m-rename-mirofish`
+- **Tip SHA:** `28f4f74ae474e85c5c93e724016763d33333e1b8`
 
 ## 2. Grep
 
 | | Files | Lines |
 |--|------:|------:|
 | Start (`main` @ `161cbac`) | 221 | 1047 |
-| End (tracked) | 17 | 22 |
+| End (tracked) | 18 | 51 |
 
 **Leftover hits (allowlisted + legacy):**
 
