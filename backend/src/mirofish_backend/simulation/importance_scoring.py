@@ -191,6 +191,7 @@ async def score_round_importance_batch(
             anthropic_api_key=anthropic_api_key,
             anthropic_model=anthropic_model,
             openai_compatible_api_key=openai_compatible_api_key,
+            llm_call_site="importance_per_round_batch",
             **extras_kw,
         )
         raw = completion.text
