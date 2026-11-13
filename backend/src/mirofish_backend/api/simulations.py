@@ -42,8 +42,10 @@ from mirofish_backend.export_bundle import (
 )
 from mirofish_backend.llm.anthropic_request import (
     anthropic_request_config_snapshot,
+    is_claude_sonnet_5_5,
     resolve_anthropic_request_config,
     run_manifest_from_anthropic_config,
+    sonnet_55_max_tokens_manifest,
 )
 from mirofish_backend.llm.llm_request_log import llm_request_log_path
 from mirofish_backend.llm.model_profiles import (
@@ -1252,6 +1254,11 @@ async def queue_simulation_run(
         "run_manifest": {
             **run_manifest_from_anthropic_config(anthropic_req_cfg, llm_request_log_basename=None),
             "llm_request_log_file_pattern": "{simulation_id}_llm_requests.jsonl",
+            **(
+                {"sonnet_55_max_tokens_floors": sonnet_55_max_tokens_manifest()}
+                if is_claude_sonnet_5_5(anthropic_model_run)
+                else {}
+            ),
         },
     }
     if _req.convergence_threshold is not None:
@@ -1688,6 +1695,8 @@ async def analyze_simulation_export(
                 lmstudio_model=settings.lmstudio_model,
                 anthropic_api_key=settings.anthropic_api_key,
                 anthropic_model=settings.anthropic_model,
+                settings=settings,
+                llm_call_site="analyze_simulation",
             )
         ).text
     except Exception as e:

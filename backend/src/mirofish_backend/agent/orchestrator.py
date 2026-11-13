@@ -323,6 +323,8 @@ async def llm_build_execution_plan(
             lmstudio_model=settings.lmstudio_model,
             anthropic_api_key=settings.anthropic_api_key,
             anthropic_model=settings.anthropic_model,
+            settings=settings,
+            llm_call_site="agent_plan",
         )
         raw = comp.text
     except Exception as e:

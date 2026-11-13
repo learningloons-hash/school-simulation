@@ -94,6 +94,8 @@ class Settings(BaseSettings):
     # Senna Arc 6: per-round LLM context bounding + optional transcript (iter-28+)
     round_summary_enabled: bool = True
     transcript_dir: str = "./data/transcripts"
+    # Non-simulation LLM calls (analyze, agent plan, scenario tools, rubric judge).
+    llm_request_log_dir: str = "./data/llm_requests"
 
     @field_validator("llm_provider", mode="before")
     @classmethod

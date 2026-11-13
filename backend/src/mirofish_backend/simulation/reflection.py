@@ -194,6 +194,7 @@ async def synthesize_reflection(
             anthropic_api_key=anthropic_api_key,
             anthropic_model=anthropic_model,
             openai_compatible_api_key=openai_compatible_api_key,
+            llm_call_site="reflection",
             **extras_kw,
         )
         raw = completion.text

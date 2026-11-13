@@ -304,6 +304,9 @@ async def complete_with_profile(
         anthropic_api_key=anthropic_key,
         anthropic_model=ant_model,
         openai_compatible_api_key=openai_key,
+        settings=cfg,
+        llm_call_site="architectural_interview_rubric",
+        llm_request_context={"profile_id": profile.profile_id},
     )
     eff_model = effective_model_id(
         provider=provider,

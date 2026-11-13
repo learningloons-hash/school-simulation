@@ -105,6 +105,8 @@ async def generate_scenario_from_brief(body: GenerateFromBriefRequest) -> Genera
                 lmstudio_model=settings.lmstudio_model,
                 anthropic_api_key=settings.anthropic_api_key,
                 anthropic_model=settings.anthropic_model,
+                settings=settings,
+                llm_call_site="scenario_generate_from_brief",
             )
         ).text
     except Exception as e:

@@ -1,7 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from mirofish_backend.config import Settings, get_settings
+from mirofish_backend.llm.anthropic_request import (
+    resolve_wire_anthropic_thinking_effort,
+    sonnet_55_effective_max_tokens,
+)
 from mirofish_backend.llm.claude_client import chat_completion_anthropic
+from mirofish_backend.llm.llm_request_log import resolve_llm_request_logger
 from mirofish_backend.llm.openai_compatible_client import chat_completion_openai_compatible
 from mirofish_backend.llm.routing_policies import (
     resolve_effective_provider as _resolve_effective_provider_for_policy,
@@ -71,11 +77,19 @@ async def llm_complete(
     anthropic_random_seed: int | None = None,
     llm_request_logger: Any | None = None,
     llm_request_context: dict[str, Any] | None = None,
+    settings: Settings | None = None,
+    llm_call_site: str = "llm_complete",
 ) -> LLMCompletion:
     """
     Dispatch chat completion by provider. Expects OpenAI-style messages with
     roles `system` and `user` (single pair).
+
+    Anthropic Sonnet 5.5: thinking and effort are resolved here (or in
+    ``claude_client``) so ad-hoc call sites cannot omit them.
     """
+    settings = settings or get_settings()
+    request_logger = resolve_llm_request_logger(run_logger=llm_request_logger, settings=settings)
+
     system_text = ""
     user_text = ""
     for m in messages:
@@ -88,35 +102,46 @@ async def llm_complete(
         elif role == "user":
             user_text = content
 
+    ctx = dict(llm_request_context or {})
+    ctx.setdefault("call_site", llm_call_site)
+
     if provider == "anthropic":
         if not anthropic_api_key.strip():
             raise ValueError("anthropic_api_key is empty; set ANTHROPIC_API_KEY or choose llm_provider=lmstudio")
+        wire_thinking, wire_effort, wire_seed = resolve_wire_anthropic_thinking_effort(
+            model_id=anthropic_model,
+            settings=settings,
+            anthropic_thinking=anthropic_thinking,
+            anthropic_effort=anthropic_effort,
+            random_seed=anthropic_random_seed,
+        )
+        effective_max = sonnet_55_effective_max_tokens(anthropic_model, max_tokens, llm_call_site)
         t, inp, out = await chat_completion_anthropic(
             api_key=anthropic_api_key,
             model=anthropic_model,
             system_prompt=system_text,
             user_prompt=user_text,
             temperature=temperature,
-            max_tokens=max_tokens,
-            thinking=anthropic_thinking,
-            effort=anthropic_effort,
-            random_seed=anthropic_random_seed,
-            llm_request_logger=llm_request_logger,
-            llm_request_context=llm_request_context,
+            max_tokens=effective_max,
+            thinking=wire_thinking,
+            effort=wire_effort,
+            random_seed=wire_seed,
+            llm_request_logger=request_logger,
+            llm_request_context=ctx,
+            settings=settings,
         )
         return LLMCompletion(text=t, input_tokens=inp, output_tokens=out)
 
-    if llm_request_logger is not None:
-        llm_request_logger.append(
-            provider=provider,
-            model_id=lmstudio_model,
-            thinking=None,
-            effort=None,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            seed=None,
-            extra=llm_request_context,
-        )
+    request_logger.append(
+        provider=provider,
+        model_id=lmstudio_model,
+        thinking=None,
+        effort=None,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        seed=None,
+        extra=ctx,
+    )
 
     t, inp, out = await chat_completion_openai_compatible(
         base_url=lmstudio_base_url,

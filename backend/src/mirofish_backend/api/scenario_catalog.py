@@ -266,6 +266,8 @@ async def llm_fill_persona_sections(
                 lmstudio_model=settings.lmstudio_model,
                 anthropic_api_key=settings.anthropic_api_key,
                 anthropic_model=settings.anthropic_model,
+                settings=settings,
+                llm_call_site="scenario_catalog_llm_fill",
             )
         ).text
     except Exception as e:

@@ -31,7 +31,8 @@ from mirofish_backend.llm.routing_policies import (
     resolve_effective_profile_id,
     HEURISTIC_PROFILE_SENTINEL,
 )
-from mirofish_backend.llm.anthropic_request import AnthropicRequestConfig, RunLLMExtras
+from mirofish_backend.config import get_settings
+from mirofish_backend.llm.anthropic_request import RunLLMExtras, resolve_anthropic_request_config
 from mirofish_backend.llm.llm_request_log import LLMRequestLogger
 from mirofish_backend.llm.router import effective_model_id, llm_complete, resolve_effective_provider
 from mirofish_backend.llm.context_clip import clip_memory_lines, clip_recent_interactions
@@ -498,6 +499,8 @@ async def _collect_round_end_likert(
                 anthropic_api_key=anthropic_api_key,
                 anthropic_model=anthropic_model,
                 openai_compatible_api_key=openai_compatible_api_key,
+                settings=get_settings(),
+                llm_call_site="likert_round_end",
                 **likert_llm_kw,
             )
             raw_response = completion.text
@@ -715,23 +718,20 @@ async def run_simulation_task(
     local_profile_id = routing_profile_local_id or LOCAL_LMSTUDIO_DEFAULT_ID
     frontier_profile_id = routing_profile_frontier_id or ANTHROPIC_DEFAULT_ID
 
-    anthropic_cfg = AnthropicRequestConfig(
+    run_settings = get_settings()
+    anthropic_req_cfg = resolve_anthropic_request_config(
         model_id=anthropic_model,
-        thinking=anthropic_thinking,
-        effort=anthropic_effort,
+        settings=run_settings,
+        request_thinking_type=(anthropic_thinking or {}).get("type") if anthropic_thinking else None,
+        request_effort=anthropic_effort,
         random_seed=random_seed,
-        price_map_key=None,
-        price_map_date=None,
     )
     req_logger = (
         LLMRequestLogger(path=llm_request_log_path, simulation_id=simulation_id)
         if llm_request_log_path
         else None
     )
-    run_llm_extras = RunLLMExtras(
-        anthropic_config=anthropic_cfg if (anthropic_thinking or anthropic_effort) else None,
-        request_logger=req_logger,
-    )
+    run_llm_extras = RunLLMExtras(anthropic_config=anthropic_req_cfg, request_logger=req_logger)
 
     random.seed(random_seed)
     scenario = scenario_config if scenario_config is not None else get_scenario(scenario_id)
@@ -1390,6 +1390,8 @@ async def run_simulation_task(
                         anthropic_api_key=anthropic_api_key,
                         anthropic_model=anthropic_model,
                         openai_compatible_api_key=openai_compatible_api_key,
+                        settings=run_settings,
+                        llm_call_site="agent_turn",
                         **turn_llm_kw,
                     )
                     turn_llm_attempted = True

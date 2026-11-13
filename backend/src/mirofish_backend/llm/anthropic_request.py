@@ -14,6 +14,21 @@ SONNET_55_MODEL_ID = "claude-sonnet-5-5"
 VALID_EFFORT_LEVELS = frozenset({"low", "medium", "high", "xhigh", "max"})
 SONNET_55_THINKING_TYPES = frozenset({"between_tools", "adaptive"})
 
+# Sonnet 5.5: max_tokens covers thinking + text (migration guide). Floors are conservative study defaults.
+SONNET_55_MAX_TOKENS_AGENT_TURN = 2048
+SONNET_55_MAX_TOKENS_LIKERT = 1024
+SONNET_55_MAX_TOKENS_IMPORTANCE = 512
+SONNET_55_MAX_TOKENS_REFLECTION = 1024
+SONNET_55_MAX_TOKENS_IMPORTANCE_BATCH = 1536
+
+SONNET_55_CALL_SITE_FLOORS: dict[str, int] = {
+    "agent_turn": SONNET_55_MAX_TOKENS_AGENT_TURN,
+    "likert_round_end": SONNET_55_MAX_TOKENS_LIKERT,
+    "importance_per_turn": SONNET_55_MAX_TOKENS_IMPORTANCE,
+    "importance_per_round_batch": SONNET_55_MAX_TOKENS_IMPORTANCE_BATCH,
+    "reflection": SONNET_55_MAX_TOKENS_REFLECTION,
+}
+
 
 def is_claude_sonnet_5_5(model_id: str | None) -> bool:
     mid = (model_id or "").strip().lower()
@@ -22,6 +37,51 @@ def is_claude_sonnet_5_5(model_id: str | None) -> bool:
     if mid == SONNET_55_MODEL_ID:
         return True
     return mid.startswith(f"{SONNET_55_MODEL_ID}-")
+
+
+def sonnet_55_effective_max_tokens(
+    model_id: str | None,
+    requested: int,
+    call_site: str,
+) -> int:
+    """Raise ``max_tokens`` floor on Sonnet 5.5 so thinking + text are not truncated."""
+    if not is_claude_sonnet_5_5(model_id):
+        return requested
+    floor = SONNET_55_CALL_SITE_FLOORS.get(call_site, 0)
+    if floor <= 0:
+        return requested
+    return max(requested, floor)
+
+
+def sonnet_55_max_tokens_manifest() -> dict[str, int]:
+    """Freezeable floors recorded on simulation ``config_snapshot``."""
+    return dict(SONNET_55_CALL_SITE_FLOORS)
+
+
+def resolve_wire_anthropic_thinking_effort(
+    *,
+    model_id: str,
+    settings: Settings,
+    anthropic_thinking: dict[str, Any] | None = None,
+    anthropic_effort: str | None = None,
+    random_seed: int | None = None,
+) -> tuple[dict[str, str] | None, str | None, int | None]:
+    """
+    Resolve thinking / effort for the Anthropic wire (Sonnet 5.5 only).
+
+    Used by ``router`` and ``claude_client`` so every call site shares one path.
+    """
+    thinking_type: str | None = None
+    if anthropic_thinking and isinstance(anthropic_thinking.get("type"), str):
+        thinking_type = anthropic_thinking["type"]
+    cfg = resolve_anthropic_request_config(
+        model_id=model_id,
+        settings=settings,
+        request_thinking_type=thinking_type,
+        request_effort=anthropic_effort,
+        random_seed=random_seed,
+    )
+    return cfg.payload_thinking(), cfg.payload_effort(), cfg.random_seed
 
 
 def anthropic_request_params_supported(model_id: str | None) -> bool:

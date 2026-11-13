@@ -3,7 +3,11 @@ from typing import Any
 
 import httpx
 
-from mirofish_backend.llm.anthropic_request import anthropic_request_params_supported
+from mirofish_backend.config import Settings, get_settings
+from mirofish_backend.llm.anthropic_request import (
+    anthropic_request_params_supported,
+    resolve_wire_anthropic_thinking_effort,
+)
 
 logger = logging.getLogger("mirofish_backend.llm.claude_client")
 
@@ -43,6 +47,7 @@ async def chat_completion_anthropic(
     timeout_s: float = 120.0,
     llm_request_logger: Any | None = None,
     llm_request_context: dict[str, Any] | None = None,
+    settings: Settings | None = None,
 ) -> tuple[str, int | None, int | None]:
     """
     Minimal Anthropic Messages API client (system + single user turn).
@@ -51,6 +56,23 @@ async def chat_completion_anthropic(
     Sonnet 5.5 accepts ``thinking`` and ``output_config.effort`` (see migration guide).
     Thinking blocks in responses are skipped; only ``type == "text"`` blocks are concatenated.
     """
+    cfg_settings = settings or get_settings()
+    if anthropic_request_params_supported(model):
+        resolved_thinking, resolved_effort, resolved_seed = resolve_wire_anthropic_thinking_effort(
+            model_id=model,
+            settings=cfg_settings,
+            anthropic_thinking=thinking,
+            anthropic_effort=effort,
+            random_seed=random_seed,
+        )
+        wire_thinking = resolved_thinking
+        wire_effort = resolved_effort
+        log_seed = resolved_seed
+    else:
+        wire_thinking = None
+        wire_effort = None
+        log_seed = random_seed
+
     headers = {
         "x-api-key": api_key,
         "anthropic-version": "2023-06-01",
@@ -62,8 +84,6 @@ async def chat_completion_anthropic(
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_prompt}],
     }
-    wire_thinking = thinking if anthropic_request_params_supported(model) else None
-    wire_effort = effort if anthropic_request_params_supported(model) else None
     if wire_thinking is not None:
         payload["thinking"] = wire_thinking
     if wire_effort is not None:
@@ -75,7 +95,7 @@ async def chat_completion_anthropic(
         effort=wire_effort,
         max_tokens=max_tokens,
         temperature=temperature,
-        seed=random_seed,
+        seed=log_seed,
     )
     if llm_request_logger is not None:
         llm_request_logger.append(
@@ -83,8 +103,6 @@ async def chat_completion_anthropic(
             **log_record,
             extra=llm_request_context,
         )
-    else:
-        logger.info("anthropic_request %s", log_record)
 
     async with httpx.AsyncClient(timeout=timeout_s) as client:
         resp = await client.post(ANTHROPIC_MESSAGES_URL, headers=headers, json=payload)
