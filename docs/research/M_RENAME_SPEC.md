@@ -11,7 +11,7 @@
 
 ## 1. Goal
 
-Remove all `mirofish` / `Senna` / `MIROFISH` names from the **build**: package names, module paths, identifiers, config keys, env-var prefixes that actually exist, docker/service names, scripts, UI/API product strings, frontend package identity, and **active** docs titles.
+Remove all `mirofish` / `MiroFish` / `MIROFISH` names from the **build**: package names, module paths, identifiers, config keys, env-var prefixes that actually exist, docker/service names, scripts, UI/API product strings, frontend package identity, and **active** docs titles.
 
 Keep Senna only as an **attribution** in a new root `README.md` and a new root `NOTICE` file. The suggested “no Senna source code is included” clause is **unverified** and **requires Mark / legal confirmation** before it is treated as a fact.
 

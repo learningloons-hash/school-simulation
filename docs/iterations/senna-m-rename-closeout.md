@@ -3,31 +3,37 @@
 ## 1. Branch
 
 - **Base (post-#16 `main`):** `161cbacde3ca933c91d756f16e008eddea2ba7b0`
-- **Branch:** `m-rename-mirofish`
-- **Tip SHA:** `28f4f74ae474e85c5c93e724016763d33333e1b8`
+- **Working branch:** the M-RENAME branch (see [PR #18](https://github.com/learningloons-hash/school-simulation/pull/18))
+- **Tip SHA:** `194d5b1d9662097b6eb1580ed171b2d4244ea222`
 
 ## 2. Grep
 
 | | Files | Lines |
 |--|------:|------:|
 | Start (`main` @ `161cbac`) | 221 | 1047 |
-| End (tracked) | 18 | 51 |
+| End (tracked, at tip) | 17 | 45 |
 
-**Leftover hits (allowlisted + legacy):**
+**Leftover hits:** documented by path and line number only below. For category labels (attribution vs legacy fallback vs study artifact), see [`docs/research/M_RENAME_SPEC.md`](../research/M_RENAME_SPEC.md) §6 and [`HANDOFF_SENNA_M_RENAME.md`](../handoffs/HANDOFF_SENNA_M_RENAME.md).
 
-- `README.md:11` — MiroFish attribution
-- `NOTICE:7` — MiroFish attribution
-- `backend/pyproject.toml:29` — deprecated `mirofish-backend` script entry
-- `backend/src/senna_backend/_deprecated_cli.py:12` — deprecation message
-- `backend/src/senna_backend/config.py:117` — legacy `./data/mirofish.sqlite` fallback
-- `backend/.env.example:51` — legacy SQLite comment
-- `scripts/agent_ask_demo.py:26,29` — `MIROFISH_BACKEND_URL` fallback
-- `scripts/sstrf_scoring_evidence.py:29,30` — legacy sqlite path helper
-- `docs/research/PREREG_SSTRF_RQ1_V2.md` — published pre-reg (4 lines)
-- `docs/diagnostics/ARC12_CONVERGENCE_CALIBRATION.md:5` — historical extraction path
-- `docs/diagnostics/ARC12_PLATFORM_FREEZE.json` + five `*_provenance.json` — frozen yaml paths
-
-**Extra allowlist (beyond brief):** `docs/research/M_RENAME_SPEC.md` — milestone spec documents grep policy and legacy strings by design.
+- `README.md:11`
+- `NOTICE:7`
+- `backend/pyproject.toml:29`
+- `backend/src/senna_backend/_deprecated_cli.py:12`
+- `backend/src/senna_backend/config.py:117`
+- `backend/.env.example:51`
+- `scripts/agent_ask_demo.py:26`
+- `scripts/agent_ask_demo.py:29`
+- `scripts/sstrf_scoring_evidence.py:29`
+- `scripts/sstrf_scoring_evidence.py:30`
+- `docs/research/PREREG_SSTRF_RQ1_V2.md` (lines 53, 60, 90, 104)
+- `docs/diagnostics/ARC12_CONVERGENCE_CALIBRATION.md:5`
+- `docs/diagnostics/ARC12_PLATFORM_FREEZE.json:17`
+- `docs/diagnostics/ciepss_school_b_provenance.json:5`
+- `docs/diagnostics/sq_reading_culture_provenance.json:4`
+- `docs/diagnostics/sq_reading_culture_shock_provenance.json:4`
+- `docs/diagnostics/sq_reading_culture_adverse_provenance.json:4`
+- `docs/diagnostics/sq_reading_culture_adverse_shock_provenance.json:4`
+- `docs/research/M_RENAME_SPEC.md` (milestone spec; extra allowlist)
 
 ## 3. Pytest
 
@@ -54,7 +60,7 @@ Failing nodeids (unchanged):
 ## 4. Frontend / health
 
 - `npm run build` — pass (Vite production build)
-- `npx tsc --noEmit` — **same pre-existing failure on `main`:** `src/components/Sparkline.tsx` SVG `title` prop (TS2322)
+- `npx tsc --noEmit` — fails with pre-existing `src/components/Sparkline.tsx` TS2322 (SVG `title` prop); **same on `main` @ `161cbac`**; not introduced by M-RENAME
 - `GET /health` @ `:8100` → `{"status":"healthy","service":"senna-backend"}`
 
 ## 5. LICENSE / data
@@ -65,4 +71,4 @@ Failing nodeids (unchanged):
 ## 6. Notes for architect
 
 - Independent review still required before merge.
-- `git log --follow` on `backend/src/senna_backend/main.py` works after commit (package moved via `git mv`).
+- Package move used `git mv`; `git log --follow` on `backend/src/senna_backend/main.py` preserves history. A plain `git diff main` may not show all paths as renames unless similarity is raised (e.g. `git diff -M50% main...HEAD`).
