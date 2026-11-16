@@ -1,0 +1,66 @@
+scenario_id: m_roster_windows_demo
+name: M-ROSTER synthetic demo (join/leave windows)
+policy_events:
+  1: "Staff briefing: term planning and shared norms for implementation check-ins."
+  2: "Working session: align messaging on workload and parent communication."
+  3: "Mid-term review: progress on adoption indicators in classrooms."
+  4: "Department huddle: refine support for teachers adjusting practice."
+  5: "Whole-school forum: surface tensions and coordination needs."
+  6: "Closing round: summarise commitments before the break."
+personas:
+  - persona_id: teacher_a
+    role: teacher
+    name: Teacher A
+    role_level: 3
+    style_cues: "Collegial, classroom-focused."
+    beliefs: { practice_change: 0.5 }
+    active_from_round: 1
+    active_until_round: 6
+  - persona_id: teacher_b
+    role: teacher
+    name: Teacher B
+    role_level: 3
+    style_cues: "Practical, concise."
+    beliefs: { practice_change: 0.55 }
+    active_from_round: 1
+    active_until_round: 4
+    absence_reason: "On leave from round 5"
+  - persona_id: teacher_c
+    role: teacher
+    name: Teacher C
+    role_level: 2
+    style_cues: "Coordinates across levels."
+    beliefs: { practice_change: 0.6 }
+    active_from_round: 1
+    active_until_round: 6
+  - persona_id: teacher_d
+    role: teacher
+    name: Teacher D
+    role_level: 3
+    style_cues: "Joins mid-run."
+    beliefs: { practice_change: 0.52 }
+    active_from_round: 3
+    active_until_round: 6
+    window_basis: "synthetic demo late joiner"
+  - persona_id: teacher_e
+    role: teacher
+    name: Teacher E
+    role_level: 3
+    style_cues: "Steady implementer."
+    beliefs: { practice_change: 0.48 }
+    active_from_round: 1
+    active_until_round: 6
+likert_self_report_enabled: true
+likert_anchor_labels:
+  support:
+    - "Strongly disagree"
+    - "Disagree"
+    - "Somewhat disagree"
+    - "Somewhat agree"
+    - "Agree"
+    - "Strongly agree"
+roster_windows:
+  absence_notice_scope: all_inactive
+  handover_template: |
+    You are joining this group from round {join_round} of {total_rounds}.
+    Role: {role}. This round's scheduled activity: {join_policy_event}

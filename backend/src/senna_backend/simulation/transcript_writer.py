@@ -31,12 +31,18 @@ async def open_transcript(
     agent_names: list[tuple[str, str]],  # [(name, role), ...]
     total_rounds: int,
     model_used: str,
+    agent_active_rounds: list[tuple[str, str, str]] | None = None,
 ) -> str:
     """Write simulation header. Returns the transcript path."""
     os.makedirs(transcript_dir, exist_ok=True)
     path = _transcript_path(transcript_dir, simulation_id)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    roster = "\n".join(f"| {n} | {r} |" for n, r in agent_names)
+    if agent_active_rounds is not None:
+        roster = "\n".join(f"| {n} | {r} | {ar} |" for n, r, ar in agent_active_rounds)
+        roster_header = "| Name | Role | Active rounds |\n|------|------|---------------|\n"
+    else:
+        roster = "\n".join(f"| {n} | {r} |" for n, r in agent_names)
+        roster_header = "| Name | Role |\n|------|------|\n"
     header = (
         f"# Senna Simulation Transcript\n\n"
         f"**Simulation ID:** `{simulation_id}`  \n"
@@ -45,8 +51,7 @@ async def open_transcript(
         f"**Started:** {now}  \n"
         f"**Model:** `{model_used}`\n\n"
         f"## Agent Roster\n\n"
-        f"| Name | Role |\n"
-        f"|------|------|\n"
+        f"{roster_header}"
         f"{roster}\n\n"
         f"---\n\n"
     )
@@ -63,10 +68,13 @@ async def append_round_to_transcript(
     policy_event: str,
     turns: list[dict],
     round_summary: str,
+    membership_line: str | None = None,
 ) -> None:
     """Append one round's full turns + compact summary to the transcript file."""
     path = _transcript_path(transcript_dir, simulation_id)
     lines = [f"## Round {round_number} — {policy_event}\n"]
+    if membership_line:
+        lines.append(f"{membership_line}\n")
     for turn in turns:
         name = turn.get("agent_name", "?")
         role = turn.get("agent_role", "?")

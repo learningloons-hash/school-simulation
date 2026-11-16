@@ -33,6 +33,10 @@ class ParsedRosterRow:
     fidelity_tier: int | None = None
     # Iteration 26: optional opaque posture label (posture_maxvar sampling).
     implementation_posture: str | None = None
+    active_from_round: int | None = None
+    active_until_round: int | None = None
+    absence_reason: str | None = None
+    window_basis: str | None = None
 
 
 @dataclass(frozen=True)
@@ -132,6 +136,23 @@ def parse_roster_csv(text: str, *, agent_limit: int, scenario: ScenarioConfig) -
 
         impl_post = _cell(rd, "implementation_posture")
 
+        def _parse_window_int(col: str) -> int | None:
+            raw = _cell(rd, col)
+            if raw is None:
+                return None
+            try:
+                val = int(raw)
+            except ValueError as e:
+                raise ValueError(f"roster_csv: line {i}: invalid {col} {raw!r}") from e
+            if val < 1:
+                raise ValueError(f"roster_csv: line {i}: {col} must be >= 1")
+            return val
+
+        active_from_round = _parse_window_int("active_from_round")
+        active_until_round = _parse_window_int("active_until_round")
+        absence_reason = _cell(rd, "absence_reason")
+        window_basis = _cell(rd, "window_basis")
+
         ft_raw = _cell(rd, "fidelity_tier")
         fidelity_tier: int | None = None
         if ft_raw is not None:
@@ -156,6 +177,10 @@ def parse_roster_csv(text: str, *, agent_limit: int, scenario: ScenarioConfig) -
             personal_history=personal_history,
             fidelity_tier=fidelity_tier,
             implementation_posture=impl_post,
+            active_from_round=active_from_round,
+            active_until_round=active_until_round,
+            absence_reason=absence_reason,
+            window_basis=window_basis,
         )
 
     return RosterParseResult(by_slot=by_slot, unknown_group_ids=tuple(sorted(unknown)))
@@ -184,6 +209,18 @@ def merge_persona_for_slot(base: PersonaTemplate, row: ParsedRosterRow | None) -
         s = str(row.implementation_posture).strip()
         if s:
             impl_post = s
+    afr = base.active_from_round
+    if row.active_from_round is not None:
+        afr = row.active_from_round
+    aur = base.active_until_round
+    if row.active_until_round is not None:
+        aur = row.active_until_round
+    ar = base.absence_reason
+    if row.absence_reason is not None and str(row.absence_reason).strip():
+        ar = str(row.absence_reason).strip()
+    wb = base.window_basis
+    if row.window_basis is not None and str(row.window_basis).strip():
+        wb = str(row.window_basis).strip()
     return PersonaTemplate(
         persona_id=row.persona_id or base.persona_id,
         role=row.role or base.role,
@@ -199,6 +236,10 @@ def merge_persona_for_slot(base: PersonaTemplate, row: ParsedRosterRow | None) -
         groups=groups,
         initial_state=dict(base.initial_state),
         implementation_posture=impl_post,
+        active_from_round=afr,
+        active_until_round=aur,
+        absence_reason=ar,
+        window_basis=wb,
     )
 
 

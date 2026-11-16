@@ -359,6 +359,31 @@ def build_export_zip(bundle: dict[str, Any]) -> bytes:
             )
         if reflections:
             zf.writestr("agent_reflections.csv", _csv_bytes(rf_headers, rf_rows))
+        aapr = bundle.get("active_agents_per_round") or []
+        if aapr:
+            aapr_headers = [
+                "round_number",
+                "active_count",
+                "active_agent_ids",
+                "joined_agent_ids",
+                "left_agent_ids",
+                "inactive_agent_ids",
+            ]
+            aapr_rows = [
+                [
+                    row.get("round_number"),
+                    row.get("active_count"),
+                    "|".join(row.get("active_agent_ids") or []),
+                    "|".join(row.get("joined_agent_ids") or []),
+                    "|".join(row.get("left_agent_ids") or []),
+                    "|".join(row.get("inactive_agent_ids") or []),
+                ]
+                for row in aapr
+            ]
+            zf.writestr(
+                "active_agents_per_round.csv",
+                _csv_bytes(aapr_headers, aapr_rows),
+            )
     return bio.getvalue()
 
 
