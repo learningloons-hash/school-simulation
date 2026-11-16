@@ -620,7 +620,7 @@ def _activity_counts_for_personas(
     agent_ids = [f"{p.persona_id}_{i:03d}" for i, p in enumerate(personas)]
     windows, warnings = resolve_activity_windows(agent_ids, personas, total_rounds)
     if not windowing_active(windows, total_rounds):
-        return None, list(warnings)
+        return None, []
     rows = active_agents_per_round_rows(windows, agent_ids, total_rounds)
     return [int(r["active_count"]) for r in rows], list(warnings)
 

@@ -84,7 +84,22 @@ Not present this round: Name A (reason), Name B.
 - Implemented Mark’s locked Q1–Q5 (see spec tail); absence scope default `all_inactive`.
 - Preflight `active_window_adjusted` uses the same token averages as headline estimate; headline stays uncredited per §13.
 - Peer recency window sizing at orchestrator l.1063–1080 unchanged (spec C3).
+- **Preflight roster merge** (`build_preflight_response` merges roster CSV before personas/tiers): changes preflight counts for requests that supply `roster_csv` where slots differ from YAML-only personas — intended fix for the pre-reg window visibility gap.
+- **`ROSTER_CSV_TEMPLATE`:** adds four optional window columns (blank cells = inherit YAML / no window). User-visible additive change to the downloadable template.
+- **Transcript membership line:** when everyone is active in a round, line is `*Active: ….*` only (no `Not present` clause). Spec §7.2 does not define the empty-inactive case.
 - Self-check: full `uv run pytest`; `import senna_backend.simulation.roster_windows, senna_backend.roster.tenure_draw`; `npm run build` (frontend) — all as reported in §2 and builder notes above.
+
+## 6b. Architect correction pass (PR #19 review)
+
+1. Reverted Likert emission from `scenario_config_to_document` — M-ROSTER serialize changes only window/roster_windows keys.
+2. Reverted explicit `likert_anchor_labels` copy in `merge_persona_for_slot` (out of scope for byte-identical roster merge).
+3. Window-resolve soft warnings attached to preflight/queue only when `windowing_active()` is true; `ValueError` still → 422.
+4. Transcript membership: omit `Not present` when the inactive list is empty.
+5.–6. Documented template + preflight roster merge (see bullets in §6).
+
+### Follow-ups (not fixed in M-ROSTER)
+
+- `merge_persona_for_slot` on `main` omits `likert_anchor_labels` in the `PersonaTemplate(...)` call; dataclass defaults apply. Explicit pass-through might matter if roster merge should preserve scenario anchors when personas are rebuilt — separate from windows.
 
 ## 7. Don’ts confirmation
 

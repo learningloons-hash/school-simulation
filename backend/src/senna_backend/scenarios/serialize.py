@@ -58,10 +58,6 @@ def scenario_config_to_document(cfg: ScenarioConfig) -> dict[str, Any]:
         out["interaction_overlay"] = cfg.interaction_overlay
     if cfg.context:
         out["context"] = dict(cfg.context)
-    if cfg.likert_self_report_enabled:
-        out["likert_self_report_enabled"] = True
-    if cfg.likert_anchor_labels:
-        out["likert_anchor_labels"] = {k: list(v) for k, v in cfg.likert_anchor_labels.items()}
     if cfg.roster_windows is not None:
         rw: dict[str, Any] = {"absence_notice_scope": cfg.roster_windows.absence_notice_scope}
         if cfg.roster_windows.handover_template:

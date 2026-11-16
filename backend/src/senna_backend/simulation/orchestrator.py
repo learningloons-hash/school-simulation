@@ -1900,10 +1900,13 @@ async def run_simulation_task(
                 active_names = [agents_by_id[aid][0] for aid in active_ids]
                 inactive_ids = [aid for aid in agent_ids_ordered if aid not in active_ids]
                 inactive_names = [agents_by_id[aid][0] for aid in inactive_ids]
-                membership_line = (
-                    f"*Active: {', '.join(active_names)}. "
-                    f"Not present: {', '.join(inactive_names) if inactive_names else '—'}.*"
-                )
+                if inactive_names:
+                    membership_line = (
+                        f"*Active: {', '.join(active_names)}. "
+                        f"Not present: {', '.join(inactive_names)}.*"
+                    )
+                else:
+                    membership_line = f"*Active: {', '.join(active_names)}.*"
             await append_round_to_transcript(
                 transcript_dir,
                 simulation_id=simulation_id,

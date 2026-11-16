@@ -236,7 +236,6 @@ def merge_persona_for_slot(base: PersonaTemplate, row: ParsedRosterRow | None) -
         groups=groups,
         initial_state=dict(base.initial_state),
         implementation_posture=impl_post,
-        likert_anchor_labels=dict(base.likert_anchor_labels),
         active_from_round=afr,
         active_until_round=aur,
         absence_reason=ar,
