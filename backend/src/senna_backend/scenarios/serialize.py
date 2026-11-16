@@ -31,6 +31,14 @@ def scenario_config_to_document(cfg: ScenarioConfig) -> dict[str, Any]:
             d["attitudes"] = dict(p.attitudes)
         if p.personal_history:
             d["personal_history"] = dict(p.personal_history)
+        if p.active_from_round is not None:
+            d["active_from_round"] = p.active_from_round
+        if p.active_until_round is not None:
+            d["active_until_round"] = p.active_until_round
+        if p.absence_reason:
+            d["absence_reason"] = p.absence_reason
+        if p.window_basis:
+            d["window_basis"] = p.window_basis
         personas.append(d)
     out: dict[str, Any] = {
         "scenario_id": cfg.scenario_id,
@@ -50,4 +58,13 @@ def scenario_config_to_document(cfg: ScenarioConfig) -> dict[str, Any]:
         out["interaction_overlay"] = cfg.interaction_overlay
     if cfg.context:
         out["context"] = dict(cfg.context)
+    if cfg.likert_self_report_enabled:
+        out["likert_self_report_enabled"] = True
+    if cfg.likert_anchor_labels:
+        out["likert_anchor_labels"] = {k: list(v) for k, v in cfg.likert_anchor_labels.items()}
+    if cfg.roster_windows is not None:
+        rw: dict[str, Any] = {"absence_notice_scope": cfg.roster_windows.absence_notice_scope}
+        if cfg.roster_windows.handover_template:
+            rw["handover_template"] = cfg.roster_windows.handover_template
+        out["roster_windows"] = rw
     return out

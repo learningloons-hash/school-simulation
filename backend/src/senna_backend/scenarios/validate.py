@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from senna_backend.scenarios.registry import is_builtin_scenario_id, scenario_from_mapping
+from senna_backend.simulation.roster_windows import ABSENCE_NOTICE_SCOPES, validate_handover_template
 
 SCENARIO_ID_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 
@@ -99,6 +100,35 @@ def validate_scenario_document(
                     errors.append(
                         f"personas[{i}].implementation_posture must be a string when present (got {type(p['implementation_posture']).__name__})"
                     )
+            for wf in ("active_from_round", "active_until_round"):
+                if wf in p and p[wf] is not None:
+                    if not isinstance(p[wf], int):
+                        errors.append(f"personas[{i}].{wf} must be an integer")
+                    elif int(p[wf]) < 1:
+                        errors.append(f"personas[{i}].{wf} must be >= 1")
+            afr = p.get("active_from_round")
+            aur = p.get("active_until_round")
+            if isinstance(afr, int) and isinstance(aur, int) and afr > aur:
+                errors.append(f"personas[{i}]: active_from_round > active_until_round")
+            for sf in ("absence_reason", "window_basis"):
+                if sf in p and p[sf] is not None and not isinstance(p[sf], str):
+                    errors.append(f"personas[{i}].{sf} must be a string when present")
+
+    rw = doc.get("roster_windows")
+    if rw is not None:
+        if not isinstance(rw, dict):
+            errors.append("roster_windows must be an object when present")
+        else:
+            scope = str(rw.get("absence_notice_scope") or "all_inactive").strip().lower()
+            if scope not in ABSENCE_NOTICE_SCOPES:
+                errors.append(
+                    f"roster_windows.absence_notice_scope must be one of {sorted(ABSENCE_NOTICE_SCOPES)}",
+                )
+            ht = rw.get("handover_template")
+            if ht is not None and not isinstance(ht, str):
+                errors.append("roster_windows.handover_template must be a string when present")
+            elif isinstance(ht, str) and ht.strip():
+                errors.extend(validate_handover_template(ht))
 
     groups = doc.get("groups")
     known_gids: set[str] = set()
