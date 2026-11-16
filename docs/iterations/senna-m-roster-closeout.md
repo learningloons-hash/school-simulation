@@ -2,7 +2,7 @@
 
 ## 1. PR / SHAs
 
-- **PR:** (filled after open)
+- **PR:** see GitHub PR for `m-roster-join-leave`
 - **Branch tip:** branch HEAD (see PR after push)
 - **Base branched from:** `9739f0962204d78273319af3436265b7ad634818`
 
