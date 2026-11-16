@@ -130,12 +130,16 @@ def speakers_per_round_for_config_snapshot(simulation_mode: str, speakers_per_ro
 
 ROSTER_CSV_TEMPLATE = (
     "slot,persona_id,role,name,role_level,style_cues,beliefs_json,groups,fidelity_tier,implementation_posture,"
-    "identity_json,attitudes_json,personal_history_json\n"
-    "1,,,,,,,,,,,,\n"
+    "identity_json,attitudes_json,personal_history_json,"
+    "active_from_round,active_until_round,absence_reason,window_basis\n"
+    "1,,,,,,,,,,,,,,,\n"
     "# fidelity_tier: optional 1|2|3 overrides sampling_strategy tier for that slot (Iter 22)\n"
     "# implementation_posture: optional opaque label for posture_maxvar sampling (Iter 26).\n"
     "#   Empty or whitespace-only cell does NOT clear YAML posture — only a non-empty cell overrides.\n"
     "# identity_json/attitudes_json/personal_history_json accept JSON objects; merged shallowly over scenario persona (Iter 14)\n"
+    "# active_from_round / active_until_round: optional inclusive activity window (M-ROSTER); empty inherits scenario YAML.\n"
+    "# absence_reason: optional text for absence notices when inactive; empty omits reason in prompts.\n"
+    "# window_basis: provenance label for exports/audit only; never shown in prompts.\n"
 )
 
 POPULATION_CSV_TEMPLATE = (
@@ -601,6 +605,26 @@ class PreflightResponse(BaseModel):
     preflight: dict[str, Any] = Field(default_factory=dict)
 
 
+def _activity_counts_for_personas(
+    personas: list[Any],
+    total_rounds: int,
+) -> tuple[list[int] | None, list[str]]:
+    from senna_backend.simulation.roster_windows import (
+        active_agents_per_round_rows,
+        resolve_activity_windows,
+        windowing_active,
+    )
+
+    if not personas:
+        return None, []
+    agent_ids = [f"{p.persona_id}_{i:03d}" for i, p in enumerate(personas)]
+    windows, warnings = resolve_activity_windows(agent_ids, personas, total_rounds)
+    if not windowing_active(windows, total_rounds):
+        return None, list(warnings)
+    rows = active_agents_per_round_rows(windows, agent_ids, total_rounds)
+    return [int(r["active_count"]) for r in rows], list(warnings)
+
+
 def _compute_preflight_estimate(
     settings: Settings,
     req: SimulationRunRequest,
@@ -615,6 +639,7 @@ def _compute_preflight_estimate(
     weighted_retrieval_enabled: bool = False,
     memory_embedding_model: str = "",
     reflection_enabled: bool = False,
+    active_counts_per_round: list[int] | None = None,
 ) -> PreflightEstimate:
     llm_max_tokens = req.max_tokens if req.max_tokens is not None else settings.llm_max_tokens
     return estimate_run_preflight(
@@ -635,6 +660,7 @@ def _compute_preflight_estimate(
         weighted_retrieval_enabled=weighted_retrieval_enabled,
         memory_embedding_model=memory_embedding_model,
         reflection_enabled=reflection_enabled,
+        active_counts_per_round=active_counts_per_round,
     )
 
 
@@ -673,7 +699,18 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
 
     remainder_count = int(req.remainder_config.remainder_count) if req.remainder_config else 0
     core_limit = req.agent_limit - remainder_count if remainder_count > 0 else req.agent_limit
-    personas = build_personas_for_agent_limit(scenario_cfg, core_limit, None)
+    roster_by_slot = None
+    if req.roster_csv and req.roster_csv.strip():
+        try:
+            roster_parse_pf = parse_roster_csv(
+                req.roster_csv.strip(),
+                agent_limit=req.agent_limit,
+                scenario=scenario_cfg,
+            )
+            roster_by_slot = roster_parse_pf.by_slot
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e)) from e
+    personas = build_personas_for_agent_limit(scenario_cfg, core_limit, roster_by_slot)
     if remainder_count > 0 and req.remainder_config is not None:
         from senna_backend.simulation.remainder import build_synthetic_remainder_personas
 
@@ -690,17 +727,13 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         )
         personas = list(personas) + synth
 
-    roster_by_slot = None
-    if req.roster_csv and req.roster_csv.strip():
-        try:
-            roster_parse = parse_roster_csv(
-                req.roster_csv.strip(),
-                agent_limit=req.agent_limit,
-                scenario=scenario_cfg,
-            )
-            roster_by_slot = roster_parse.by_slot
-        except ValueError as e:
-            raise HTTPException(status_code=422, detail=str(e)) from e
+    try:
+        active_counts_pf, window_warnings_pf = _activity_counts_for_personas(
+            personas,
+            req.total_rounds,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
     tier_list, _ = compute_fidelity_tiers(
         sampling_strategy=req.sampling_strategy,
@@ -746,8 +779,10 @@ async def build_preflight_response(settings: Settings, req: SimulationRunRequest
         weighted_retrieval_enabled=weighted_preflight,
         memory_embedding_model=mem_embed_preflight,
         reflection_enabled=reflection_preflight,
+        active_counts_per_round=active_counts_pf,
     )
-    return PreflightResponse(warnings=list(est.warnings), preflight=est.to_snapshot())
+    pf_warnings = list(est.warnings) + window_warnings_pf
+    return PreflightResponse(warnings=pf_warnings, preflight=est.to_snapshot())
 
 
 class SimulationListItem(BaseModel):
@@ -977,6 +1012,12 @@ async def queue_simulation_run(
         personas_final = list(personas_final) + synth
         if slot_overrides is not None:
             slot_overrides = list(slot_overrides) + [{}] * remainder_count
+
+    try:
+        _, window_warnings_q = _activity_counts_for_personas(personas_final, _req.total_rounds)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    run_warnings.extend(window_warnings_q)
 
     personas_for_task: list | None
     if remainder_count > 0 or personas_override is not None:

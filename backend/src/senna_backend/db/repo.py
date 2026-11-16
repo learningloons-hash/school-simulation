@@ -1735,7 +1735,29 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
             },
         )
 
-    return {
+    active_agents_per_round: list[dict[str, Any]] = []
+    rw_block = (cfg_run or {}).get("roster_windows") if cfg_run else None
+    if isinstance(rw_block, dict) and rw_block:
+        from senna_backend.simulation.roster_windows import ActivityWindow, active_agents_per_round_rows
+
+        windows_raw = rw_block.get("windows") or []
+        if windows_raw:
+            agent_ids_ordered = [str(w.get("agent_id")) for w in windows_raw if w.get("agent_id")]
+            windows = {
+                str(w["agent_id"]): ActivityWindow(
+                    agent_id=str(w["agent_id"]),
+                    active_from_round=int(w["active_from_round"]),
+                    active_until_round=int(w["active_until_round"]),
+                    absence_reason=str(w.get("absence_reason") or ""),
+                    window_basis=str(w.get("window_basis") or ""),
+                )
+                for w in windows_raw
+                if w.get("agent_id")
+            }
+            tr = int(total_rounds) if total_rounds else 1
+            active_agents_per_round = active_agents_per_round_rows(windows, agent_ids_ordered, tr)
+
+    export_out: dict[str, Any] = {
         "run": run,
         "transcript": transcript,
         "agent_state_snapshots": agent_state_snapshots,
@@ -1751,6 +1773,9 @@ async def get_simulation_export_bundle(sqlite_path: str, *, simulation_id: str) 
         "architectural_interview_scores": architectural_interview_scores,
         "agent_reflections": agent_reflections,
     }
+    if active_agents_per_round:
+        export_out["active_agents_per_round"] = active_agents_per_round
+    return export_out
 
 
 async def upsert_user_scenario(
