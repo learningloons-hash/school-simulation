@@ -271,10 +271,10 @@ def test_resolve_windows_clips_until_gt_total_rounds() -> None:
 
 
 def test_resolve_windows_error_from_gt_total_rounds() -> None:
-    # active_from=10 with total_rounds=4: until defaults to 4, then 10>4 triggers
-    # the from>until check (implementation clips until to total_rounds first).
+    # Spec §5: active_from=10 with total_rounds=4 and a blank active_until_round
+    # (defaults to R) must report "starts after total_rounds", not from>until.
     personas = [_persona_stub(frm=10)]
-    with pytest.raises(ValueError, match="active_from_round > active_until_round"):
+    with pytest.raises(ValueError, match="starts after total_rounds=4"):
         resolve_activity_windows(["a"], personas, total_rounds=4)
 
 
