@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 from senna_backend.scenarios.registry import is_builtin_scenario_id, scenario_from_mapping
-from senna_backend.simulation.roster_windows import ABSENCE_NOTICE_SCOPES, validate_handover_template
+from senna_backend.simulation.roster_windows import parse_roster_windows_mapping
 
 SCENARIO_ID_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 
@@ -114,21 +114,10 @@ def validate_scenario_document(
                 if sf in p and p[sf] is not None and not isinstance(p[sf], str):
                     errors.append(f"personas[{i}].{sf} must be a string when present")
 
-    rw = doc.get("roster_windows")
-    if rw is not None:
-        if not isinstance(rw, dict):
-            errors.append("roster_windows must be an object when present")
-        else:
-            scope = str(rw.get("absence_notice_scope") or "all_inactive").strip().lower()
-            if scope not in ABSENCE_NOTICE_SCOPES:
-                errors.append(
-                    f"roster_windows.absence_notice_scope must be one of {sorted(ABSENCE_NOTICE_SCOPES)}",
-                )
-            ht = rw.get("handover_template")
-            if ht is not None and not isinstance(ht, str):
-                errors.append("roster_windows.handover_template must be a string when present")
-            elif isinstance(ht, str) and ht.strip():
-                errors.extend(validate_handover_template(ht))
+    try:
+        parse_roster_windows_mapping(doc.get("roster_windows"))
+    except ValueError as e:
+        errors.append(str(e))
 
     groups = doc.get("groups")
     known_gids: set[str] = set()

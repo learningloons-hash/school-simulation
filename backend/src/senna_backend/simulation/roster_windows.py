@@ -34,6 +34,37 @@ def validate_handover_template(template: str) -> list[str]:
     return errors
 
 
+def validate_absence_notice_scope(raw: Any) -> str:
+    scope = str(raw or "all_inactive").strip().lower()
+    if scope not in ABSENCE_NOTICE_SCOPES:
+        allowed = ", ".join(sorted(ABSENCE_NOTICE_SCOPES))
+        raise ValueError(f"roster_windows.absence_notice_scope must be one of {allowed}")
+    return scope
+
+
+def parse_roster_windows_mapping(rw_raw: Any) -> RosterWindowsConfig | None:
+    """Shared load-time validation for scenario YAML and validate_scenario_document."""
+    if rw_raw is None:
+        return None
+    if not isinstance(rw_raw, dict):
+        raise ValueError("roster_windows must be a mapping when present")
+    scope = validate_absence_notice_scope(rw_raw.get("absence_notice_scope"))
+    ht = rw_raw.get("handover_template")
+    handover_template: str | None = None
+    if ht is not None:
+        if not isinstance(ht, str):
+            raise ValueError("roster_windows.handover_template must be a string when present")
+        handover_template = ht
+        if handover_template.strip():
+            errs = validate_handover_template(handover_template)
+            if errs:
+                raise ValueError(errs[0])
+    return RosterWindowsConfig(
+        handover_template=handover_template,
+        absence_notice_scope=scope,
+    )
+
+
 def _resolved_from_until(
     persona: PersonaTemplate,
     *,
@@ -48,17 +79,17 @@ def _resolved_from_until(
     if raw_until is not None and not isinstance(raw_until, int):
         raise ValueError(f"activity window for {agent_id}: active_until_round must be an integer")
     from_r = 1 if raw_from is None else int(raw_from)
-    until_r = total_rounds if raw_until is None else int(raw_until)
     if from_r < 1:
         raise ValueError(f"activity window for {agent_id}: active_from_round must be >= 1")
-    if until_r < 1:
-        raise ValueError(f"activity window for {agent_id}: active_until_round must be >= 1")
-    if from_r > until_r:
-        raise ValueError(f"activity window for {agent_id}: active_from_round > active_until_round")
     if from_r > total_rounds:
         raise ValueError(
             f"activity window for {agent_id} starts after total_rounds={total_rounds}",
         )
+    until_r = total_rounds if raw_until is None else int(raw_until)
+    if until_r < 1:
+        raise ValueError(f"activity window for {agent_id}: active_until_round must be >= 1")
+    if from_r > until_r:
+        raise ValueError(f"activity window for {agent_id}: active_from_round > active_until_round")
     if until_r > total_rounds:
         warnings.append(
             f"activity window for {agent_id} clipped to total_rounds={total_rounds}",
@@ -154,7 +185,9 @@ def absence_notice_for_round(
     round_number: int,
     scope: str,
 ) -> str | None:
-    sc = (scope or "all_inactive").strip().lower()
+    sc = scope.strip().lower()
+    if sc not in ABSENCE_NOTICE_SCOPES:
+        raise ValueError(f"roster_windows.absence_notice_scope must be one of {sorted(ABSENCE_NOTICE_SCOPES)}")
     if sc == "none":
         return None
     entries: list[str] = []
@@ -193,7 +226,7 @@ def active_agents_per_round_rows(
         if r > 1:
             prev_active = set(active_agent_ids_for_round(windows, ordered_agent_ids, r - 1))
             curr_active = set(active_ids)
-            left = [aid for aid in prev_active if aid not in curr_active]
+            left = [aid for aid in ordered_agent_ids if aid in prev_active and aid not in curr_active]
         rows.append(
             {
                 "round_number": r,

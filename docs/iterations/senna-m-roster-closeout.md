@@ -97,6 +97,10 @@ Not present this round: Name A (reason), Name B.
 4. Transcript membership: omit `Not present` when the inactive list is empty.
 5.–6. Documented template + preflight roster merge (see bullets in §6).
 
+## 6c. Correction round 2 (independent tests, spec §5)
+
+Load-time `parse_roster_windows_mapping` shared by `scenario_from_mapping` and `validate_scenario_document`; window resolve checks `from > total_rounds` before defaulting blank `until`; export `left_agent_ids` in roster order; persona int errors use `personas[i].` prefix.
+
 ### Follow-ups (not fixed in M-ROSTER)
 
 - `merge_persona_for_slot` on `main` omits `likert_anchor_labels` in the `PersonaTemplate(...)` call; dataclass defaults apply. Explicit pass-through might matter if roster merge should preserve scenario anchors when personas are rebuilt — separate from windows.
