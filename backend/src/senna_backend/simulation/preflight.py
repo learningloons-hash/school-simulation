@@ -29,9 +29,10 @@ class PreflightEstimate:
     context_window: int | None
     context_pressure_ratio: float | None
     warnings: tuple[str, ...]
+    active_window_adjusted: dict[str, Any] | None = None
 
     def to_snapshot(self) -> dict[str, Any]:
-        return {
+        snap = {
             "total_speaking_turns": self.total_speaking_turns,
             "llm_turns": self.llm_turns,
             "heuristic_turns": self.heuristic_turns,
@@ -43,6 +44,9 @@ class PreflightEstimate:
             "context_window": self.context_window,
             "context_pressure_ratio": self.context_pressure_ratio,
         }
+        if self.active_window_adjusted is not None:
+            snap["active_window_adjusted"] = dict(self.active_window_adjusted)
+        return snap
 
 
 def speakers_per_round_count(
@@ -77,6 +81,7 @@ def estimate_run_preflight(
     weighted_retrieval_enabled: bool = False,
     memory_embedding_model: str = "",
     reflection_enabled: bool = False,
+    active_counts_per_round: list[int] | None = None,
 ) -> PreflightEstimate:
     """
     Pure preflight estimator: turn counts, rough token/cost envelope, context pressure warnings.
@@ -212,6 +217,58 @@ def estimate_run_preflight(
     if warnings_extra_reflection:
         warnings.append(warnings_extra_reflection)
 
+    active_window_adjusted: dict[str, Any] | None = None
+    if active_counts_per_round is not None and active_counts_per_round:
+        counts = list(active_counts_per_round)
+        speaking_adj = sum(min(per_round, c) for c in counts)
+        likert_adj = sum(counts) if likert_self_report_enabled else 0
+        adj_llm = speaking_adj + likert_adj
+        if importance_scoring_enabled and adj_llm > 0:
+            mode = (importance_scoring_mode or "per_turn").strip().lower()
+            llm_speaking_adj = speaking_adj
+            if mode == "per_round_batch":
+                adj_llm += rounds
+            else:
+                adj_llm += llm_speaking_adj
+        if weighted_retrieval_enabled and speaking_adj > 0:
+            llm_speaking_adj = max(
+                0,
+                adj_llm - likert_adj - (rounds if importance_scoring_enabled else 0),
+            )
+            _ = llm_speaking_adj
+        if reflection_enabled and speaking_adj > 0:
+            llm_speaking_adj = max(0, adj_llm - likert_adj)
+            est_reflections = max(0, llm_speaking_adj // 5)
+            adj_llm += est_reflections
+        est_in_adj = adj_llm * avg_in
+        est_out_adj = adj_llm * avg_out
+        adj_cost = 0.0
+        if anthropic_llm > 0 and llm_turns > 0:
+            anth_ratio = anthropic_llm / llm_turns
+            anth_adj = int(round(adj_llm * anth_ratio))
+            openai_adj = max(0, adj_llm - anth_adj)
+            adj_cost += anth_adj * estimate_cost_usd(
+                input_tokens=avg_in,
+                output_tokens=avg_out,
+                provider_key=anthropic_pricing,
+            )
+            if openai_adj > 0:
+                adj_cost += openai_adj * estimate_cost_usd(
+                    input_tokens=avg_in,
+                    output_tokens=avg_out,
+                    provider_key=local_pricing,
+                )
+        adj_cost = round(adj_cost, 4)
+        active_window_adjusted = {
+            "active_agents_per_round": counts,
+            "speaking_turns": speaking_adj,
+            "likert_llm_turns": likert_adj,
+            "llm_turns": adj_llm,
+            "estimated_input_tokens": est_in_adj,
+            "estimated_output_tokens": est_out_adj,
+            "estimated_cost_usd": adj_cost,
+        }
+
     return PreflightEstimate(
         total_speaking_turns=total_speaking,
         llm_turns=llm_turns,
@@ -224,6 +281,7 @@ def estimate_run_preflight(
         context_window=context_window,
         context_pressure_ratio=pressure,
         warnings=tuple(warnings),
+        active_window_adjusted=active_window_adjusted,
     )
 
 

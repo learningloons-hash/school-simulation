@@ -30,4 +30,4 @@
 | 11 | Memory Architecture | ✅ CLOSED (GM PASS WITH ISSUES, 2026-08-24) — [`docs/handoffs/HANDOFF_SENNA_ARC11.md`](docs/handoffs/HANDOFF_SENNA_ARC11.md) / [`senna-iter-53-closeout.md`](docs/iterations/senna-iter-53-closeout.md) (`senna-iter-49`–`53`) |
 | 12 | Freeze and Study Readiness | ✅ CLOSED — [`HANDOFF_SENNA_ARC12.md`](docs/handoffs/HANDOFF_SENNA_ARC12.md) / [`senna-iter-58-closeout.md`](docs/iterations/senna-iter-58-closeout.md) (pre-reg signed 2026-08-25; validity trials may proceed) |
 
-**Research milestones (not numbered Arcs):** M-RENAME — package `senna_backend`, dist `senna-backend`; see [`HANDOFF_SENNA_M_RENAME.md`](docs/handoffs/HANDOFF_SENNA_M_RENAME.md).
+**Research milestones (not numbered Arcs):** M-RENAME — package `senna_backend`, dist `senna-backend`; see [`HANDOFF_SENNA_M_RENAME.md`](docs/handoffs/HANDOFF_SENNA_M_RENAME.md). M-ROSTER — roster join/leave windows (builder PR `m-roster-join-leave`); see [`HANDOFF_SENNA_M_ROSTER.md`](docs/handoffs/HANDOFF_SENNA_M_ROSTER.md).

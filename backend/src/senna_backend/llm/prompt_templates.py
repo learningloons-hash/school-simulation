@@ -125,6 +125,8 @@ def build_user_prompt(
     recent_interactions: list[dict[str, Any]],
     context_snippets: list[dict[str, Any]] | None = None,
     round_summaries: list[str] | None = None,
+    handover_note: str | None = None,
+    absence_notice: str | None = None,
 ) -> str:
     memory_block = "\n".join([f"- {m}" for m in prior_agent_memory]) if prior_agent_memory else "- (none)"
     interaction_block = (
@@ -166,9 +168,20 @@ def build_user_prompt(
         if round_summaries
         else "What others have said (chronological in this window; excludes your current line):\n"
     )
+    handover_block = ""
+    if handover_note is not None:
+        handover_block = (
+            "Handover note (given to you on joining; only you can see this):\n"
+            f"{handover_note}\n\n"
+        )
+    absence_block = ""
+    if absence_notice is not None:
+        absence_block = f"{absence_notice}\n\n"
     return (
         f"Round: {round_number}\n"
         f"Policy event: {policy_event}\n"
+        f"{handover_block}"
+        f"{absence_block}"
         f"{rag_block}"
         f"{evolution_note}\n"
         f"{summaries_block}"

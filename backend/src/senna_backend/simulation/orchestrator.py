@@ -3,6 +3,8 @@ import json
 import logging
 import random
 import time
+
+import aiosqlite
 from dataclasses import dataclass
 from typing import Any, NamedTuple
 
@@ -62,6 +64,18 @@ from senna_backend.simulation.transcript_writer import (
 from senna_backend.simulation.weighted_retrieval import resolve_memory_embedding_model
 from senna_backend.simulation.memory_context import (
     build_memory_context_inclusion_records,
+)
+from senna_backend.simulation.roster_windows import (
+    absence_notice_for_round,
+    active_agent_ids_for_round,
+    agents_active_both_rounds,
+    filter_turns_min_round,
+    is_active,
+    join_round as roster_join_round,
+    render_handover_note,
+    resolve_activity_windows,
+    roster_windows_config_snapshot,
+    windowing_active,
 )
 from senna_backend.simulation.heuristic import (
     apply_tier3_heuristic_to_states,
@@ -403,6 +417,7 @@ async def _collect_round_end_likert(
     routing_profile_local_id: str,
     routing_profile_frontier_id: str,
     run_llm_extras: RunLLMExtras | None = None,
+    activity_windows: dict | None = None,
 ) -> tuple[int, int]:
     """One LLM call per agent; persists Likert rows without mutating float state."""
     in_acc = 0
@@ -442,6 +457,12 @@ async def _collect_round_end_likert(
             network_neighbors=network_neighbors,
             round_speaker_ids=spoke_ids,
         )
+        if activity_windows is not None:
+            w = activity_windows.get(agent.agent_id)
+            if w is not None:
+                jr = roster_join_round(w)
+                if jr is not None:
+                    recent_visible = filter_turns_min_round(recent_visible, jr)
         visible_history = format_likert_visible_history(
             recent_visible,
             agent_id=agent.agent_id,
@@ -750,6 +771,33 @@ async def run_simulation_task(
         scenario, personas, slot_overrides=slot_overrides, fidelity_tiers=fidelity_tiers
     )
     agent_states = {agent.agent_id: _initial_state_from_persona(agent.persona) for agent in agents}
+    agent_ids_ordered = [a.agent_id for a in agents]
+    activity_windows, _window_resolve_warnings = resolve_activity_windows(
+        agent_ids_ordered,
+        personas,
+        total_rounds,
+    )
+    roster_windowing = windowing_active(activity_windows, total_rounds)
+    roster_windows_cfg = scenario.roster_windows
+    handover_notes_by_agent: dict[str, str] = {}
+    absence_scope = (
+        roster_windows_cfg.absence_notice_scope if roster_windows_cfg is not None else "all_inactive"
+    )
+    agents_by_id = {a.agent_id: (a.name, a.role) for a in agents}
+    if roster_windowing:
+        await merge_simulation_config_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            updates={
+                "roster_windows": roster_windows_config_snapshot(
+                    agents=agents,
+                    windows=activity_windows,
+                    roster_cfg=roster_windows_cfg,
+                    handover_notes=handover_notes_by_agent,
+                    total_rounds=total_rounds,
+                ),
+            },
+        )
     previous_readiness = 0.0
     sim_mode = (simulation_mode or "full_round_robin").strip().lower()
 
@@ -812,6 +860,16 @@ async def run_simulation_task(
 
     if round_summary_enabled:
         agent_roster = [(a.name, a.role) for a in agents]
+        active_roster = None
+        if roster_windowing:
+            active_roster = [
+                (
+                    a.name,
+                    a.role,
+                    f"{activity_windows[a.agent_id].active_from_round}–{activity_windows[a.agent_id].active_until_round}",
+                )
+                for a in agents
+            ]
         await open_transcript(
             transcript_dir,
             simulation_id=simulation_id,
@@ -819,12 +877,20 @@ async def run_simulation_task(
             agent_names=agent_roster,
             total_rounds=total_rounds,
             model_used=model_used,
+            agent_active_rounds=active_roster,
         )
 
     for round_number in range(1, total_rounds + 1):
         policy_event = _policy_event_for_round(scenario, round_number)
+        roster_pool = agents
+        if roster_windowing:
+            roster_pool = [
+                a
+                for a in agents
+                if is_active(activity_windows[a.agent_id], round_number)
+            ]
         round_agents = _agents_for_round(
-            agents,
+            roster_pool,
             round_number=round_number,
             simulation_mode=sim_mode,
             speakers_per_round=speakers_per_round,
@@ -1162,6 +1228,11 @@ async def run_simulation_task(
                         observer_agent_id=agent.agent_id,
                         round_number=round_number,
                     )
+                    if roster_windowing:
+                        w = activity_windows[agent.agent_id]
+                        jr = roster_join_round(w)
+                        if jr is not None:
+                            peer_pool = filter_turns_min_round(peer_pool, jr)
                     peer_ranked = rank_turns(
                         peer_pool,
                         weights=retrieval_weights,
@@ -1248,7 +1319,17 @@ async def run_simulation_task(
                         observer_agent_id=agent.agent_id,
                         round_number=round_number,
                     )
+                    if roster_windowing:
+                        w = activity_windows[agent.agent_id]
+                        jr = roster_join_round(w)
+                        if jr is not None:
+                            recent_interactions = filter_turns_min_round(recent_interactions, jr)
                     peer_prompt_turn_ids = {str(r["id"]) for r in recent_interactions if r.get("id")}
+
+                pre_join_min: int | None = None
+                if roster_windowing:
+                    jr = roster_join_round(activity_windows[agent.agent_id])
+                    pre_join_min = jr
 
                 inclusion_records = build_memory_context_inclusion_records(
                     observer_agent_id=agent.agent_id,
@@ -1260,6 +1341,7 @@ async def run_simulation_task(
                     self_prompt_turn_ids=self_prompt_turn_ids,
                     peer_prompt_turn_ids=peer_prompt_turn_ids,
                     retrieval_signals_by_turn_id=retrieval_signals_by_turn_id or None,
+                    pre_join_min_round=pre_join_min,
                 )
 
                 prior_agent_memory = clip_memory_lines(
@@ -1275,6 +1357,38 @@ async def run_simulation_task(
                         up_to_round=round_number,
                     )
                     prior_summaries = [r["summary_text"] for r in summary_rows] if summary_rows else None
+                    if prior_summaries and roster_windowing:
+                        jr = roster_join_round(activity_windows[agent.agent_id])
+                        if jr is not None:
+                            filtered_rows = [r for r in summary_rows if int(r["round_number"]) >= jr]
+                            prior_summaries = (
+                                [r["summary_text"] for r in filtered_rows] if filtered_rows else None
+                            )
+
+                handover_kw: str | None = None
+                if roster_windowing and roster_windows_cfg and roster_windows_cfg.handover_template:
+                    w = activity_windows[agent.agent_id]
+                    jr = roster_join_round(w)
+                    if jr is not None and round_number == jr:
+                        rendered = render_handover_note(
+                            roster_windows_cfg.handover_template,
+                            name=agent.name,
+                            role=agent.role,
+                            join_round=jr,
+                            total_rounds=total_rounds,
+                            join_policy_event=_policy_event_for_round(scenario, jr),
+                        )
+                        handover_notes_by_agent[agent.agent_id] = rendered
+                        handover_kw = rendered
+                absence_kw: str | None = None
+                if roster_windowing:
+                    absence_kw = absence_notice_for_round(
+                        activity_windows,
+                        agents_by_id,
+                        agent_ids_ordered,
+                        round_number,
+                        absence_scope,
+                    )
 
                 context_snippets: list[dict[str, Any]] | None = None
                 if rag_effective:
@@ -1341,6 +1455,8 @@ async def run_simulation_task(
                     recent_interactions=recent_interactions,
                     context_snippets=context_snippets,
                     round_summaries=prior_summaries,
+                    handover_note=handover_kw,
+                    absence_notice=absence_kw,
                 )
                 raw_prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
                 effective = resolve_effective_provider(
@@ -1614,6 +1730,12 @@ async def run_simulation_task(
         # Iteration 24: shift Tier-3 agents toward mean Tier-1/2 state delta (+ noise).
         # Skip when no Tier-1/2 speakers this round (Tier-3-only runs stay stable; Iteration 23 test).
         tier3_ids = [a.agent_id for a in agents if a.fidelity_tier == 3]
+        if roster_windowing:
+            tier3_ids = [
+                aid
+                for aid in tier3_ids
+                if is_active(activity_windows[aid], round_number)
+            ]
         has_t12_speakers = any(a.fidelity_tier in (1, 2) for a in round_agents)
         if tier3_ids and has_t12_speakers:
             ds, dr, dw = mean_deltas_tier12_for_round(round_agents, states_before_t12, agent_states)
@@ -1630,11 +1752,18 @@ async def run_simulation_task(
             )
 
         if likert_self_report_enabled:
+            likert_agent_list = agents
+            if roster_windowing:
+                likert_agent_list = [
+                    a
+                    for a in agents
+                    if is_active(activity_windows[a.agent_id], round_number)
+                ]
             likert_in, likert_out = await _collect_round_end_likert(
                 sqlite_path=sqlite_path,
                 simulation_id=simulation_id,
                 round_number=round_number,
-                agents=agents,
+                agents=likert_agent_list,
                 agent_states=agent_states,
                 scenario=scenario,
                 scenario_id=scenario_id,
@@ -1656,12 +1785,22 @@ async def run_simulation_task(
                 routing_profile_local_id=local_profile_id,
                 routing_profile_frontier_id=frontier_profile_id,
                 run_llm_extras=run_llm_extras,
+                activity_windows=activity_windows if roster_windowing else None,
             )
             if likert_in or likert_out:
                 run_in_acc += likert_in
                 run_out_acc += likert_out
 
-        state_values = list(agent_states.values())
+        if roster_windowing:
+            state_values = [
+                agent_states[a.agent_id]
+                for a in agents
+                if is_active(activity_windows[a.agent_id], round_number)
+            ]
+        else:
+            state_values = list(agent_states.values())
+        if not state_values:
+            state_values = list(agent_states.values())
         avg_support = sum(s.support_level for s in state_values) / len(state_values)
         avg_resistance = sum(s.resistance_level for s in state_values) / len(state_values)
         avg_workload = sum(s.workload_stress for s in state_values) / len(state_values)
@@ -1679,7 +1818,15 @@ async def run_simulation_task(
 
         conv_delta: float | None = None
         if round_number > 1 and prev_agent_triples is not None:
-            conv_delta = _population_convergence_delta(agents, agent_states, prev_agent_triples)
+            if roster_windowing:
+                conv_agents = agents_active_both_rounds(agents, activity_windows, round_number)
+                conv_delta = _population_convergence_delta(
+                    conv_agents,
+                    agent_states,
+                    prev_agent_triples,
+                )
+            else:
+                conv_delta = _population_convergence_delta(agents, agent_states, prev_agent_triples)
 
         await insert_global_state_snapshot(
             sqlite_path,
@@ -1698,7 +1845,12 @@ async def run_simulation_task(
             consistency_index=consistency_index,
         )
 
-        for agent in agents:
+        snapshot_agents = agents
+        if roster_windowing:
+            snapshot_agents = [
+                a for a in agents if is_active(activity_windows[a.agent_id], round_number)
+            ]
+        for agent in snapshot_agents:
             st = agent_states[agent.agent_id]
             sections = attribute_sections_for_snapshot(agent.context)
             await insert_agent_state_snapshot(
@@ -1738,6 +1890,23 @@ async def run_simulation_task(
                 round_number=round_number,
                 summary_text=summary_text,
             )
+            membership_line: str | None = None
+            if roster_windowing:
+                active_ids = active_agent_ids_for_round(
+                    activity_windows,
+                    agent_ids_ordered,
+                    round_number,
+                )
+                active_names = [agents_by_id[aid][0] for aid in active_ids]
+                inactive_ids = [aid for aid in agent_ids_ordered if aid not in active_ids]
+                inactive_names = [agents_by_id[aid][0] for aid in inactive_ids]
+                if inactive_names:
+                    membership_line = (
+                        f"*Active: {', '.join(active_names)}. "
+                        f"Not present: {', '.join(inactive_names)}.*"
+                    )
+                else:
+                    membership_line = f"*Active: {', '.join(active_names)}.*"
             await append_round_to_transcript(
                 transcript_dir,
                 simulation_id=simulation_id,
@@ -1745,6 +1914,7 @@ async def run_simulation_task(
                 policy_event=policy_event,
                 turns=round_turns,
                 round_summary=summary_text,
+                membership_line=membership_line,
             )
 
         prev_agent_triples = {
@@ -1826,6 +1996,63 @@ async def run_simulation_task(
             simulation_id=simulation_id,
             status="running",
             current_round=round_number,
+        )
+
+    if roster_windowing:
+        turns_outside = 0
+        likert_outside = 0
+        spoke_by_round: dict[str, list[str]] = {}
+        for rn in range(1, total_rounds + 1):
+            active_set = set(
+                active_agent_ids_for_round(activity_windows, agent_ids_ordered, rn)
+            )
+            round_turns_audit = await get_turns_for_round(
+                sqlite_path,
+                simulation_id=simulation_id,
+                round_number=rn,
+            )
+            spoke_by_round[str(rn)] = sorted(
+                {str(t.get("agent_id")) for t in round_turns_audit if t.get("agent_id")}
+            )
+            for t in round_turns_audit:
+                aid = str(t.get("agent_id") or "")
+                if aid and aid not in active_set:
+                    turns_outside += 1
+        async with aiosqlite.connect(sqlite_path) as db:
+            cur = await db.execute(
+                "SELECT round_number, agent_id FROM agent_round_likert WHERE simulation_id = ?",
+                (simulation_id,),
+            )
+            async for lr in cur:
+                rn = int(lr[0])
+                aid = str(lr[1])
+                if aid not in set(
+                    active_agent_ids_for_round(activity_windows, agent_ids_ordered, rn)
+                ):
+                    likert_outside += 1
+        if turns_outside != 0:
+            logger.error(
+                "roster_window_audit simulation_id=%s turns_outside_window=%d",
+                simulation_id[:12],
+                turns_outside,
+            )
+        await merge_simulation_config_snapshot(
+            sqlite_path,
+            simulation_id=simulation_id,
+            updates={
+                "roster_windows": roster_windows_config_snapshot(
+                    agents=agents,
+                    windows=activity_windows,
+                    roster_cfg=roster_windows_cfg,
+                    handover_notes=handover_notes_by_agent,
+                    total_rounds=total_rounds,
+                ),
+                "roster_window_audit": {
+                    "turns_outside_window": turns_outside,
+                    "likert_rows_outside_window": likert_outside,
+                    "spoke_by_round": spoke_by_round,
+                },
+            },
         )
 
     if round_summary_enabled:

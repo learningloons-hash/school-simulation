@@ -12,6 +12,7 @@ ExclusionReason = Literal[
     "visibility_policy",
     "char_budget_truncated",
     "same_round_peer",
+    "pre_join",
 ] | None
 
 
@@ -37,6 +38,7 @@ def build_prompt_aligned_inclusion_records(
     peer_prompt_turn_ids: set[str],
     peer_limit: int,
     retrieval_signals_by_turn_id: dict[str, dict[str, float]] | None = None,
+    pre_join_min_round: int | None = None,
 ) -> list[InclusionRecord]:
     """
     Derive inclusion rows from turns actually placed in the assembled prompt.
@@ -54,6 +56,25 @@ def build_prompt_aligned_inclusion_records(
         target_scope = str(turn.get("target_scope") or "agent")
         speaker_id = str(turn.get("agent_id") or "")
         turn_round = int(turn.get("round_number") or 0)
+
+        if (
+            pre_join_min_round is not None
+            and speaker_id != observer_agent_id
+            and turn_round > 0
+            and turn_round < pre_join_min_round
+        ):
+            records.append(
+                InclusionRecord(
+                    round_number=round_number,
+                    observer_agent_id=observer_agent_id,
+                    candidate_turn_id=turn_id,
+                    included=False,
+                    exclusion_reason="pre_join",
+                    target_scope=target_scope,
+                    char_truncated=False,
+                )
+            )
+            continue
 
         if speaker_id == observer_agent_id:
             if turn_id not in self_prompt_turn_ids:
@@ -159,6 +180,7 @@ def build_memory_context_inclusion_records(
     self_prompt_turn_ids: set[str] | None = None,
     peer_prompt_turn_ids: set[str] | None = None,
     retrieval_signals_by_turn_id: dict[str, dict[str, float]] | None = None,
+    pre_join_min_round: int | None = None,
 ) -> list[InclusionRecord]:
     """
     Build inclusion rows. When prompt-aligned id sets are supplied, records reflect
@@ -175,6 +197,7 @@ def build_memory_context_inclusion_records(
             peer_prompt_turn_ids=peer_prompt_turn_ids,
             peer_limit=peer_limit,
             retrieval_signals_by_turn_id=retrieval_signals_by_turn_id,
+            pre_join_min_round=pre_join_min_round,
         )
 
     recency_ids = {str(t.get("id") or "") for t in recency_window if t.get("id")}
@@ -242,6 +265,9 @@ def summarize_memory_context_log(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "recency_cut": 0,
         "same_round_peer": 0,
     }
+    has_pre_join = any(str(row.get("exclusion_reason") or "") == "pre_join" for row in rows)
+    if has_pre_join:
+        breakdown["pre_join"] = 0
     for row in rows:
         if not row.get("included"):
             reason = str(row.get("exclusion_reason") or "")

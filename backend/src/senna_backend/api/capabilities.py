@@ -71,6 +71,11 @@ def build_capabilities_dict() -> dict:
                 "min": 1,
                 "max": 3,
             },
+            "roster_activity_windows": {
+                "optional": True,
+                "description": "M-ROSTER: roster columns active_from_round, active_until_round (inclusive), "
+                "optional absence_reason and window_basis; scenario YAML roster_windows block for handover template.",
+            },
             "remainder_config": {
                 "optional": True,
                 "description": "Iteration 24: synthetic Tier-3 remainder cohort + heuristic tuning. "

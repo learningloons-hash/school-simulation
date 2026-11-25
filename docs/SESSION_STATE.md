@@ -12,8 +12,9 @@ Update it at the end of each iteration gate.
 - **Research utility track: ACTIVE** (2026-09-15). Mechanics-only harness work on `sq_reading_culture` (Part C, persona-rich, tempsweep); CIEPSS validity re-run blocked on new pre-registration. Neutral-prior discipline holds for `ciepss_school_b`; differentiated personas are utility-only.
 - **Study repo anchors (`senna-sstrf-study` `main`):** gitignore fix + manifest validator **`46c57c2`**; persona-rich + Part C export bundles **`92a16c6`**; ops bundle **`f5e77ec`**; legacy zip backfill flat paths **`f9ecc7f`** (supersedes nested-path **`37529eb`**).
 - **Public repo handoffs:** Architect PASS on study gitignore **`f647caa`**; validity harness dry-run guard **`dfc0bb1`**; persona-rich fixtures **`e242142`**; CIEPSS dissociation narrative **`d2110e1`**.
-- **M-RENAME (package/build):** builder pass open for review — Python package `senna_backend`, dist `senna-backend`; legacy CLI/SQLite/env fallbacks in [`HANDOFF_SENNA_M_RENAME.md`](handoffs/HANDOFF_SENNA_M_RENAME.md).
-- Last update date: **2026-11-13** (M-RENAME builder pass).
+- **M-RENAME (package/build):** CLOSED on `main` @ `9739f09` — Python package `senna_backend`, dist `senna-backend`; [`HANDOFF_SENNA_M_RENAME.md`](handoffs/HANDOFF_SENNA_M_RENAME.md).
+- **M-ROSTER (join/leave):** builder pass on branch `m-roster-join-leave` — per-actor activity windows, handover/absence prompts, export `active_agents_per_round.csv`; [`HANDOFF_SENNA_M_ROSTER.md`](handoffs/HANDOFF_SENNA_M_ROSTER.md).
+- Last update date: **2026-11-16** (M-ROSTER builder pass).
 - Last verified: adoption_momentum round-1 null slice + validity harness tests (see Gate Evidence).
 
 ## Environment and Access

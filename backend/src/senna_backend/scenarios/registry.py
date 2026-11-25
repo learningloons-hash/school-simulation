@@ -42,6 +42,17 @@ class PersonaTemplate:
     # Opaque implementation archetype label for sampling (Iteration 26), e.g. active_sense_maker.
     implementation_posture: str = ""
     likert_anchor_labels: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    # M-ROSTER: optional per-round activity window (None / empty → active every round).
+    active_from_round: int | None = None
+    active_until_round: int | None = None
+    absence_reason: str = ""
+    window_basis: str = ""
+
+
+@dataclass(frozen=True)
+class RosterWindowsConfig:
+    handover_template: str | None = None
+    absence_notice_scope: str = "all_inactive"
 
 
 @dataclass(frozen=True)
@@ -63,6 +74,7 @@ class ScenarioConfig:
     likert_anchor_labels: dict[str, tuple[str, ...]] = field(default_factory=dict)
     # scenario-context-field: optional organisational/ecological background (YAML `context:`).
     context: dict[str, Any] = field(default_factory=dict)
+    roster_windows: RosterWindowsConfig | None = None
 
 
 _DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -193,7 +205,18 @@ def _parse_likert_anchor_labels(raw: Any) -> dict[str, tuple[str, ...]]:
     return out
 
 
-def _persona_from_mapping(p: dict[str, Any]) -> PersonaTemplate:
+def _optional_positive_int(raw: Any, *, field: str, context: str) -> int | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, int):
+        raise ValueError(f"{context}{field} must be an integer")
+    if raw < 1:
+        raise ValueError(f"{context}{field} must be >= 1")
+    return raw
+
+
+def _persona_from_mapping(p: dict[str, Any], *, index: int | None = None) -> PersonaTemplate:
+    ctx = f"personas[{index}]." if index is not None else ""
     groups_raw = p.get("groups")
     groups = _groups_tuple_from_persona(groups_raw) if groups_raw is not None else ()
     return PersonaTemplate(
@@ -212,6 +235,14 @@ def _persona_from_mapping(p: dict[str, Any]) -> PersonaTemplate:
         initial_state=_mapping_dict(p.get("initial_state")),
         implementation_posture=str(p.get("implementation_posture") or "").strip(),
         likert_anchor_labels=_parse_likert_anchor_labels(p.get("likert_anchor_labels")),
+        active_from_round=_optional_positive_int(
+            p.get("active_from_round"), field="active_from_round", context=ctx
+        ),
+        active_until_round=_optional_positive_int(
+            p.get("active_until_round"), field="active_until_round", context=ctx
+        ),
+        absence_reason=str(p.get("absence_reason") or "").strip(),
+        window_basis=str(p.get("window_basis") or "").strip(),
     )
 
 
@@ -247,7 +278,7 @@ def _scenario_from_mapping(raw: dict[str, Any]) -> ScenarioConfig:
     pe_raw = raw.get("policy_events") or {}
     policy_events: dict[int, str] = {int(k): str(v) for k, v in pe_raw.items()}
     personas_raw = raw.get("personas") or []
-    personas = [_persona_from_mapping(dict(x)) for x in personas_raw]
+    personas = [_persona_from_mapping(dict(x), index=i) for i, x in enumerate(personas_raw)]
     rag_enabled = bool(raw.get("rag_enabled", False))
     rc = raw.get("rag_corpus_paths")
     if isinstance(rc, list):
@@ -259,6 +290,9 @@ def _scenario_from_mapping(raw: dict[str, Any]) -> ScenarioConfig:
     likert_enabled = bool(raw.get("likert_self_report_enabled", False))
     likert_anchors = _parse_likert_anchor_labels(raw.get("likert_anchor_labels"))
     context = _context_from_scenario(raw)
+    from senna_backend.simulation.roster_windows import parse_roster_windows_mapping
+
+    roster_windows = parse_roster_windows_mapping(raw.get("roster_windows"))
     return ScenarioConfig(
         scenario_id=str(raw["scenario_id"]),
         name=str(raw["name"]),
@@ -271,6 +305,7 @@ def _scenario_from_mapping(raw: dict[str, Any]) -> ScenarioConfig:
         likert_self_report_enabled=likert_enabled,
         likert_anchor_labels=likert_anchors,
         context=context,
+        roster_windows=roster_windows,
     )
 
 
