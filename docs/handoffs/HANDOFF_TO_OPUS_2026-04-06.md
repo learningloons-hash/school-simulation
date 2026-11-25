@@ -14,9 +14,11 @@ This file is a cold-start brief for Opus (or any other assistant picking up this
 | **PhD thesis** | "Using Large Language Model-Powered Multi-Agent Simulation to Model Policy Implementation and Policy Evaluation" (submitted April 2026, ANU Crawford) |
 | **Stack** | FastAPI backend (Python 3.12, `uv`) + React/Vite frontend (TypeScript) + SQLite |
 | **LLM endpoints** | Local: LM Studio at `http://127.0.0.1:1234/v1`; Cloud: Anthropic Messages API |
-| **Backend** | `127.0.0.1:8100` (`HOST` override) |
-| **Frontend** | `127.0.0.1:3100` |
+| **Backend** | `0.0.0.0:8100` |
+| **Frontend** | `0.0.0.0:3100` |
 | **Host machine** | Mac mini (always-on); thin client is a Windows laptop over Tailscale |
+
+[^m-deps-bind]: Default bind changed to `127.0.0.1` in M-DEPS (Nov 2026). For LAN/Tailscale: set `HOST=0.0.0.0` (backend) and run Vite with `--host 0.0.0.0` (frontend).
 | **Repo root** | `school-simulation/` |
 | **Session state doc** | `docs/SESSION_STATE.md` — single source of truth for cross-session handoffs; updated at every iteration gate |
 

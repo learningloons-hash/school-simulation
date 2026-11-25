@@ -12,7 +12,7 @@ Security dependency bumps (backend `uv.lock`, frontend `package-lock.json`) and 
 
 ### Backend (`backend/pyproject.toml`, `backend/uv.lock`)
 
-- Pinned `fastapi==0.135.3`; constrained `starlette>=1.3.1,<1.4`.
+- Pinned `fastapi==0.135.3` (spec: hold FastAPI minor; starlette floor upgrade must not pull a newer FastAPI); constrained `starlette>=1.3.1,<1.4`.
 - Raised floors: `pydantic-settings>=2.14.2`, `pytest>=9.0.3` (dev).
 - `uv lock --upgrade-package` for: anyio, certifi, starlette, idna, pydantic-settings, pytest.
 
@@ -25,7 +25,7 @@ Security dependency bumps (backend `uv.lock`, frontend `package-lock.json`) and 
 ### Local-only binding
 
 - `senna_backend.config.Settings.host` default `0.0.0.0` → `127.0.0.1` (`HOST` env / `run_dev()` unchanged).
-- Docs: `docs/SESSION_STATE.md`, `docs/NEW_LAPTOP_PLATFORM_SETUP.md`, `docs/handoffs/HANDOFF_TO_OPUS_2026-04-06.md`.
+- Docs: `docs/SESSION_STATE.md`, `docs/NEW_LAPTOP_PLATFORM_SETUP.md`; historical `HANDOFF_TO_OPUS_2026-04-06.md` table left period-accurate with M-DEPS footnote.
 
 ## Resolved versions
 
@@ -56,6 +56,8 @@ Security dependency bumps (backend `uv.lock`, frontend `package-lock.json`) and 
 | `main` (pre-change) | 673 | 15 | 2 |
 | `m-deps-security` | 673 | 15 | 2 |
 
+**Warnings:** Pytest summary **3** on branch vs **1** on `main` (pre-change): Starlette 1.3 `TestClient` adds a `StarletteDeprecationWarning` (httpx2 migration); not a failure — deferred.
+
 Same failing tests (pre-existing; not fixed in this milestone):
 
 - `tests/test_interaction_sample_k.py::test_sample_k_fewer_llm_turns_than_full_robin`
@@ -83,7 +85,7 @@ Same failing tests (pre-existing; not fixed in this milestone):
 
 ### npm audit
 
-**Before** (`main`, Vite 5 lock): 7 advisories (esbuild/vite dev SSRF moderate; browserslist high; nanoid high; postcss high; @babel/core moderate; baseline-browser-mapping moderate; source-map-js — details in Dependabot GHSA refs).
+**Before** (`main`, Vite 5 lock; `npm ci` + `npm audit` on `main` lock): **8 vulnerabilities** (1 low, 2 moderate, 5 high) — `@babel/core` moderate; `baseline-browser-mapping` moderate; `browserslist` high; `esbuild` / `vite` moderate (dev SSRF); `nanoid` high; `postcss` high; `source-map-js` high (GHSA-68fv-2mgg-jv7q).
 
 **After** (`m-deps-security`): `found 0 vulnerabilities`.
 

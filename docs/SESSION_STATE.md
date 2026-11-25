@@ -23,6 +23,7 @@ Update it at the end of each iteration gate.
 - Thin client: Windows laptop over Tailscale
 - Backend default: `127.0.0.1:8100` (override with `HOST` env)
 - Frontend default: `127.0.0.1:3100` (override in `vite.config.ts` / Vite CLI `--host`)
+- Tailscale/LAN thin-client access: `HOST=0.0.0.0` for the backend; `vite --host 0.0.0.0` or `npm run dev -- --host 0.0.0.0` for the frontend.
 - LLM endpoint: `http://127.0.0.1:1234/v1` (LM Studio on Mac mini)
 
 ## Learnings (ops / dev)
