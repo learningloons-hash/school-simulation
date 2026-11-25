@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
-      host: "0.0.0.0",
+      host: "127.0.0.1",
       port,
       proxy: {
         // Proxy API routes so the browser can call same-origin paths.

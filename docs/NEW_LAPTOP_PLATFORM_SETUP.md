@@ -25,7 +25,7 @@ Two terminals (from `backend/` after editing `.env`):
 
 ```powershell
 # Terminal 1 — no reload (reload kills runs)
-uv run uvicorn senna_backend.main:app --host 0.0.0.0 --port 8100
+uv run uvicorn senna_backend.main:app --host 127.0.0.1 --port 8100
 
 # Terminal 2
 cd ..\frontend
@@ -78,7 +78,7 @@ If `LLM_PROVIDER` is omitted and only `ANTHROPIC_API_KEY` is set, the backend in
 Prefer:
 
 ```bash
-cd backend && uv run uvicorn senna_backend.main:app --host 0.0.0.0 --port 8100
+cd backend && uv run uvicorn senna_backend.main:app --host 127.0.0.1 --port 8100
 ```
 
 ---
