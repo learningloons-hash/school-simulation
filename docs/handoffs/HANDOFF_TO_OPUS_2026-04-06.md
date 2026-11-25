@@ -17,10 +17,10 @@ This file is a cold-start brief for Opus (or any other assistant picking up this
 | **Backend** | `0.0.0.0:8100` |
 | **Frontend** | `0.0.0.0:3100` |
 | **Host machine** | Mac mini (always-on); thin client is a Windows laptop over Tailscale |
-
-[^m-deps-bind]: Default bind changed to `127.0.0.1` in M-DEPS (Nov 2026). For LAN/Tailscale: set `HOST=0.0.0.0` (backend) and run Vite with `--host 0.0.0.0` (frontend).
 | **Repo root** | `school-simulation/` |
 | **Session state doc** | `docs/SESSION_STATE.md` — single source of truth for cross-session handoffs; updated at every iteration gate |
+
+[^m-deps-bind]: Default bind changed to `127.0.0.1` in M-DEPS (Nov 2026). For LAN/Tailscale: set `HOST=0.0.0.0` (backend) and run Vite with `--host 0.0.0.0` (frontend).
 
 The simulation runs multi-agent "rounds" where LLM-backed agents (teachers, school leaders, parents, policy officers, etc.) interact under a policy scenario, producing transcripts, state timelines, and outcome indicators. The entire pipeline from scenario definition through simulation run through export and analysis is now API-driven and can be triggered by a single natural-language question via the `/agent/ask` endpoint.
 
